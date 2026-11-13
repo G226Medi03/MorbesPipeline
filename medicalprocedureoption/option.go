@@ -30,6 +30,11 @@ type MedicalProcedureOption struct {
 
 func (value MedicalProcedureOption) Id() MedicalProcedureOptionID { return value.id }
 
+func (value MedicalProcedureOption) WithID(id MedicalProcedureOptionID) MedicalProcedureOption {
+	value.id = id
+	return value
+}
+
 func NewMedicalProcedureOption(
 	id MedicalProcedureOptionID,
 	procedureID entity.ProcedureID,
