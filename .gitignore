@@ -1,0 +1,17 @@
+# binaries
+bin/
+*.exe
+*.test
+
+# local
+.env
+.env.*
+db/
+backup/
+external_files/
+external_files_text/
+
+# IDE
+.idea/
+.vscode/
+*.swp
