@@ -24,6 +24,28 @@ const (
 	LLMCacheRefresh
 )
 
+// AskLLM reads or writes the shared LLM response cache.
+func AskLLM(
+	ctx context.Context,
+	llm *cllmcall.Client,
+	st ports.Store,
+	prompt string,
+	referedSourceID source.SourceId,
+) (*source.LlmResponse, error) {
+	return ask_llm(ctx, llm, st, prompt, referedSourceID)
+}
+
+// AskLLMWithMode runs an LLM request with the requested cache mode.
+func AskLLMWithMode(
+	ctx context.Context,
+	llm *cllmcall.Client,
+	st ports.Store,
+	prompt string,
+	referedSourceID source.SourceId,
+	cacheMode LLMCacheMode,
+) (*source.LlmResponse, error) {
+	return ask_llm_with_mode(ctx, llm, st, prompt, referedSourceID, cacheMode)
+}
 func ask_llm(
 	ctx context.Context,
 	llm *cllmcall.Client,
