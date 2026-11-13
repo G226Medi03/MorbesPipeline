@@ -1,0 +1,68 @@
+package csolve
+
+import (
+	"context"
+	"fmt"
+
+	cservice "github.com/G226Medi03/MorbesPipeline/service"
+	"github.com/G226Medi03/MorbesPipeline/solve/domain"
+)
+
+type ReplayMode = domain.ReplayMode
+
+const (
+	ReplayModeLLM  = domain.ReplayModeLLM
+	ReplayModeCode = domain.ReplayModeCode
+)
+
+// PrepareReplay resets the source case so replay overwrites the same case.
+func (self *Service) PrepareReplay(_ context.Context, sourceID domain.CaseID, mode ReplayMode, fromNode string) (domain.CaseID, error) {
+	if mode != ReplayModeLLM && mode != ReplayModeCode {
+		return "", fmt.Errorf("알 수 없는 replay mode 입니다: %s", mode)
+	}
+	source, found, err := self.store.Get(sourceID)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("replay 원본 case 를 찾지 못했습니다: %s", sourceID)
+	}
+	if source.State == "running" || source.State == "pending" {
+		return "", fmt.Errorf("이미 실행 중인 case 는 replay 할 수 없습니다: %s", sourceID)
+	}
+	keepCalls := mode == ReplayModeCode
+	if err := self.store.ResetCaseForReplay(sourceID, string(mode), fromNode, keepCalls); err != nil {
+		return "", err
+	}
+	return sourceID, nil
+}
+
+// RunReplay executes the reset case. useCache is ignored for code replay,
+// which always bypasses the shared LLM response cache.
+func (self *Service) RunReplay(ctx context.Context, sourceID domain.CaseID, mode ReplayMode, fromNode string, useCache bool) error {
+	run := *self
+	run.ctx = ctx
+	if mode == ReplayModeCode {
+		calls, err := self.store.ListLLMCalls(sourceID)
+		if err != nil {
+			_ = self.store.SetFailed(sourceID, err)
+			return err
+		}
+		replay := newReplayLLM(calls, self.replay_live, self.replay_live_stages)
+		run.solver = replay
+		run.extract_llm = replay
+		run.situation_llm = replay
+		run.cache_mode = cservice.LLMCacheBypass
+		if item, found, err := self.store.Get(sourceID); err == nil && found && item.SourceID.ToI64() <= 0 && item.SituationSourceID.ToI64() > 0 {
+			if err := self.store.SetSource(sourceID, item.SituationSourceID); err != nil {
+				return err
+			}
+		}
+		return run.run_v2_from(ctx, sourceID, fromNode)
+	}
+	run.cache_mode = cservice.LLMCacheUse
+	if !useCache {
+		run.cache_mode = cservice.LLMCacheRefresh
+	}
+	return run.run_v2_from(ctx, sourceID, fromNode)
+}

@@ -1,0 +1,88 @@
+package csolve
+
+import (
+	"encoding/json"
+
+	"github.com/G226Medi03/MorbesPipeline/logs"
+)
+
+const (
+	seqExplain                = 10
+	seqQuestionType           = 12
+	seqCaseExtraction         = 20
+	seqResolve                = 30
+	seqActor                  = 15
+	seqOtherNames             = 17
+	seqStatus                 = 20
+	seqAction                 = 30
+	seqActorAction            = 35
+	seqPatientDescription     = 36
+	seqMedicalProcedureOption = 37
+	seqRelation               = 40
+	seqSituation              = 50
+	seqCause                  = 60
+)
+
+type promptSet struct {
+	templates map[string]string
+	versions  map[string]int
+}
+
+func (self *Service) load_prompts() (promptSet, error) {
+	result := promptSet{
+		templates: make(map[string]string, len(PromptStages())),
+		versions:  make(map[string]int, len(PromptStages())),
+	}
+	for _, stage := range PromptStages() {
+		template, version, err := self.store.GetPrompt(stage)
+		if err != nil {
+			if stage == PromptActor || stage == PromptOtherNames || stage == PromptPatientDescription || stage == PromptQuestionType {
+				continue
+			}
+			return promptSet{}, err
+		}
+		result.templates[stage] = template
+		result.versions[stage] = version
+	}
+	return result, nil
+}
+
+func (self *Service) record_call(call LLMCallInput) {
+	if call.State == "" {
+		call.State = "ok"
+	}
+	// cause_trace is deterministic graph work, not an LLM call. Replays should
+	// replace the previous trace record instead of accumulating one panel per run.
+	if call.Stage == "cause_trace" {
+		if err := self.store.DeleteLLMCallsByStage(call.CaseID, call.Stage); err != nil {
+			logs.Warn("solve llm call 이전 trace 삭제 실패",
+				logs.AttrOf("case", call.CaseID),
+				logs.AttrOf("stage", call.Stage),
+				logs.AttrOf("error", err))
+		}
+	}
+	if _, err := self.store.AppendLLMCall(call); err != nil {
+		logs.Warn("solve llm call 저장 실패",
+			logs.AttrOf("case", call.CaseID),
+			logs.AttrOf("stage", call.Stage),
+			logs.AttrOf("error", err))
+	}
+}
+
+func encode_json(value any) string {
+	if value == nil {
+		return ""
+	}
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return ""
+	}
+	return string(encoded)
+}
+
+func error_text(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
