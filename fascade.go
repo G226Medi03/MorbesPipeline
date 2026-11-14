@@ -61,7 +61,6 @@ type (
 	MedicalProcedureOptionID = ids.MedicalProcedureOptionID
 	PatientDescription       = patient.PatientDescription
 	Trait                    = trait.Trait
-	ProcedureType            = trait.ProcedureType
 )
 
 const (
@@ -118,6 +117,19 @@ var (
 	NewMedicalProcedureOption = procedureoption.NewMedicalProcedureOption
 	ErrSourceRequired         = procedureoption.ErrSourceRequired
 	ParseStatus               = patient.ParseStatus
+
+	MarshalAction    = repo.MarshalAction
+	MarshalActor     = repo.MarshalActor
+	MarshalProcedure = repo.MarshalProcedure
+	MarshalStatus    = repo.MarshalStatus
+	MarshalSymptom   = repo.MarshalSymptom
+
+	UnmarshalAction           = repo.UnmarshalAction
+	UnmarshalActor            = repo.UnmarshalActor
+	UnmarshalOrParseProcedure = repo.UnmarshalOrParseProcedure
+	UnmarshalProcedure        = repo.UnmarshalProcedure
+	UnmarshalStatus           = repo.UnmarshalStatus
+	UnmarshalSymptom          = repo.UnmarshalSymptom
 
 	InferQuestionPolicy           = domain.InferQuestionPolicy
 	InferQuestionType             = domain.InferQuestionType

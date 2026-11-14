@@ -1,17 +1,20 @@
 package morbes_pipeline
 
 import (
-	"context"
-
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
+	llmclient "github.com/G226Medi03/MorbesPipeline/internal/external/llmclient/call"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline"
 )
 
 type (
+	Case                             = solve.Case
+	Step                             = solve.Step
+	StepState                        = solve.StepState
 	Service                          = pipeline.Service
 	Pipeline                         = pipeline.Pipeline
 	Dependencies                     = pipeline.Dependencies
+	LLMClient                        = llmclient.Client
 	CaseExtraction                   = pipeline.CaseExtraction
 	ResolvedCaseExtraction           = pipeline.ResolvedCaseExtraction
 	ActorDraft                       = pipeline.ActorDraft
@@ -20,7 +23,6 @@ type (
 	RelationDraft                    = pipeline.RelationDraft
 	OptionDraft                      = pipeline.OptionDraft
 	PatientDescriptionDraft          = pipeline.PatientDescriptionDraft
-	ProblemChoice                    = pipeline.ProblemChoice
 	ReplayMode                       = solve.ReplayMode
 	LLMCall                          = model.LLMCall
 	LLMCallInput                     = model.LLMCallInput
@@ -55,13 +57,10 @@ const (
 )
 
 var (
-	NewService  = pipeline.New_Service
-	New_Service = pipeline.New_Service
+	NewService   = pipeline.New_Service
+	New_Service  = pipeline.New_Service
+	NewLLMClient = llmclient.NewFunc
 )
-
-func Run(ctx context.Context, service *Service, id CaseID) error {
-	return service.Run(ctx, id)
-}
 
 func PipelineStages() []string {
 	return pipeline.PipelineStages()
