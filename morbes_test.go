@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	graph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 )
 
 func TestPublicFacade(t *testing.T) {
@@ -16,12 +17,12 @@ func TestPublicFacade(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck // deferred close
 
-	store := NewStore(ctx, db)
+	store := New(ctx, db)
 	if err := store.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	container := NewContainer()
-	status := HaveDisease{Disease: EDisease("고혈압")}
+	container := graph.New_Container()
+	status := HaveSymptom{Symptom: EOtherSymptom{Name: "고혈압"}}
 	if _, err := store.EnsureStatusIn(container, status, SourceID(1)); err != nil {
 		t.Fatalf("EnsureStatusIn: %v", err)
 	}

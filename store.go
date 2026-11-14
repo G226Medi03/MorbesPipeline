@@ -10,13 +10,9 @@ type (
 	ProblemResultFilter = persistence.ProblemResultFilter
 	ProblemResultRow    = persistence.ProblemResultRow
 
-	NamedRecord                = persistence.NamedRecord
 	ActorRecord                = persistence.ActorRecord
-	ActorActionLink            = persistence.ActorActionLink
 	ActionRecord               = persistence.ActionRecord
-	ActionResultStatusLink     = persistence.ActionResultStatusLink
 	StatusRecord               = persistence.StatusRecord
-	StatusActionLink           = persistence.StatusActionLink
 	ProcedureRecord            = persistence.ProcedureRecord
 	EntityNeighbors            = persistence.EntityNeighbors
 	StatusNameRef              = persistence.StatusNameRef
@@ -28,8 +24,6 @@ type (
 var ErrUnknownEntityType = persistence.ErrUnknownEntityType
 
 var (
-	New             = persistence.New
-	NewWithDBs      = persistence.NewWithDBs
-	NewStore        = persistence.New
-	NewStoreWithDBs = persistence.NewWithDBs
+	New        = persistence.New
+	NewWithDBs = persistence.NewWithDBs
 )
