@@ -1,0 +1,49 @@
+{
+  "repos": [
+    {
+      "path": ".",
+      "module": "github.com/G226Medi03/MorbesPipeline",
+      "enforce": true
+    }
+  ],
+  "forbidden": [
+    "github.com/G226Medi03/MedicalEntity"
+  ],
+  "adapters": [
+    {
+      "name": "pipelinecore",
+      "external": "github.com/G226Medi03/PipeLineCore",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
+    },
+    {
+      "name": "sourceentity",
+      "external": "github.com/G226Medi03/SourceEntity",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+    },
+    {
+      "name": "sourceentityrepository",
+      "external": "github.com/G226Medi03/SourceEntityRepository",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentityrepository"
+    },
+    {
+      "name": "sqlcore",
+      "external": "github.com/G226Medi03/SQLCore",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore"
+    },
+    {
+      "name": "llmclient",
+      "external": "github.com/G226Medi03/llm-client",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/llmclient"
+    },
+    {
+      "name": "logsqlite",
+      "external": "github.com/G226Medi03/log-sqlite",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/logsqlite"
+    },
+    {
+      "name": "duration",
+      "external": "github.com/G226Medi03/go-duration",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/duration"
+    }
+  ]
+}

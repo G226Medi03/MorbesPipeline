@@ -11,3 +11,5 @@ This repository will own:
 - pipeline-only legacy adapters
 
 The generic pipeline model lives in `github.com/G226Medi03/PipeLineCore`.
+
+See [docs/README.md](docs/README.md) for the code structure and pipeline documentation.
