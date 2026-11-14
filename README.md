@@ -2,13 +2,13 @@
 
 Morbes medical pipeline module.
 
-This repository will own:
+This repository owns:
 
 - pipeline solve orchestration
 - pipeline domain DTOs
-- canonicalization
-- pipeline ports
-- pipeline-only legacy adapters
+- SQLite persistence and read models
+- external repository adapters
+- root public facade for consumer applications
 
 The generic pipeline model lives in `github.com/G226Medi03/PipeLineCore`.
 

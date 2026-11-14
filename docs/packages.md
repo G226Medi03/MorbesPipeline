@@ -10,15 +10,14 @@ import morbes "github.com/G226Medi03/MorbesPipeline"
 
 | 파일 | 내용 |
 | --- | --- |
-| `doc.go` | `package morbes` 문서 |
+| `facade.go` | entity/domain 타입 alias, codec, trait helper |
 | `solve.go` | `Service`, `Dependencies`, `Run`, replay, prompt, option 선택 |
-| `store.go` | `Store`, `NewStore`, `NewStoreWithDBs` |
-| `domain.go` | Case/Step/Question/Option/Trait 타입 |
-| `entity.go` | MedicalEntity ename 타입 alias |
+| `store.go` | `Store`, `New`, `NewWithDBs`, read model |
+| `support.go` | IDs, logs, label, sourceutil, sliceutil, parser |
 | `tracing.go` | `Container`, `Candidate`, `TraceNode`, cause service |
-| `support.go` | IDs, logs, label, sourceutil, sliceutil |
 
 공개 facade는 내부 구현을 **type alias + 얇은 wrapper**로 노출한다.
+root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` alias를 권장한다.
 
 ## internal 패키지
 

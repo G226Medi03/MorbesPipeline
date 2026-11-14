@@ -13,4 +13,5 @@ type Pipeline interface {
 	RunWithCache(ctx context.Context, id domain.CaseID, useCache bool) error
 	PrepareReplay(ctx context.Context, id domain.CaseID, mode ReplayMode, fromNode string) (domain.CaseID, error)
 	RunReplay(ctx context.Context, id domain.CaseID, mode ReplayMode, fromNode string, useCache bool) error
+	LoadResolvedCaseExtraction(id domain.CaseID) (ResolvedCaseExtraction, bool, error)
 }

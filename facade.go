@@ -43,9 +43,7 @@ type (
 	ReceivedProcedure       = repo.ReceivedMedicalProcedure
 	EOtherSymptom           = repo.EOtherSymptom
 	EPain                   = repo.EPain
-)
 
-type (
 	CaseID           = domain.CaseID
 	CaseState        = domain.CaseState
 	Stage            = domain.Stage
