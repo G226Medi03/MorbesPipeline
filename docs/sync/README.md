@@ -14,10 +14,10 @@
 | 5 | `SQLCore` | `v0.2.0` | `internal/persistence`, `internal/persistence/*` | 동기화 완료 |
 | 6 | `MedicalEntityRepository` | `v0.10.0` | `repo` facade + `internal/persistence/entity*.go`, `internal/persistence/graph`, `internal/persistence/option` | pain/symptom schema 반영 |
 | 7 | `PipeLineCore` | `v0.1.0` | `internal/pipeline/pipeline_nodes.go`, `internal/pipeline/service.go` | 동기화 완료 |
-| 8 | `llm-client` | `v0.4.0` | `MorbesLLMService` 경유 | 직접 import 제거 |
+| 8 | `llm-client` | `v0.4.0` | `internal/pipeline` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logs` | 동기화 완료 |
 | 10 | `go-duration` | `v0.1.0` | `MorbesLLMService` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLMService` | `v0.8.0` | LLM 호출, 캐시, relation, actor 추출, replay, parser facade | 동기화 완료 |
+| 11 | `MorbesLLMService` | `v0.9.0` | LLM 호출, 캐시, relation, actor 추출, replay | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -39,17 +39,15 @@
 ## 2. MedicalEntityParser
 
 - 사용 API (via `MorbesLLMService`):
-  - `ParseStatusResponse`, `ParseStatusesResponse`
-  - `ParseActionsResponse`, `ParseActorItemsResponse`
-  - `ParseRelationsResponse`, `ParseActorName`
+  - `ParseStatusesResponse`, `ParseActionsResponse`, `ParseStatusResponse`
+  - `ExtractStatuses`, `ExtractActions`, `ExtractActors`, `ExtractRelations`
 - 대응 패키지:
   - `internal/domain/patient`
   - `internal/domain/situation`
   - `internal/pipeline/draft_parse.go`
   - `internal/pipeline/extraction_v2.go`
 - 확인:
-  - parser v0.1.0 decode-only API 반영
-  - `MedicalEntityParser` 직접 import 0건
+  - parser direct import 0건
   - typed status/action/actor 결과를 draft value로 변환
 
 ## 3. SourceEntity / SourceEntityRepository

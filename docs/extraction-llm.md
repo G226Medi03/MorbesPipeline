@@ -132,7 +132,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### status
 
 - 함수: `run_v2_status_extraction`
-- 파서: `morbesllm.ParseStatusesResponse`
+- 추출/파싱: `morbesllm.Service.ExtractStatuses`
 - 결과: `[]StatusDraft{Key, Kind, Value(json.RawMessage), SourceID}`
 - typed status를 `entityjson.EncodeStatus`로 직렬화해 draft value로 보관한다.
 - key는 LLM이 준 key를 유지하고 사전순으로 정렬한다.
@@ -140,7 +140,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### action
 
 - 함수: `run_v2_action_extraction`
-- 파서: `morbesllm.ParseActionsResponse`
+- 추출/파싱: `morbesllm.Service.ExtractActions`
 - typed action을 `entityjson.EncodeAction`으로 직렬화한다.
 - 결과: `[]ActionDraft{Key, Variant, Value, SourceID}`
 
@@ -198,8 +198,8 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### relation
 
 - 함수: `run_v2_relation_extraction`
-- `build_relation_prompt_from_drafts`가 status/action map을 `morbesllm.BuildRelationPrompt`로 렌더링
-- `morbesllm.Service.ExtractRelations`가 `ParseRelationsResponse`로 relation을 해석한다.
+- `build_relation_prompt_from_drafts`가 typed status/action map을 `morbesllm.BuildRelationPrompt`로 렌더링
+- `morbesllm.Service.ExtractRelations`가 `llmparser.DecodeRelations`로 relation을 해석한다.
 - parser 결과는 `[causeKey, actionKey, resultKey, actionKey, ...]` 형태의 경로다.
   인접한 세 개를 묶어 `RelationDraft{CauseStatusKey, ActionKey, ResultStatusKey}`로
   변환한다.

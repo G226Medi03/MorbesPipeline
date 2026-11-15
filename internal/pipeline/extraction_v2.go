@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -43,31 +44,37 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 	})
 	prompt += problem_only_instruction(PromptStatus)
 	started := time.Now()
-	raw, response, err := self.generate_extraction(ctx, state, prompt)
+	var statuses map[string]repo.IEStatus
+	var response *source.LlmResponse
+	var err error
+	if self.llm == nil {
+		err = fmt.Errorf("extraction LLM is not configured")
+	} else {
+		statuses, response, err = self.llm.ExtractStatuses(ctx, prompt, extraction_refered_source(state), self.cache_mode)
+	}
+	raw := ""
+	if response != nil {
+		raw = response.OutputText()
+	}
 	var drafts []StatusDraft
 	if err == nil {
-		statuses, parse_err := morbesllm.ParseStatusesResponse(raw)
-		if parse_err != nil {
-			err = parse_err
-		} else {
-			keys := make([]string, 0, len(statuses))
-			for key := range statuses {
-				keys = append(keys, key)
+		keys := make([]string, 0, len(statuses))
+		for key := range statuses {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			status := statuses[key]
+			value, marshal_err := entityjson.EncodeStatus(status)
+			if marshal_err != nil {
+				continue
 			}
-			sort.Strings(keys)
-			for _, key := range keys {
-				status := statuses[key]
-				value, marshal_err := entityjson.EncodeStatus(status)
-				if marshal_err != nil {
-					continue
-				}
-				drafts = append(drafts, StatusDraft{
-					Key:      key,
-					Kind:     status.Kind(),
-					Value:    value,
-					SourceID: extraction_source_id(response, state),
-				})
-			}
+			drafts = append(drafts, StatusDraft{
+				Key:      key,
+				Kind:     status.Kind(),
+				Value:    value,
+				SourceID: extraction_source_id(response, state),
+			})
 		}
 	}
 	self.record_v2_extraction_call(id, seqStatus, "status_extract", "status", state.Prompts.versions[PromptStatus], prompt, raw, response, drafts, started, err)
@@ -82,31 +89,37 @@ func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.Cas
 	})
 	prompt += problem_only_instruction(PromptAction)
 	started := time.Now()
-	raw, response, err := self.generate_extraction(ctx, state, prompt)
+	var actions map[string]repo.IEAction
+	var response *source.LlmResponse
+	var err error
+	if self.llm == nil {
+		err = fmt.Errorf("extraction LLM is not configured")
+	} else {
+		actions, response, err = self.llm.ExtractActions(ctx, prompt, extraction_refered_source(state), self.cache_mode)
+	}
+	raw := ""
+	if response != nil {
+		raw = response.OutputText()
+	}
 	var drafts []ActionDraft
 	if err == nil {
-		actions, parse_err := morbesllm.ParseActionsResponse(raw)
-		if parse_err != nil {
-			err = parse_err
-		} else {
-			keys := make([]string, 0, len(actions))
-			for key := range actions {
-				keys = append(keys, key)
+		keys := make([]string, 0, len(actions))
+		for key := range actions {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			action := actions[key]
+			encoded, marshal_err := entityjson.EncodeAction(action)
+			if marshal_err != nil {
+				continue
 			}
-			sort.Strings(keys)
-			for _, key := range keys {
-				action := actions[key]
-				encoded, marshal_err := entityjson.EncodeAction(action)
-				if marshal_err != nil {
-					continue
-				}
-				drafts = append(drafts, ActionDraft{
-					Key:      key,
-					Variant:  action.Kind(),
-					Value:    encoded,
-					SourceID: extraction_source_id(response, state),
-				})
-			}
+			drafts = append(drafts, ActionDraft{
+				Key:      key,
+				Variant:  action.Kind(),
+				Value:    encoded,
+				SourceID: extraction_source_id(response, state),
+			})
 		}
 	}
 	self.record_v2_extraction_call(id, seqAction, "action_extract", "action", state.Prompts.versions[PromptAction], prompt, raw, response, drafts, started, err)

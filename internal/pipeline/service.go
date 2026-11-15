@@ -10,6 +10,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	sourceentity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence"
+	cllmcall "github.com/G226Medi03/llm-client/call"
 )
 
 type Service struct {
@@ -18,12 +19,12 @@ type Service struct {
 	llm            *morbesllm.Service
 	question_store QuestionStore
 
-	replay_live        morbesllm.Generator
+	replay_live        *cllmcall.Client
 	replay_live_stages map[string]bool
 	cache_mode         morbesllm.CacheMode
 }
 
-func (self *Service) SetReplayLive(live morbesllm.Generator, stages map[string]bool) {
+func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool) {
 	self.replay_live = live
 	self.replay_live_stages = stages
 }
