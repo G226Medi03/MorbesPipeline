@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 )
 

@@ -1,7 +1,7 @@
 package csolve
 
 import (
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence"
 )
 

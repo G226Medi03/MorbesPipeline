@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 )
 

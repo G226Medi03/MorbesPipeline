@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
