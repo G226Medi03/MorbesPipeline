@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/G226Medi03/MedicalEntityRepository v0.10.0
-	github.com/G226Medi03/MorbesLLmPipeline v0.6.0
+	github.com/G226Medi03/MorbesLLmPipeline v0.7.0
 	github.com/G226Medi03/PipeLineCore v0.1.0
 	github.com/G226Medi03/SQLCore v0.2.0
 	github.com/G226Medi03/SourceEntity v0.3.0
