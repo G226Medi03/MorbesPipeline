@@ -17,7 +17,7 @@
 | 8 | `llm-client` | `v0.4.0` | `MorbesLLmPipeline` 경유 | 직접 import 제거 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logs` | 동기화 완료 |
 | 10 | `go-duration` | `v0.1.0` | `MorbesLLmPipeline` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLmPipeline` | `v0.6.0` | LLM 호출, 캐시, relation, replay, parser facade | 동기화 완료 |
+| 11 | `MorbesLLmPipeline` | `v0.7.0` | LLM 호출, 캐시, relation, actor 추출, replay, parser facade | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -159,6 +159,7 @@
 - 사용 API:
   - `Service`, `Clients`, `CacheMode`
   - `AskRole`, `ExplainResult`, `ExtractRelations`
+  - `BuildActorPrompt`, `ExtractActors`, `ActorDraft`
   - `WithReplay`, `WithReplayLive`
   - parser facade
 - 대응 패키지:
@@ -166,8 +167,8 @@
   - `internal/domain/patient`
   - `internal/domain/situation`
 - 확인:
-  - `MorbesLLmPipeline v0.6.0`
-  - LLM 호출/캐시/relation/replay 소유
+  - `MorbesLLmPipeline v0.7.0`
+  - LLM 호출/캐시/relation/actor 추출/replay 소유
   - `Generator`는 `llmclient.LlmResponse` 반환
 
 ## 동기화 절차

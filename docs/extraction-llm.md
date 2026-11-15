@@ -115,17 +115,18 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 `extractionPipeline`의 각 LLM 단계는 다음 패턴을 따른다.
 
 1. 프롬프트 템플릿 확인(없으면 단계별로 skip 또는 실패)
-2. `problem_stem` 기준으로 렌더링
-3. `generate_extraction` 호출
-4. parser로 draft 생성
+2. stage별 입력으로 프롬프트 렌더링
+3. `generate_extraction` 또는 `MorbesLLmPipeline` 추출 메서드 호출
+4. typed 값 또는 draft 생성
 5. `record_v2_extraction_call`로 호출 기록
 
 ### actor
 
 - 함수: `run_v2_actor_extraction`
-- 파서: `morbesllm.ParseActorItemsResponse`
-- 결과: `[]ActorDraft{Key: "o1", Kind, Name, SourceID}`
-- typed actor의 `Kind()`/`ActorName()`을 사용하고, kind가 비면 이름 기반 추론으로 보정한다.
+- prompt: `morbesllm.BuildActorPrompt`
+- 추출/파싱: `morbesllm.Service.ExtractActors`
+- 결과: `[]morbesllm.ActorDraft{Key: "o1", Kind, Name, SourceID}`
+- actor kind 보정과 draft 변환은 `MorbesLLmPipeline`이 담당한다.
 - 템플릿이 비어 있으면 `nil`을 반환한다(오류 아님).
 
 ### status

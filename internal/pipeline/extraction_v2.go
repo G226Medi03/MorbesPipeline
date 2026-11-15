@@ -19,45 +19,20 @@ func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.Case
 	if strings.TrimSpace(template) == "" {
 		return nil, nil
 	}
-	prompt := RenderPrompt(template, map[string]string{
-		"problem":     state.Case.Problem,
-		"answer":      "",
-		"explanation": "",
-	})
+	prompt := morbesllm.BuildActorPrompt(template, state.Case.Problem, "", "")
 	started := time.Now()
-	raw, response, err := self.generate_extraction(ctx, state, prompt)
-	var drafts []ActorDraft
-	if err == nil {
-		items, parse_err := morbesllm.ParseActorItemsResponse(raw)
-		if parse_err != nil {
-			err = parse_err
-		} else {
-			for _, item := range items {
-				if item == nil {
-					continue
-				}
-				name := strings.TrimSpace(item.ActorName())
-				if name == "" {
-					continue
-				}
-				kind := canonical_actor_kind(item.Kind())
-				if strings.TrimSpace(item.Kind()) == "" {
-					kind = resolve_actor_kind_from_name(name)
-				}
-				if kind == "" {
-					kind = "unknown_actor"
-				}
-				drafts = append(drafts, ActorDraft{
-					Key:      fmt.Sprintf("o%d", len(drafts)+1),
-					Kind:     kind,
-					Name:     name,
-					SourceID: extraction_source_id(response, state),
-				})
-			}
-		}
+	actors, response, err := self.llm.ExtractActors(
+		ctx,
+		prompt,
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
+	raw := ""
+	if response != nil {
+		raw = response.OutputText()
 	}
-	self.record_v2_extraction_call(id, seqActor, "actor_extract", "actor", state.Prompts.versions[PromptActor], prompt, raw, response, drafts, started, err)
-	return drafts, err
+	self.record_v2_extraction_call(id, seqActor, "actor_extract", "actor", state.Prompts.versions[PromptActor], prompt, raw, response, actors, started, err)
+	return actors, err
 }
 
 func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]StatusDraft, error) {
