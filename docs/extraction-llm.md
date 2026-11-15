@@ -95,7 +95,7 @@
 
 ## LLM 캐시
 
-LLM 호출과 캐시 정책은 `github.com/G226Medi03/MorbesLLmPipeline`이 소유한다.
+LLM 호출과 캐시 정책은 `github.com/G226Medi03/MorbesLLMService`가 소유한다.
 `Service.generate_extraction`은 `morbesllm.Service.AskRole`을 호출한다.
 
 | 모드 | 동작 |
@@ -116,7 +116,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 
 1. 프롬프트 템플릿 확인(없으면 단계별로 skip 또는 실패)
 2. stage별 입력으로 프롬프트 렌더링
-3. `generate_extraction` 또는 `MorbesLLmPipeline` 추출 메서드 호출
+3. `generate_extraction` 또는 `MorbesLLMService` 추출 메서드 호출
 4. typed 값 또는 draft 생성
 5. `record_v2_extraction_call`로 호출 기록
 
@@ -126,7 +126,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 - prompt: `morbesllm.BuildActorPrompt`
 - 추출/파싱: `morbesllm.Service.ExtractActors`
 - 결과: `[]morbesllm.ActorDraft{Key: "o1", Kind, Name, SourceID}`
-- actor kind 보정과 draft 변환은 `MorbesLLmPipeline`이 담당한다.
+- actor kind 보정과 draft 변환은 `MorbesLLMService`가 담당한다.
 - 템플릿이 비어 있으면 `nil`을 반환한다(오류 아님).
 
 ### status

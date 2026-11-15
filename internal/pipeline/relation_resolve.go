@@ -2,7 +2,7 @@ package csolve
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 )
 
 func build_relation_prompt_from_drafts(
