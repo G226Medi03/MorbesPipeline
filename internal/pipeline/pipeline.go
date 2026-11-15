@@ -105,17 +105,6 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 	return self.store.FinishStep(step_id, "succeeded", encode_json(explainStepOutput{Explanation: explanation}), "", 0)
 }
 
-func canonical_actor_kind(kind string) string {
-	return string(repo.ParseActorKind(kind))
-}
-
-func actor_kind(value repo.IEActor) string {
-	if _, ok := value.(repo.Device); ok {
-		return "device"
-	}
-	return "unknown_actor"
-}
-
 func looks_like_patient_description(problem string) bool {
 	for _, token := range []string{"진술", "서술", "표현", "이해한", "말한", "호소"} {
 		if strings.Contains(problem, token) {

@@ -3,6 +3,7 @@ package csolve
 import (
 	"encoding/json"
 
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 )
 
@@ -18,12 +19,7 @@ type CaseExtraction struct {
 	MedicalProcedureOptions []OptionDraft             `json:"medicalProcedureOptions,omitempty"`
 }
 
-type ActorDraft struct {
-	Key      string          `json:"key"`
-	Kind     string          `json:"kind"`
-	Name     string          `json:"name"`
-	SourceID source.SourceId `json:"sourceId,omitempty"`
-}
+type ActorDraft = morbesllm.ActorDraft
 
 type StatusDraft struct {
 	Key      string          `json:"key"`
