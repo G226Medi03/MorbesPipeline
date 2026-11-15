@@ -111,7 +111,7 @@ func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error 
 		_ = self.store.SetFailed(caseID, err)
 		return err
 	}
-	if self.extract_llm == nil {
+	if self.llm == nil {
 		return fmt.Errorf("extraction LLM 이 없습니다")
 	}
 	if fromNode == "" {

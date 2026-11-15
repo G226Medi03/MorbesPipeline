@@ -21,5 +21,6 @@ const (
 var (
 	NewSourceId    = ext.NewSourceId
 	NewRespId      = ext.NewRespId
+	NewLlmResponse = ext.NewLlmResponse
 	CanonicalModel = ext.CanonicalModel
 )

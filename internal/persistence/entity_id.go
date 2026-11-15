@@ -2,10 +2,13 @@ package store
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
-	"strings"
 )
 
 func (s *Store) statusIDForValue(value repo.IEStatus) (ids.StatusID, error) {
@@ -47,11 +50,7 @@ func (s *Store) statusPtr(value repo.IEStatus) (string, int64, error) {
 		}
 		return s.subtypePtr("status_decreased_index", "index_id", indexID, string(repo.StatusKindDecreasedIndex))
 	case repo.HaveSymptom:
-		symptomName, err := symptomLookupName(typed.Symptom)
-		if err != nil {
-			return "", 0, err
-		}
-		symptomID, err := s.symptomIDByName(symptomName)
+		symptomID, err := s.symptomIDForValue(typed.Symptom)
 		if err != nil {
 			return "", 0, err
 		}
@@ -288,19 +287,76 @@ func (s *Store) indexIDByName(name string) (int64, error) {
 	return id, err
 }
 
+func (s *Store) symptomIDForValue(value repo.IESymptom) (int64, error) {
+	switch typed := value.(type) {
+	case repo.EOtherSymptom:
+		return s.symptomIDByName(typed.Name)
+	case repo.EPain:
+		siteKind, siteName := painSite(typed.Site)
+		aspects, err := marshalPainAspects(typed.Aspects)
+		if err != nil {
+			return 0, err
+		}
+		var id int64
+		err = s.QueryRowContext(s.ctx,
+			`SELECT s.symptom_id FROM esymptom s JOIN symptom_pain p ON p.id = s.ptr
+			 WHERE s.kind = ? AND p.site_kind = ? AND p.site_name = ? AND p.aspects_json = ?`,
+			string(repo.SymptomKindPain), siteKind, siteName, aspects).Scan(&id)
+		return id, err
+	default:
+		return 0, fmt.Errorf("지원하지 않는 symptom 타입입니다: %T", value)
+	}
+}
+
 func (s *Store) symptomIDByName(name string) (int64, error) {
 	var id int64
-	err := s.QueryRowContext(s.ctx, `SELECT symptom_id FROM esymptom WHERE name = ?`, strings.TrimSpace(name)).Scan(&id)
+	err := s.QueryRowContext(s.ctx,
+		`SELECT s.symptom_id FROM esymptom s JOIN symptom_other o ON o.id = s.ptr
+		 WHERE s.kind = ? AND o.name = ?`,
+		string(repo.SymptomKindOtherSymptom), strings.TrimSpace(name)).Scan(&id)
 	return id, err
 }
 
-func symptomLookupName(value repo.IESymptom) (string, error) {
-	switch typed := value.(type) {
-	case repo.EOtherSymptom:
-		return strings.TrimSpace(typed.Name), nil
-	case repo.EPain:
-		return "pain", nil
-	default:
-		return "", fmt.Errorf("지원하지 않는 symptom 타입입니다: %T", value)
+func painSite(value repo.IEActor) (string, string) {
+	if value == nil {
+		return "", ""
 	}
+	return string(repo.ParseActorKind(value.Kind())), value.ActorName()
+}
+
+type painAspectDocument struct {
+	Kind    string `json:"kind"`
+	Value   string `json:"value,omitempty"`
+	Measure string `json:"measure,omitempty"`
+	Name    string `json:"name,omitempty"`
+}
+
+func marshalPainAspects(aspects []repo.IPainAspect) (string, error) {
+	documents := make([]painAspectDocument, 0, len(aspects))
+	for _, aspect := range aspects {
+		switch typed := aspect.(type) {
+		case repo.SymptomDuration:
+			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Value: typed.Value, Measure: typed.Measure})
+		case repo.Intensity:
+			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Value: typed.Value, Measure: typed.Measure})
+		case repo.Quality:
+			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Name: typed.Name})
+		case repo.Radiation:
+			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Name: typed.Name})
+		default:
+			return "", fmt.Errorf("지원하지 않는 pain aspect 타입입니다: %T", aspect)
+		}
+	}
+	sort.SliceStable(documents, func(i, j int) bool {
+		return painAspectDocumentKey(documents[i]) < painAspectDocumentKey(documents[j])
+	})
+	encoded, err := json.Marshal(documents)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}
+
+func painAspectDocumentKey(document painAspectDocument) string {
+	return document.Kind + "\x1f" + document.Value + "\x1f" + document.Measure + "\x1f" + document.Name
 }

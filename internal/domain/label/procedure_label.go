@@ -1,11 +1,9 @@
 package centitylabel
 
 import (
-	"encoding/json"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
 
 func ProcedureLabel(value repo.IMedicalProcedure) string {
@@ -50,52 +48,4 @@ func procedure_label(value repo.IMedicalProcedure) string {
 	default:
 		return value.Kind()
 	}
-}
-
-func is_procedure_kind(kind string) bool {
-	switch trait.ProcedureType(kind) {
-	case trait.KindSurgery, trait.KindTransplant,
-		trait.KindInfuse, trait.KindCleaning, trait.KindDiagnosticTest,
-		trait.KindEducation, trait.KindInstruction, trait.KindInsertion, trait.KindUnknown:
-		return true
-	}
-	return false
-}
-
-// unmarshalProcedure accepts both the current codec shape and the legacy
-// nested shape used by older databases.
-func unmarshalProcedure(raw json.RawMessage) (repo.IMedicalProcedure, error) {
-	var payload map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return nil, err
-	}
-	var kind string
-	_ = json.Unmarshal(payload["kind"], &kind)
-	kind = strings.ToLower(strings.TrimSpace(kind))
-	nestedKeys := []string{kind}
-	switch kind {
-	case "diagnostictest", "diagnostic_test", "diagnostic", "test":
-		nestedKeys = []string{"diagnostic_test", "diagnostic"}
-	case "unknownmedicalprocedure":
-		nestedKeys = []string{"unknown"}
-	}
-	for _, key := range nestedKeys {
-		nestedRaw, ok := payload[key]
-		if !ok {
-			continue
-		}
-		nested := map[string]json.RawMessage{}
-		if err := json.Unmarshal(nestedRaw, &nested); err != nil {
-			return nil, err
-		}
-		for nestedKey, value := range nested {
-			payload[nestedKey] = value
-		}
-		encoded, err := json.Marshal(payload)
-		if err != nil {
-			return nil, err
-		}
-		return repo.UnmarshalProcedure(encoded)
-	}
-	return repo.UnmarshalProcedure(raw)
 }

@@ -3,20 +3,21 @@ module github.com/G226Medi03/MorbesPipeline
 go 1.26.0
 
 require (
-	github.com/G226Medi03/MedicalEntityParser v0.0.0-20261113142150-8b1d93272249
-	github.com/G226Medi03/MedicalEntityRepository v0.9.1-0.20261114084907-355c4b9a7cff
+	github.com/G226Medi03/MedicalEntityRepository v0.10.0
+	github.com/G226Medi03/MorbesLLmPipeline v0.6.0
 	github.com/G226Medi03/PipeLineCore v0.1.0
 	github.com/G226Medi03/SQLCore v0.2.0
-	github.com/G226Medi03/SourceEntity v0.2.0
+	github.com/G226Medi03/SourceEntity v0.3.0
 	github.com/G226Medi03/SourceEntityRepository v0.2.0
-	github.com/G226Medi03/go-duration v0.1.0
-	github.com/G226Medi03/llm-client v0.3.0
 	github.com/G226Medi03/log-sqlite v0.1.1
 	modernc.org/sqlite v1.62.0
 )
 
 require (
-	github.com/G226Medi03/MedicalEntity v0.13.1-0.20261113140922-8243ad87432a // indirect
+	github.com/G226Medi03/MedicalEntity v0.15.0 // indirect
+	github.com/G226Medi03/MedicalEntityParser v0.1.0 // indirect
+	github.com/G226Medi03/go-duration v0.1.0 // indirect
+	github.com/G226Medi03/llm-client v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect

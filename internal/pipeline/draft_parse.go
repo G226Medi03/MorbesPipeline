@@ -3,8 +3,8 @@ package csolve
 import (
 	"encoding/json"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-
-	"github.com/G226Medi03/MedicalEntityParser/parser"
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 )
 
 func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
@@ -15,7 +15,11 @@ func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
 		}
 	}
 	payload["kind"] = draft.Kind
-	return parser.ParseStatus(payload)
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return morbesllm.ParseStatusResponse(string(encoded))
 }
 
 func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {
@@ -30,5 +34,5 @@ func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {
 	if err != nil {
 		return nil, err
 	}
-	return repo.UnmarshalAction(encoded)
+	return entityjson.DecodeAction(encoded)
 }

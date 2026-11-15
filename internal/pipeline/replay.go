@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	cservice "github.com/G226Medi03/MorbesPipeline/internal/llm"
 )
 
 type ReplayMode = domain.ReplayMode
@@ -48,11 +48,16 @@ func (self *Service) RunReplay(ctx context.Context, sourceID domain.CaseID, mode
 			_ = self.store.SetFailed(sourceID, err)
 			return err
 		}
-		replay := newReplayLLM(calls, self.replay_live, self.replay_live_stages)
-		run.solver = replay
-		run.extract_llm = replay
-		run.situation_llm = replay
-		run.cache_mode = cservice.LLMCacheBypass
+		replayCalls := make([]morbesllm.ReplayCall, 0, len(calls))
+		for _, call := range calls {
+			replayCalls = append(replayCalls, morbesllm.ReplayCall{
+				Stage:  call.Stage,
+				Prompt: call.Prompt,
+				Output: call.RawOutput,
+			})
+		}
+		run.llm = self.llm.WithReplayLive(replayCalls, self.replay_live, self.replay_live_stages)
+		run.cache_mode = morbesllm.CacheBypass
 		if item, found, err := self.store.Get(sourceID); err == nil && found && item.SourceID.ToI64() <= 0 && item.SituationSourceID.ToI64() > 0 {
 			if err := self.store.SetSource(sourceID, item.SituationSourceID); err != nil {
 				return err
@@ -60,9 +65,9 @@ func (self *Service) RunReplay(ctx context.Context, sourceID domain.CaseID, mode
 		}
 		return run.run_v2_from(ctx, sourceID, fromNode)
 	}
-	run.cache_mode = cservice.LLMCacheUse
+	run.cache_mode = morbesllm.CacheUse
 	if !useCache {
-		run.cache_mode = cservice.LLMCacheRefresh
+		run.cache_mode = morbesllm.CacheRefresh
 	}
 	return run.run_v2_from(ctx, sourceID, fromNode)
 }

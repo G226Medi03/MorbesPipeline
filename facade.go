@@ -59,10 +59,6 @@ const (
 )
 
 var (
-	MarshalAction    = repo.MarshalAction
-	MarshalProcedure = repo.MarshalProcedure
-	MarshalStatus    = repo.MarshalStatus
-
 	InferQuestionPolicy   = domain.InferQuestionPolicy
 	NormalizeQuestionType = domain.NormalizeQuestionType
 )

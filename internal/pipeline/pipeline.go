@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	cservice "github.com/G226Medi03/MorbesPipeline/internal/llm"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
 )
 
@@ -22,9 +22,9 @@ func (self *Service) Run(ctx context.Context, id domain.CaseID) error {
 func (self *Service) RunWithCache(ctx context.Context, id domain.CaseID, useCache bool) error {
 	run := *self
 	run.ctx = ctx
-	run.cache_mode = cservice.LLMCacheUse
+	run.cache_mode = morbesllm.CacheUse
 	if !useCache {
-		run.cache_mode = cservice.LLMCacheRefresh
+		run.cache_mode = morbesllm.CacheRefresh
 	}
 	return run.run_v2_from(ctx, id, "")
 }
@@ -65,8 +65,8 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 		return err
 	}
 	explain_model := ""
-	if self.solver != nil {
-		explain_model = self.solver.Model()
+	if self.llm != nil {
+		explain_model = self.llm.Model(morbesllm.RoleSolver)
 	}
 	explain_started := time.Now()
 	logs.Info("explain 시작", logs.AttrOf("case", id), logs.AttrOf("model", explain_model))
@@ -161,7 +161,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 	statuses, coverageAdded := coverageObservedStatuses(state, statuses)
 	cause_ctx, cancel := context.WithTimeout(ctx, cause_trace_timeout)
 	defer cancel()
-	container, err := cservice.Postprocess(cause_ctx, self.store)
+	container, err := Postprocess(cause_ctx, self.store)
 	if err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err

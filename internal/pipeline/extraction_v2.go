@@ -4,17 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
+	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"sort"
 	"strings"
 	"sync"
 	"time"
-
-	cllmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
-	"github.com/G226Medi03/MedicalEntityParser/parser"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	cservice "github.com/G226Medi03/MorbesPipeline/internal/llm"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
 )
 
 func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActorDraft, error) {
@@ -31,17 +28,20 @@ func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.Case
 	raw, response, err := self.generate_extraction(ctx, state, prompt)
 	var drafts []ActorDraft
 	if err == nil {
-		items, parse_err := cllmparser.ParseActorItems(raw)
+		items, parse_err := morbesllm.ParseActorItemsResponse(raw)
 		if parse_err != nil {
 			err = parse_err
 		} else {
 			for _, item := range items {
-				name := strings.TrimSpace(item.Name)
+				if item == nil {
+					continue
+				}
+				name := strings.TrimSpace(item.ActorName())
 				if name == "" {
 					continue
 				}
-				kind := canonical_actor_kind(item.Kind)
-				if strings.TrimSpace(item.Kind) == "" {
+				kind := canonical_actor_kind(item.Kind())
+				if strings.TrimSpace(item.Kind()) == "" {
 					kind = resolve_actor_kind_from_name(name)
 				}
 				if kind == "" {
@@ -71,7 +71,7 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 	raw, response, err := self.generate_extraction(ctx, state, prompt)
 	var drafts []StatusDraft
 	if err == nil {
-		statuses, parse_err := cllmparser.ParseStatuses(raw)
+		statuses, parse_err := morbesllm.ParseStatusesResponse(raw)
 		if parse_err != nil {
 			err = parse_err
 		} else {
@@ -82,17 +82,13 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 			sort.Strings(keys)
 			for _, key := range keys {
 				status := statuses[key]
-				value := status.Value
-				if len(value) == 0 {
-					encoded, marshal_err := json.Marshal(status.Value)
-					if marshal_err != nil {
-						continue
-					}
-					value = encoded
+				value, marshal_err := entityjson.EncodeStatus(status)
+				if marshal_err != nil {
+					continue
 				}
 				drafts = append(drafts, StatusDraft{
 					Key:      key,
-					Kind:     status.Kind,
+					Kind:     status.Kind(),
 					Value:    value,
 					SourceID: extraction_source_id(response, state),
 				})
@@ -114,7 +110,7 @@ func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.Cas
 	raw, response, err := self.generate_extraction(ctx, state, prompt)
 	var drafts []ActionDraft
 	if err == nil {
-		actions, parse_err := parser.ParseActions(raw)
+		actions, parse_err := morbesllm.ParseActionsResponse(raw)
 		if parse_err != nil {
 			err = parse_err
 		} else {
@@ -125,18 +121,13 @@ func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.Cas
 			sort.Strings(keys)
 			for _, key := range keys {
 				action := actions[key]
-				normalized, norm_err := parser.NormalizeActionValue(action.Kind, action.Value)
-				if norm_err != nil {
-					logs.Warn("action extraction action skip", logs.AttrOf("case", id), logs.AttrOf("key", key), logs.AttrOf("error", norm_err))
-					continue
-				}
-				encoded, marshal_err := json.Marshal(normalized)
+				encoded, marshal_err := entityjson.EncodeAction(action)
 				if marshal_err != nil {
 					continue
 				}
 				drafts = append(drafts, ActionDraft{
 					Key:      key,
-					Variant:  action.Kind,
+					Variant:  action.Kind(),
 					Value:    encoded,
 					SourceID: extraction_source_id(response, state),
 				})
@@ -293,8 +284,8 @@ func (self *Service) run_v2_relation_extraction(
 	}
 	prompt += problem_only_instruction(PromptRelation)
 	started := time.Now()
-	relations, relation_source, ask, err := cservice.ExtractRelationsWithPrompt(
-		ctx, self.extract_llm, self.store, state.ExplanationSourceID, "solve", prompt, self.cache_mode,
+	relations, relation_source, ask, err := self.llm.ExtractRelations(
+		ctx, prompt, state.ExplanationSourceID, self.cache_mode,
 	)
 	var drafts []RelationDraft
 	if err == nil {
@@ -314,29 +305,15 @@ func (self *Service) run_v2_relation_extraction(
 }
 
 func (self *Service) generate_extraction(ctx context.Context, state *pipelineState, prompt string) (string, *source.LlmResponse, error) {
-	if self.extract_llm == nil {
+	if self.llm == nil {
 		return "", nil, fmt.Errorf("extraction LLM is not configured")
 	}
-	model := self.extract_llm.Model()
 	refered_source_id := extraction_refered_source(state)
-	if self.cache_mode == cservice.LLMCacheUse {
-		if cached, found, err := self.store.FindLlmResponse(model, prompt, refered_source_id); err != nil {
-			return "", nil, err
-		} else if found {
-			return cached.Output, cached, nil
-		}
-	}
-	raw, err := self.extract_llm.Generate(ctx, prompt)
+	response, err := self.llm.AskRole(ctx, morbesllm.RoleExtract, prompt, refered_source_id, self.cache_mode)
 	if err != nil {
-		return raw, nil, err
+		return "", nil, err
 	}
-	var response *source.LlmResponse
-	if self.cache_mode == cservice.LLMCacheRefresh {
-		response, err = self.store.RefreshLlmResponse(model, prompt, refered_source_id, raw)
-	} else {
-		response, err = self.store.GetOrInsertLlmResponse(model, prompt, refered_source_id, raw)
-	}
-	return raw, response, err
+	return response.OutputText(), response, nil
 }
 
 func (self *Service) record_v2_extraction_call(
@@ -356,8 +333,8 @@ func (self *Service) record_v2_extraction_call(
 	if response != nil {
 		model = response.Model
 	}
-	if model == "" && self.extract_llm != nil {
-		model = self.extract_llm.Model()
+	if model == "" && self.llm != nil {
+		model = self.llm.Model(morbesllm.RoleExtract)
 	}
 	call := LLMCallInput{
 		CaseID:        case_id,
@@ -394,7 +371,7 @@ func (self *Service) record_v2_relation_call(
 		Seq:           seqRelation,
 		Stage:         "relation_extract",
 		Role:          "relation",
-		Model:         self.extract_llm.Model(),
+		Model:         self.llm.Model(morbesllm.RoleExtract),
 		PromptVersion: state.Prompts.versions[PromptRelation],
 		Prompt:        prompt,
 		ParsedOutput:  encode_json(relations),
@@ -403,7 +380,7 @@ func (self *Service) record_v2_relation_call(
 		DurationMS:    time.Since(started).Milliseconds(),
 	}
 	if response != nil {
-		call.RawOutput = response.Output
+		call.RawOutput = response.OutputText()
 		call.SourceID = response.SourceID
 		call.RespID = response.RespID
 	}

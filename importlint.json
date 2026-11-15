@@ -7,7 +7,8 @@
     }
   ],
   "forbidden": [
-    "github.com/G226Medi03/MedicalEntity"
+    "github.com/G226Medi03/MedicalEntity",
+    "github.com/G226Medi03/MedicalEntityParser"
   ],
   "adapters": [
     {
@@ -31,19 +32,9 @@
       "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore"
     },
     {
-      "name": "llmclient",
-      "external": "github.com/G226Medi03/llm-client",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/llmclient"
-    },
-    {
       "name": "logsqlite",
       "external": "github.com/G226Medi03/log-sqlite",
       "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/logsqlite"
-    },
-    {
-      "name": "duration",
-      "external": "github.com/G226Medi03/go-duration",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/duration"
     }
   ]
 }

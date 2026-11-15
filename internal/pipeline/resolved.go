@@ -3,6 +3,7 @@ package csolve
 import (
 	"encoding/json"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	medicalprocedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
@@ -20,7 +21,7 @@ type ResolvedCaseExtraction struct {
 func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 	statuses := make(map[string]json.RawMessage, len(value.Statuses))
 	for key, status := range value.Statuses {
-		encoded, err := repo.MarshalStatus(status)
+		encoded, err := entityjson.EncodeStatus(status)
 		if err != nil {
 			return nil, err
 		}
@@ -28,7 +29,7 @@ func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 	}
 	actions := make(map[string]json.RawMessage, len(value.Actions))
 	for key, action := range value.Actions {
-		encoded, err := repo.MarshalAction(action)
+		encoded, err := entityjson.EncodeAction(action)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	value.PatientDescriptions = aux.PatientDescriptions
 	value.Statuses = make(map[string]repo.IEStatus, len(aux.Statuses))
 	for key, raw := range aux.Statuses {
-		status, err := repo.UnmarshalStatus(raw)
+		status, err := entityjson.DecodeStatus(raw)
 		if err != nil {
 			return err
 		}
@@ -70,7 +71,7 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	}
 	value.Actions = make(map[string]repo.IEAction, len(aux.Actions))
 	for key, raw := range aux.Actions {
-		action, err := repo.UnmarshalAction(raw)
+		action, err := entityjson.DecodeAction(raw)
 		if err != nil {
 			return err
 		}

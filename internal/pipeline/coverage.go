@@ -1,9 +1,10 @@
 package csolve
 
 import (
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"strings"
 
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 )
 
@@ -54,11 +55,7 @@ func coverageEvidence(problem string) string {
 }
 
 func coverageStatusLabel(status repo.IEStatus) string {
-	data, err := repo.MarshalStatus(status)
-	if err != nil {
-		return ""
-	}
-	label := strings.TrimSpace(centitylabel.StatusLabel(status.Kind(), string(data)))
+	label := strings.TrimSpace(centitylabel.StatusLabelValue(status))
 	if label == "" || label == status.Kind() {
 		return ""
 	}
@@ -95,6 +92,5 @@ func appendTerm(values []string, add ...string) []string {
 }
 
 func coverageStatusKey(status repo.IEStatus) string {
-	data, _ := repo.MarshalStatus(status)
-	return status.Kind() + "|" + string(data)
+	return entitykey.Status(status)
 }

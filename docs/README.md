@@ -10,6 +10,7 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
 | --- | --- |
 | [packages.md](packages.md) | 현재 패키지 구조와 책임 |
 | [importlint.md](importlint.md) | A→B→C import 규칙과 adapter 구조 |
+| [plans/2026-11-14-json-encode-removal.md](plans/2026-11-14-json-encode-removal.md) | encode/JSON 제거 계획 |
 | [sync/README.md](sync/README.md) | 참조 GitHub repo별 동기화 현황 |
 | [pipeline.md](pipeline.md) | solve 노드, checkpoint, replay |
 | [extraction-llm.md](extraction-llm.md) | 프롬프트, LLM 캐시, 추출 단계 |

@@ -2,13 +2,11 @@ package csolve
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"strings"
-
-	"github.com/G226Medi03/MedicalEntityParser/parser"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
+	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -177,16 +175,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		if strings.TrimSpace(variant) == "" {
 			variant = "cause_status"
 		}
-		normalized, norm_err := parser.NormalizeActionValue(variant, draft.Value)
-		if norm_err != nil {
-			logs.Warn("case extraction action skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", norm_err))
-			continue
-		}
-		encoded, err := json.Marshal(normalized)
-		if err != nil {
-			continue
-		}
-		value, err := parseActionDraft(ActionDraft{Key: draft.Key, Variant: variant, Value: encoded})
+		value, err := parseActionDraft(ActionDraft{Key: draft.Key, Variant: variant, Value: draft.Value})
 		if err != nil {
 			logs.Warn("case extraction action skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
 			continue
@@ -218,7 +207,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			}
 		}
 		option_sources := draft_sources(draft.SourceID)
-		procedure, err := repo.UnmarshalOrParseProcedure(draft.MedicalProcedure)
+		procedure, err := entityjson.DecodeOrParseProcedure(draft.MedicalProcedure)
 		if err != nil {
 			logs.Warn("case extraction procedure skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
 			continue

@@ -10,10 +10,10 @@ import morbes "github.com/G226Medi03/MorbesPipeline"
 
 | 파일 | 내용 |
 | --- | --- |
-| `facade.go` | entity/domain 타입 alias, codec, trait helper |
+| `facade.go` | entity/domain 타입 alias, trait helper |
 | `solve.go` | `Service`, `Dependencies`, `Run`, replay, prompt, option 선택 |
 | `store.go` | `Store`, `New`, `NewWithDBs`, read model |
-| `support.go` | IDs, logs, label, sourceutil, sliceutil, parser |
+| `support.go` | IDs, logs, label, sourceutil, sliceutil |
 | `tracing.go` | `Container`, `Candidate`, `TraceNode`, cause service |
 
 공개 facade는 내부 구현을 **type alias + 얇은 wrapper**로 노출한다.
@@ -31,7 +31,8 @@ root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` a
 | `internal/persistence/benchmark/` | `benchmarkresult` | benchmark 테이블 |
 | `internal/tracing/graph/` | `cgraph` | 인메모리 상태/행동 그래프 |
 | `internal/tracing/cause/` | `ccause` | 원인 추적 |
-| `internal/llm/` | `cservice` | LLM 캐시, relation, postprocess |
+| `internal/domain/entityjson/` | `entityjson` | typed medical entity JSON codec |
+| `internal/domain/entitykey/` | `entitykey` | typed entity identity key |
 | `internal/domain/solve/` | `domain` | Case/Step/Stage/Question |
 | `internal/domain/solve/model/` | `model` | LLMCall/PromptVersion |
 | `internal/domain/procedureoption/` | `medicalprocedureoption` | option DTO |
@@ -52,12 +53,13 @@ root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` a
 ```text
 internal/support ← internal/domain ← internal/persistence ← root
 internal/support ← internal/domain ← internal/tracing     ← root
-internal/support ← internal/domain ← internal/llm         ← root
+MorbesLLmPipeline ← internal/pipeline ← root
 ```
 
-- `internal/domain`은 `persistence`/`pipeline`/`tracing`/`llm`을 import하지 않는다.
-- `internal/persistence`는 `llm`/`pipeline`을 import하지 않는다.
+- `internal/domain`은 `persistence`/`pipeline`/`tracing`을 import하지 않는다.
+- `internal/persistence`는 `pipeline`을 import하지 않는다.
 - `internal/tracing`은 `persistence`를 import하지 않는다.
+- LLM 호출, 캐시, relation, replay는 `MorbesLLmPipeline`이 소유한다.
 - 루트 `morbes`만 전체를 조립한다.
 
 ## Store 공개 범위

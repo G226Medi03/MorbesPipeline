@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-
-	"github.com/G226Medi03/MedicalEntityParser/parser"
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 )
 
 // PatientDescription is the minimal patient-reported context for one answer
@@ -21,7 +21,7 @@ type PatientDescription struct {
 func (value PatientDescription) MarshalJSON() ([]byte, error) {
 	descriptions := make([]json.RawMessage, 0, len(value.Description))
 	for _, status := range value.Description {
-		encoded, err := repo.MarshalStatus(status)
+		encoded, err := entityjson.EncodeStatus(status)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func (value *PatientDescription) UnmarshalJSON(data []byte) error {
 	value.Knowledge = aux.Knowledge
 	value.Description = make([]repo.IEStatus, 0, len(aux.Description))
 	for _, raw := range aux.Description {
-		status, err := repo.UnmarshalStatus(raw)
+		status, err := entityjson.DecodeStatus(raw)
 		if err != nil {
 			return err
 		}
@@ -58,14 +58,16 @@ func (value *PatientDescription) UnmarshalJSON(data []byte) error {
 
 // ParseStatus converts an LLM status object into a typed status.
 func ParseStatus(raw json.RawMessage) (repo.IEStatus, error) {
-	payload := map[string]any{}
+	var payload struct {
+		Kind string `json:"kind"`
+	}
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return nil, fmt.Errorf("patient description status JSON 파싱 실패: %w", err)
 	}
-	if kind, _ := payload["kind"].(string); kind == "" {
+	if payload.Kind == "" {
 		return nil, fmt.Errorf("patient description status.kind 가 비어 있습니다")
 	}
-	value, err := parser.ParseStatus(payload)
+	value, err := morbesllm.ParseStatusResponse(string(raw))
 	if err != nil {
 		return nil, fmt.Errorf("patient description status 정규화 실패: %w", err)
 	}

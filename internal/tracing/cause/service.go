@@ -2,13 +2,12 @@ package ccause
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"sort"
-	"strconv"
 	"strings"
 
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	source_entity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
@@ -79,7 +78,7 @@ func (s *Service) trace_from(ctx context.Context, status_id ids.StatusID, depth,
 		if err != nil {
 			return err
 		}
-		action_key := action_key(action.Kind, action.Data)
+		action_key := entitykey.Action(action.Value)
 		action_node := TraceNode{
 			Type:  "action",
 			ID:    action.ID.ToI64(),
@@ -93,12 +92,12 @@ func (s *Service) trace_from(ctx context.Context, status_id ids.StatusID, depth,
 			if _, ok := path_set[cause.ID]; ok {
 				continue
 			}
-			cause_key := status_key(cause.Kind, cause.Data)
+			cause_key := entitykey.Status(cause.Value)
 			cause_node := TraceNode{
 				Type:  "status",
 				ID:    cause.ID.ToI64(),
 				Key:   cause_key,
-				Label: centitylabel.StatusLabel(cause.Kind, cause.Data),
+				Label: centitylabel.StatusLabelValue(cause.Value),
 			}
 			candidate_path := make([]TraceNode, 0, len(path)+2)
 			candidate_path = append(candidate_path, path...)
@@ -108,12 +107,12 @@ func (s *Service) trace_from(ctx context.Context, status_id ids.StatusID, depth,
 			candidate := Candidate{
 				CauseStatusID:  cause.ID,
 				CauseStatusIDs: []ids.StatusID{cause.ID},
-				CauseKind:      cause.Kind,
+				CauseKind:      cause.Value.Kind(),
 				CauseKey:       cause_key,
 				CauseLabel:     cause_node.Label,
 				ViaActionID:    action.ID,
 				ViaActionIDs:   []ids.ActionID{action.ID},
-				ViaActionKind:  action.Kind,
+				ViaActionKind:  action.Value.Kind(),
 				ViaActionKey:   action_key,
 				Depth:          depth + 1,
 				SourceIDs:      append([]source_entity.SourceId(nil), action.SourceIDs...),
@@ -169,7 +168,7 @@ func (s *Service) trace_from(ctx context.Context, status_id ids.StatusID, depth,
 				CauseLabel:    actor_node.Label,
 				ViaActionID:   action.ID,
 				ViaActionIDs:  []ids.ActionID{action.ID},
-				ViaActionKind: action.Kind,
+				ViaActionKind: action.Value.Kind(),
 				ViaActionKey:  action_key,
 				Depth:         depth + 1,
 				SourceIDs:     append_unique_ids(append([]source_entity.SourceId(nil), action.SourceIDs...), s.container.ActionActorSourceIDs[ids.ActionID(action.ID)]...),
@@ -200,22 +199,14 @@ func (s *Service) find_status_ids(status repo.IEStatus) ([]ids.StatusID, error) 
 	if s.container == nil {
 		return nil, fmt.Errorf("morbes graph container 가 없습니다")
 	}
-	rawStatus, err := repo.MarshalStatus(status)
-	if err != nil {
-		return nil, err
-	}
-	expected := status_key(status.Kind(), string(rawStatus))
+	expected := entitykey.Status(status)
 
 	var result []ids.StatusID
 	for id, value := range s.container.Statuses {
 		if value.Kind() != status.Kind() {
 			continue
 		}
-		raw, err := repo.MarshalStatus(value)
-		if err != nil {
-			continue
-		}
-		if status_key(value.Kind(), string(raw)) == expected {
+		if entitykey.Status(value) == expected {
 			result = append(result, id)
 		}
 	}
@@ -231,44 +222,29 @@ func (s *Service) status_node(id ids.StatusID) (TraceNode, bool) {
 	if !ok {
 		return TraceNode{}, false
 	}
-	raw, err := repo.MarshalStatus(value)
-	if err != nil {
-		return TraceNode{}, false
-	}
 	return TraceNode{
 		Type:  "status",
 		ID:    id.ToI64(),
-		Key:   status_key(value.Kind(), string(raw)),
-		Label: centitylabel.StatusLabel(value.Kind(), string(raw)),
+		Key:   entitykey.Status(value),
+		Label: centitylabel.StatusLabelValue(value),
 	}, true
 }
 
 func (s *Service) action_label(action actionRow) string {
-	if action.Kind != "cause_status" {
-		return centitylabel.NodeLabel(action.Kind, action.Data)
+	if cause, ok := action.Value.(repo.CauseStatus); ok {
+		if cause.Status == nil {
+			return "원인 상태 정보 없음"
+		}
+		label := centitylabel.StatusLabelValue(cause.Status)
+		switch cause.Status.Kind() {
+		case "increased_index", "decreased_index":
+			name := strings.TrimSpace(strings.TrimSuffix(strings.TrimSuffix(label, " 증가"), " 감소"))
+			return "cause_status: " + cause.Status.Kind() + " (" + name + ")"
+		default:
+			return "cause_status: " + label
+		}
 	}
-	var payload struct {
-		StatusID int64 `json:"status_id"`
-	}
-	if err := json.Unmarshal([]byte(action.Data), &payload); err != nil || payload.StatusID <= 0 {
-		return centitylabel.NodeLabel(action.Kind, action.Data)
-	}
-	status_value, ok := s.container.Statuses[ids.StatusID(payload.StatusID)]
-	if !ok {
-		return "cause_status:" + strconv.FormatInt(payload.StatusID, 10)
-	}
-	raw, err := repo.MarshalStatus(status_value)
-	if err != nil {
-		return "cause_status:" + strconv.FormatInt(payload.StatusID, 10)
-	}
-	label := centitylabel.StatusLabel(status_value.Kind(), string(raw))
-	switch status_value.Kind() {
-	case "increased_index", "decreased_index":
-		name := strings.TrimSpace(strings.TrimSuffix(strings.TrimSuffix(label, " 증가"), " 감소"))
-		return "cause_status: " + status_value.Kind() + " (" + name + ")"
-	default:
-		return "cause_status: " + label
-	}
+	return action.Value.Kind() + ":" + centitylabel.ActionLabelValue(action.Value)
 }
 
 func (s *Service) actor_node(id ids.ActorID) (TraceNode, bool) {

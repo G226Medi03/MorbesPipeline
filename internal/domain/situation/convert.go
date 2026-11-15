@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-
-	"github.com/G226Medi03/MedicalEntityParser/parser"
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 )
 
 // ToStatuses converts findings.status into typed observable statuses.
@@ -22,14 +21,16 @@ func (s Situation) ToStatuses() ([]repo.IEStatus, error) {
 }
 
 func status_from_raw(raw json.RawMessage) (repo.IEStatus, error) {
-	payload := map[string]any{}
+	var payload struct {
+		Kind string `json:"kind"`
+	}
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return nil, fmt.Errorf("status JSON 파싱 실패: %w", err)
 	}
-	if kind, _ := payload["kind"].(string); kind == "" {
+	if payload.Kind == "" {
 		return nil, fmt.Errorf("status.kind 가 비어 있습니다")
 	}
-	value, err := parser.ParseStatus(payload)
+	value, err := morbesllm.ParseStatusResponse(string(raw))
 	if err != nil {
 		return nil, err
 	}

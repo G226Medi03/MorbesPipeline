@@ -1,10 +1,11 @@
-package cservice
+package csolve
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
@@ -91,14 +92,11 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 			continue
 		}
 		actionValue := repo.CauseStatus{Status: statusValue}
-		encoded, err := eactionMarshal(actionValue)
-		if err != nil {
-			continue
-		}
+		expectedKey := entitykey.Action(actionValue)
 		var actionID ids.ActionID
+		var err error
 		for candidateID, candidateValue := range c.Actions {
-			candidateEncoded, err := eactionMarshal(candidateValue)
-			if err == nil && bytes.Equal(candidateEncoded, encoded) {
+			if entitykey.Action(candidateValue) == expectedKey {
 				actionID = candidateID
 				break
 			}
@@ -158,10 +156,6 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 	return nil
 }
 
-func eactionMarshal(value repo.IEAction) ([]byte, error) {
-	return repo.MarshalAction(value)
-}
-
 func firstPostprocessSourceID(groups ...[]source.SourceId) source.SourceId {
 	for _, ids := range groups {
 		for _, id := range ids {
@@ -195,16 +189,12 @@ func containsActionID(values []ids.ActionID, target ids.ActionID) bool {
 // causeStatusResultRule ensures every cause_status action exposes its embedded
 // status as a result status.
 func findStatusIDByValue(c *cgraph.Container, value repo.IEStatus) ids.StatusID {
-	raw, err := repo.MarshalStatus(value)
-	if err != nil {
-		return 0
-	}
+	expected := entitykey.Status(value)
 	for statusID, candidate := range c.Statuses {
 		if candidate.Kind() != value.Kind() {
 			continue
 		}
-		candidateRaw, err := repo.MarshalStatus(candidate)
-		if err == nil && bytes.Equal(raw, candidateRaw) {
+		if entitykey.Status(candidate) == expected {
 			return statusID
 		}
 	}
