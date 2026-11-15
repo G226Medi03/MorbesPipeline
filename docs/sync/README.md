@@ -8,16 +8,16 @@
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1 | `MedicalEntity` | `v0.15.0` | `MedicalEntityRepository/repo` facade 경유 | 직접 import 제거 |
-| 2 | `MedicalEntityParser` | `v0.1.0` | `MorbesLLmPipeline` facade 경유 | 직접 import 제거 |
+| 2 | `MedicalEntityParser` | `v0.1.0` | `MorbesLLMService` facade 경유 | 직접 import 제거 |
 | 3 | `SourceEntity` | `v0.3.0` | `internal/support/sourceutil`, `internal/persistence/source.go` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.2.0` | `internal/persistence/source.go` | 동기화 완료 |
 | 5 | `SQLCore` | `v0.2.0` | `internal/persistence`, `internal/persistence/*` | 동기화 완료 |
 | 6 | `MedicalEntityRepository` | `v0.10.0` | `repo` facade + `internal/persistence/entity*.go`, `internal/persistence/graph`, `internal/persistence/option` | pain/symptom schema 반영 |
 | 7 | `PipeLineCore` | `v0.1.0` | `internal/pipeline/pipeline_nodes.go`, `internal/pipeline/service.go` | 동기화 완료 |
-| 8 | `llm-client` | `v0.4.0` | `MorbesLLmPipeline` 경유 | 직접 import 제거 |
+| 8 | `llm-client` | `v0.4.0` | `MorbesLLMService` 경유 | 직접 import 제거 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logs` | 동기화 완료 |
-| 10 | `go-duration` | `v0.1.0` | `MorbesLLmPipeline` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLmPipeline` | `v0.7.0` | LLM 호출, 캐시, relation, actor 추출, replay, parser facade | 동기화 완료 |
+| 10 | `go-duration` | `v0.1.0` | `MorbesLLMService` / parser 경유 | 직접 import 제거 |
+| 11 | `MorbesLLMService` | `v0.8.0` | LLM 호출, 캐시, relation, actor 추출, replay, parser facade | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -38,7 +38,7 @@
 
 ## 2. MedicalEntityParser
 
-- 사용 API (via `MorbesLLmPipeline`):
+- 사용 API (via `MorbesLLMService`):
   - `ParseStatusResponse`, `ParseStatusesResponse`
   - `ParseActionsResponse`, `ParseActorItemsResponse`
   - `ParseRelationsResponse`, `ParseActorName`
@@ -128,10 +128,10 @@
   - `llmclient.LlmResponse`
   - `Generator.Generate` / `Model`
 - 대응 패키지:
-  - `MorbesLLmPipeline`
+  - `MorbesLLMService`
 - 확인:
   - `MorbesPipeline` 직접 import 0건
-  - replay generator와 cache mode는 `MorbesLLmPipeline`이 소유
+  - replay generator와 cache mode는 `MorbesLLMService`가 소유
   - live stage override는 `SetReplayLive`로 전달
 
 ## 8. log-sqlite
@@ -150,11 +150,11 @@
 - 사용 API:
   - parser 내부에서만 사용
 - 대응 패키지:
-  - `MorbesLLmPipeline` / `MedicalEntityParser` 경유
+  - `MorbesLLMService` / `MedicalEntityParser` 경유
 - 확인:
   - `MorbesPipeline` 직접 import 0건
 
-## 10. MorbesLLmPipeline
+## 10. MorbesLLMService
 
 - 사용 API:
   - `Service`, `Clients`, `CacheMode`
@@ -167,7 +167,7 @@
   - `internal/domain/patient`
   - `internal/domain/situation`
 - 확인:
-  - `MorbesLLmPipeline v0.7.0`
+  - `MorbesLLMService v0.8.0`
   - LLM 호출/캐시/relation/actor 추출/replay 소유
   - `Generator`는 `llmclient.LlmResponse` 반환
 

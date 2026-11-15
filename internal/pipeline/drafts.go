@@ -3,7 +3,7 @@ package csolve
 import (
 	"encoding/json"
 
-	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 )
 
