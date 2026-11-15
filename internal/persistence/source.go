@@ -34,14 +34,11 @@ func (s *Store) FindLlmResponse(model, prompt string, referedSourceID sourcedoma
 	if err != nil || !found {
 		return nil, false, err
 	}
-	return &sourcedomain.LlmResponse{
-		SourceID:        sourceRow.SourceID,
-		RespID:          row.RespID,
-		Model:           row.Model,
-		Prompt:          row.Prompt,
-		ReferedSourceID: row.ReferedSourceID,
-		Output:          row.Output,
-	}, true, nil
+	response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, row.Output)
+	response.SourceID = sourceRow.SourceID
+	response.RespID = row.RespID
+	response.ReferedSourceID = row.ReferedSourceID
+	return &response, true, nil
 }
 
 func (s *Store) GetOrInsertLlmResponse(model, prompt string, referedSourceID sourcedomain.SourceId, output string) (*sourcedomain.LlmResponse, error) {
@@ -80,14 +77,11 @@ func (s *Store) RefreshLlmResponse(model, prompt string, referedSourceID sourced
 		if !sourceFound {
 			return nil, fmt.Errorf("llm response source 를 찾지 못했습니다: %d", row.RespID)
 		}
-		return &sourcedomain.LlmResponse{
-			SourceID:        sourceRow.SourceID,
-			RespID:          row.RespID,
-			Model:           row.Model,
-			Prompt:          row.Prompt,
-			ReferedSourceID: row.ReferedSourceID,
-			Output:          output,
-		}, nil
+		response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, output)
+		response.SourceID = sourceRow.SourceID
+		response.RespID = row.RespID
+		response.ReferedSourceID = row.ReferedSourceID
+		return &response, nil
 	}
 	respID, err := s.SourceRepository.LlmResponse.EnsureID(s.ctx, s.sourceExecutor(), model, prompt, referedSourceID, output)
 	if err != nil {
@@ -109,14 +103,11 @@ func (s *Store) getLlmResponseBySource(sourceID sourcedomain.SourceId) (*sourced
 	if err != nil || !found {
 		return nil, err
 	}
-	return &sourcedomain.LlmResponse{
-		SourceID:        sourceID,
-		RespID:          row.RespID,
-		Model:           row.Model,
-		Prompt:          row.Prompt,
-		ReferedSourceID: row.ReferedSourceID,
-		Output:          row.Output,
-	}, nil
+	response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, row.Output)
+	response.SourceID = sourceID
+	response.RespID = row.RespID
+	response.ReferedSourceID = row.ReferedSourceID
+	return &response, nil
 }
 
 func (s *Store) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.SourceRef {

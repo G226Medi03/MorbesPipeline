@@ -88,7 +88,7 @@ resolve 순서:
    - 이름에 "투여"가 포함된 actor는 infusion option 보강 대상으로 기록
 4. status draft 저장: `patient.ParseStatus` → `CanonicalizeStatusEntity`
 5. action draft 저장:
-   - `parser.NormalizeActionValue`
+   - `parseActionDraft`로 typed action 복원
    - `cause_status`면 `CanonicalizeCauseStatusValue`
    - `SaveAction`
 6. medical procedure option 저장:

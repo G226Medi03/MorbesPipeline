@@ -26,15 +26,17 @@ go run ./tools/importlint --config importlint.json --report-only
 
 - `MedicalEntity`는 이 repo에서 직접 import할 수 없다.
   - facade는 `MedicalEntityRepository/repo`를 사용한다.
+- `MedicalEntityParser`는 이 repo에서 직접 import할 수 없다.
+  - parser facade는 `MorbesLLmPipeline`을 사용한다.
 - 아래 외부 모듈은 `internal/external/*` adapter를 통해서만 import할 수 있다.
   - `PipeLineCore`
   - `SourceEntity`
   - `SourceEntityRepository`
   - `SQLCore`
-  - `llm-client`
   - `log-sqlite`
-  - `go-duration`
-- `MedicalEntityRepository`, `MedicalEntityParser`는 직접 import할 수 있다.
+- `llm-client`, `go-duration`은 `MorbesLLmPipeline` 경유로만 사용한다.
+- `MedicalEntityRepository`와 `MorbesLLmPipeline`은 직접 import할 수 있다.
+- `MedicalEntityParser`는 `MorbesLLmPipeline` 내부에서만 사용한다.
 - adapter 패키지 자신만 해당 외부 모듈을 직접 import할 수 있다.
 - test import도 검사한다.
 - 위반 시 exit code 1.
@@ -47,9 +49,7 @@ internal/external/
 ├── sourceentity/
 ├── sourceentityrepository/
 ├── sqlcore/
-├── llmclient/
-├── logsqlite/
-└── duration/
+└── logsqlite/
 ```
 
 각 adapter는 외부 repo의 타입/함수를 alias 또는 var로 re-export한다.
@@ -63,7 +63,8 @@ internal/external/
 {
   "repos": [{ "path": ".", "module": "github.com/G226Medi03/MorbesPipeline", "enforce": true }],
   "forbidden": [
-    "github.com/G226Medi03/MedicalEntity"
+    "github.com/G226Medi03/MedicalEntity",
+    "github.com/G226Medi03/MedicalEntityParser"
   ],
   "adapters": [
     {

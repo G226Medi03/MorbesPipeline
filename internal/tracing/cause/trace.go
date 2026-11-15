@@ -2,12 +2,9 @@
 package ccause
 
 import (
-	"encoding/json"
 	"fmt"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"sort"
-	"strings"
 
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
@@ -16,11 +13,7 @@ import (
 func ObservedLabels(statuses []repo.IEStatus) []string {
 	result := make([]string, 0, len(statuses))
 	for _, status := range statuses {
-		data, err := repo.MarshalStatus(status)
-		if err != nil {
-			continue
-		}
-		result = append(result, centitylabel.StatusLabel(status.Kind(), string(data)))
+		result = append(result, centitylabel.StatusLabelValue(status))
 	}
 	return result
 }
@@ -38,138 +31,6 @@ func append_unique_ids[T comparable](values []T, add ...T) []T {
 	}
 	return values
 }
-func action_key(kind, data string) string {
-	var obj map[string]any
-	if err := json.Unmarshal([]byte(data), &obj); err != nil {
-		return kind + ":" + data
-	}
-	switch kind {
-	case "cause_status":
-		if status_id, ok := obj["status_id"]; ok {
-			return kind + ":" + strings.TrimSpace(value_text(status_id))
-		}
-	case "block", "relax":
-		if actor, ok := obj["actor"]; ok {
-			return kind + ":" + strings.TrimSpace(value_text(actor))
-		}
-	}
-	return kind + ":" + data
-}
-
-func status_key(kind, data string) string {
-	var obj map[string]any
-	if err := json.Unmarshal([]byte(data), &obj); err != nil {
-		return kind + ":" + data
-	}
-	switch kind {
-	case "received_medical_procedure":
-		if raw, ok := obj["medical_procedure"]; ok {
-			encoded, err := json.Marshal(raw)
-			if err == nil {
-				value, err := repo.UnmarshalProcedure(encoded)
-				if err == nil {
-					return kind + ":" + procedure_identity(value)
-				}
-			}
-		}
-		if name := strings.TrimSpace(value_text(obj["name"])); name != "" {
-			return kind + ":" + name
-		}
-		return kind + ":procedure"
-	case "have_symptom":
-		symptom, _ := obj["symptom"].(map[string]any)
-		if len(symptom) == 0 {
-			if name := strings.TrimSpace(value_text(obj["name"])); name != "" {
-				return kind + ":" + name
-			}
-		}
-		symptom_kind, _ := symptom["kind"].(string)
-		if symptom_kind == "symptom_code" {
-			return kind + ":code:" + strings.TrimSpace(value_text(symptom["code"]))
-		}
-		if symptom_kind == "pain" {
-			aspects, _ := symptom["aspects"].([]any)
-			parts := make([]string, 0, len(aspects))
-			for _, item := range aspects {
-				aspect, _ := item.(map[string]any)
-				aspect_kind, _ := aspect["kind"].(string)
-				aspect_value := aspect["name"]
-				if aspect_kind == "site" {
-					aspect_value = aspect["site"]
-					if strings.TrimSpace(value_text(aspect_value)) == "" {
-						aspect_value = aspect["name"]
-					}
-				}
-				parts = append(parts, aspect_kind+"="+strings.TrimSpace(value_text(aspect_value))+strings.TrimSpace(value_text(aspect["value"])))
-			}
-			sort.Strings(parts)
-			return kind + ":pain:" + strings.Join(parts, "|")
-		}
-		return kind + ":" + strings.TrimSpace(value_text(symptom))
-	case "increased_index", "decreased_index":
-		return kind + ":" + strings.TrimSpace(value_text(first_nonempty_any(obj["index"], obj["name"])))
-	case "have_disease":
-		return kind + ":" + strings.TrimSpace(value_text(first_nonempty_any(obj["disease"], obj["name"])))
-	case "damaged", "inflammation":
-		return kind + ":" + strings.TrimSpace(value_text(first_nonempty_any(obj["actor"], obj["name"])))
-	default:
-		return centitylabel.NodeLabel(kind, data)
-	}
-}
-
-func procedure_identity(value repo.IMedicalProcedure) string {
-	switch typed := value.(type) {
-	case repo.Transplant:
-		return "Transplant:" + strings.TrimSpace(typed.Target.ActorName())
-	case repo.Infuse:
-		return "Infuse:" + strings.TrimSpace(typed.Material.ActorName()) + ":" + string(typed.Route)
-	case repo.Surgery:
-		return "Surgery:" + strings.TrimSpace(typed.Name)
-	case repo.Cleaning:
-		name := ""
-		if typed.Target != nil {
-			name = strings.TrimSpace(typed.Target.ActorName())
-		}
-		return "Cleaning:" + name
-	case repo.DiagnosticTest:
-		return "DiagnosticTest:" + strings.TrimSpace(typed.Name)
-	case repo.Education:
-		return "Education:" + strings.TrimSpace(typed.Name)
-	case repo.Instruction:
-		return "Instruction:" + strings.TrimSpace(typed.Name)
-	case repo.UnknownMedicalProcedure:
-		return "Unknown:" + strings.TrimSpace(typed.Name)
-	default:
-		return value.Kind()
-	}
-}
-
-func first_nonempty_any(values ...any) any {
-	for _, value := range values {
-		if strings.TrimSpace(value_text(value)) != "" {
-			return value
-		}
-	}
-	return nil
-}
-
-func value_text(value any) string {
-	switch typed := value.(type) {
-	case string:
-		return typed
-	case map[string]any:
-		for _, key := range []string{"name", "code", "value"} {
-			if text, ok := typed[key].(string); ok {
-				return text
-			}
-		}
-		encoded, _ := json.Marshal(typed)
-		return string(encoded)
-	default:
-		encoded, _ := json.Marshal(typed)
-		return string(encoded)
-	}
-}
 
 func (s *Service) actions_causing(status_id ids.StatusID) ([]actionRow, error) {
 	if s.container == nil {
@@ -181,14 +42,9 @@ func (s *Service) actions_causing(status_id ids.StatusID) ([]actionRow, error) {
 		if !ok {
 			continue
 		}
-		data, err := repo.MarshalAction(value)
-		if err != nil {
-			continue
-		}
 		result = append(result, actionRow{
 			ID:        id,
-			Kind:      value.Kind(),
-			Data:      string(data),
+			Value:     value,
 			SourceIDs: append([]source.SourceId(nil), s.container.ActionSourceIDs[id]...),
 		})
 	}
@@ -205,14 +61,9 @@ func (s *Service) statuses_causing(action_id ids.ActionID) ([]statusRow, error) 
 		if !ok {
 			continue
 		}
-		data, err := repo.MarshalStatus(value)
-		if err != nil {
-			continue
-		}
 		result = append(result, statusRow{
-			ID:   id,
-			Kind: value.Kind(),
-			Data: string(data),
+			ID:    id,
+			Value: value,
 		})
 	}
 	return result, nil

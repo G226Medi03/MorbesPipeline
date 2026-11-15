@@ -2,7 +2,7 @@ package csolve
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	cservice "github.com/G226Medi03/MorbesPipeline/internal/llm"
+	morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 )
 
 func build_relation_prompt_from_drafts(
@@ -27,12 +27,12 @@ func build_relation_prompt_from_drafts(
 		}
 		action_map[draft.Key] = action
 	}
-	return cservice.Build_RelationPromptFromMaps(
+	return morbesllm.BuildRelationPrompt(
 		template,
 		problem,
 		"",
 		"",
 		status_map,
 		action_map,
-	), nil
+	)
 }

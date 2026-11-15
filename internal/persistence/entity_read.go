@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"strings"
 )
@@ -54,13 +55,12 @@ func (s *Store) statusValueByKindPtr(kind string, ptr int64) (repo.IEStatus, err
 		return repo.HaveDisease{Disease: repo.EDisease(name)}, nil
 	case repo.StatusKindHaveSymptom:
 		var symptomID int64
-		var details string
 		err := s.QueryRowContext(s.ctx,
-			`SELECT symptom_id, details_json FROM status_have_symptom WHERE id = ?`, ptr).Scan(&symptomID, &details)
+			`SELECT symptom_id FROM status_have_symptom WHERE id = ?`, ptr).Scan(&symptomID)
 		if err != nil {
 			return nil, err
 		}
-		symptom, err := s.symptomValueByID(symptomID, details)
+		symptom, err := s.symptomValueByID(symptomID)
 		if err != nil {
 			return nil, err
 		}
@@ -120,30 +120,55 @@ func (s *Store) indexNameByID(id int64) (string, error) {
 	return name, err
 }
 
-func (s *Store) symptomNameByID(id int64) (string, error) {
-	var name string
-	err := s.QueryRowContext(s.ctx, `SELECT name FROM esymptom WHERE symptom_id = ?`, id).Scan(&name)
-	return name, err
-}
-
-func (s *Store) symptomValueByID(id int64, details string) (repo.IESymptom, error) {
-	name, err := s.symptomNameByID(id)
-	if err != nil {
+func (s *Store) symptomValueByID(id int64) (repo.IESymptom, error) {
+	var kind string
+	var ptr int64
+	if err := s.QueryRowContext(s.ctx,
+		`SELECT kind, ptr FROM esymptom WHERE symptom_id = ?`, id).Scan(&kind, &ptr); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(details) != "" && strings.TrimSpace(details) != "{}" {
-		var payload map[string]json.RawMessage
-		if json.Unmarshal([]byte(details), &payload) == nil {
-			payload["kind"] = json.RawMessage(`"pain"`)
-			encoded, err := json.Marshal(payload)
-			if err == nil {
-				if parsed, err := repo.UnmarshalSymptom(encoded); err == nil {
-					return parsed, nil
-				}
-			}
+	switch repo.SymptomKind(kind) {
+	case repo.SymptomKindOtherSymptom:
+		var name string
+		if err := s.QueryRowContext(s.ctx,
+			`SELECT name FROM symptom_other WHERE id = ?`, ptr).Scan(&name); err != nil {
+			return nil, err
 		}
+		return repo.EOtherSymptom{Name: name}, nil
+	case repo.SymptomKindPain:
+		var siteKind, siteName, aspectsJSON string
+		if err := s.QueryRowContext(s.ctx,
+			`SELECT site_kind, site_name, aspects_json FROM symptom_pain WHERE id = ?`, ptr).
+			Scan(&siteKind, &siteName, &aspectsJSON); err != nil {
+			return nil, err
+		}
+		var rawAspects []json.RawMessage
+		if err := json.Unmarshal([]byte(aspectsJSON), &rawAspects); err != nil {
+			return nil, err
+		}
+		aspects := make([]repo.IPainAspect, 0, len(rawAspects))
+		for _, raw := range rawAspects {
+			aspect, err := entityjson.DecodeAspect(raw)
+			if err != nil {
+				return nil, err
+			}
+			aspects = append(aspects, aspect)
+		}
+		return repo.EPain{Site: actorFromKind(siteKind, siteName), Aspects: aspects}, nil
+	default:
+		return nil, fmt.Errorf("지원하지 않는 symptom kind 입니다: %s", kind)
 	}
-	return repo.EOtherSymptom{Name: name}, nil
+}
+
+func actorFromKind(kind, name string) repo.IEActor {
+	switch repo.ParseActorKind(kind) {
+	case repo.ActorKindDevice:
+		return repo.NewDevice(name)
+	case repo.ActorKindProcedure:
+		return repo.NewActorProcedure(name)
+	default:
+		return repo.NewUnknownActor(name)
+	}
 }
 
 func (s *Store) actorValueByID(id int64) (repo.IEActor, error) {

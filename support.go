@@ -1,8 +1,6 @@
 package morbes_pipeline
 
 import (
-	parser "github.com/G226Medi03/MedicalEntityParser/llmparser"
-
 	label "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
@@ -37,10 +35,7 @@ var (
 	SourceID = sourceutil.SourceID
 	RespID   = sourceutil.RespID
 
-	StatusLabel    = label.StatusLabel
-	NodeLabel      = label.NodeLabel
 	ProcedureLabel = label.ProcedureLabel
-	IsStatusKind   = label.IsStatusKind
 
 	MergeTraits       = trait.MergeTraits
 	PriorityTraits    = trait.PriorityTraits
@@ -48,8 +43,6 @@ var (
 	ComparePriority   = trait.ComparePriority
 	CategoryRank      = trait.CategoryRank
 	PriorityReason    = trait.PriorityReason
-
-	ExtractJSONElements = parser.ExtractJSONElements
 )
 
 func Info(msg string, attrs ...Attr)  { logs.Info(msg, attrs...) }

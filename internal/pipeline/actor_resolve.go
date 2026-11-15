@@ -1,9 +1,9 @@
 package csolve
 
-import "github.com/G226Medi03/MedicalEntityParser/parser"
+import morbesllm "github.com/G226Medi03/MorbesLLmPipeline"
 
 func resolve_actor_kind_from_name(name string) string {
-	parsed, err := parser.ParseActor(name)
+	parsed, err := morbesllm.ParseActorName(name)
 	if err != nil {
 		return ""
 	}

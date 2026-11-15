@@ -95,16 +95,17 @@
 
 ## LLM 캐시
 
-`Service.generate_extraction`이 추출 LLM 호출을 담당한다.
+LLM 호출과 캐시 정책은 `github.com/G226Medi03/MorbesLLmPipeline`이 소유한다.
+`Service.generate_extraction`은 `morbesllm.Service.AskRole`을 호출한다.
 
 | 모드 | 동작 |
 | --- | --- |
-| `LLMCacheUse` | `FindLlmResponse`로 캐시를 먼저 조회하고, miss면 호출 후 `GetOrInsertLlmResponse` |
-| `LLMCacheRefresh` | 캐시를 읽지 않고 호출한 뒤 `RefreshLlmResponse`로 기존 행 갱신 |
-| `LLMCacheBypass` | 캐시를 읽지 않고, 호출한 뒤 `GetOrInsertLlmResponse`를 사용한다(code replay용) |
+| `morbesllm.CacheUse` | `FindLlmResponse`로 캐시를 먼저 조회하고, miss면 호출 후 `GetOrInsertLlmResponse` |
+| `morbesllm.CacheRefresh` | 캐시를 읽지 않고 호출한 뒤 `RefreshLlmResponse`로 기존 행 갱신 |
+| `morbesllm.CacheBypass` | 캐시를 읽지 않고, 호출한 뒤 `GetOrInsertLlmResponse`를 사용한다(code replay용) |
 
-`service.AskLLMWithMode`는 relation 추출에서 같은 모드를 사용한다.
-`explain`은 별도로 `GetOrInsertLlmResponse`만 사용한다.
+relation 추출도 같은 `morbesllm.Service`를 사용한다.
+`explain`은 solver role을 사용한다.
 
 캐시 키는 `(model, prompt, refered_source_id)`이다. 참조 source는
 `ExplanationSourceID`가 있으면 그것, 없으면 `Case.SourceID`다.
@@ -122,23 +123,24 @@
 ### actor
 
 - 함수: `run_v2_actor_extraction`
-- 파서: `MedicalEntityParser/llmparser.ParseActorItems`
+- 파서: `morbesllm.ParseActorItemsResponse`
 - 결과: `[]ActorDraft{Key: "o1", Kind, Name, SourceID}`
-- kind가 비면 `parser.ParseActor`로 보정하고, 그래도 비면 `unknown_actor`
+- typed actor의 `Kind()`/`ActorName()`을 사용하고, kind가 비면 이름 기반 추론으로 보정한다.
 - 템플릿이 비어 있으면 `nil`을 반환한다(오류 아님).
 
 ### status
 
 - 함수: `run_v2_status_extraction`
-- 파서: `llmparser.ParseStatuses`
+- 파서: `morbesllm.ParseStatusesResponse`
 - 결과: `[]StatusDraft{Key, Kind, Value(json.RawMessage), SourceID}`
+- typed status를 `entityjson.EncodeStatus`로 직렬화해 draft value로 보관한다.
 - key는 LLM이 준 key를 유지하고 사전순으로 정렬한다.
 
 ### action
 
 - 함수: `run_v2_action_extraction`
-- 파서: `parser.ParseActions`
-- 각 action을 `parser.NormalizeActionValue(kind, value)`로 정규화한 뒤 JSON으로 저장
+- 파서: `morbesllm.ParseActionsResponse`
+- typed action을 `entityjson.EncodeAction`으로 직렬화한다.
 - 결과: `[]ActionDraft{Key, Variant, Value, SourceID}`
 
 ### patient description
@@ -195,8 +197,8 @@
 ### relation
 
 - 함수: `run_v2_relation_extraction`
-- `Build_RelationPromptFromMaps`로 status/action map을 JSON에 넣어 렌더링
-- `service.ExtractRelationsWithPrompt`가 `llmparser.ParseRelations`를 호출
+- `build_relation_prompt_from_drafts`가 status/action map을 `morbesllm.BuildRelationPrompt`로 렌더링
+- `morbesllm.Service.ExtractRelations`가 `ParseRelationsResponse`로 relation을 해석한다.
 - parser 결과는 `[causeKey, actionKey, resultKey, actionKey, ...]` 형태의 경로다.
   인접한 세 개를 묶어 `RelationDraft{CauseStatusKey, ActionKey, ResultStatusKey}`로
   변환한다.
