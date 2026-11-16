@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	morbesllm "github.com/G226Medi03/MorbesLLMService"
+	medicalentityparser "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
 )
 
 // ToStatuses converts findings.status into typed observable statuses.
@@ -30,9 +30,15 @@ func status_from_raw(raw json.RawMessage) (repo.IEStatus, error) {
 	if payload.Kind == "" {
 		return nil, fmt.Errorf("status.kind 가 비어 있습니다")
 	}
-	value, err := morbesllm.ParseStatusResponse(string(raw))
+	statuses, err := medicalentityparser.DecodeStatuses(string(raw))
 	if err != nil {
 		return nil, err
 	}
-	return value, nil
+	if len(statuses) != 1 {
+		return nil, fmt.Errorf("status response must contain exactly one status: got %d", len(statuses))
+	}
+	for _, value := range statuses {
+		return value, nil
+	}
+	return nil, fmt.Errorf("status response is empty")
 }
