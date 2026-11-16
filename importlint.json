@@ -7,10 +7,14 @@
     }
   ],
   "forbidden": [
-    "github.com/G226Medi03/MedicalEntity",
-    "github.com/G226Medi03/MedicalEntityParser"
+    "github.com/G226Medi03/MedicalEntity"
   ],
   "adapters": [
+    {
+      "name": "medicalentityparser",
+      "external": "github.com/G226Medi03/MedicalEntityParser",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
+    },
     {
       "name": "pipelinecore",
       "external": "github.com/G226Medi03/PipeLineCore",

@@ -18,6 +18,16 @@ func TestParseStatus(t *testing.T) {
 	}
 }
 
+func TestParseStatusRejectsMultiple(t *testing.T) {
+	raw := json.RawMessage(`[
+		{"kind":"have_disease","disease":"고혈압"},
+		{"kind":"have_disease","disease":"저혈압"}
+	]`)
+	if _, err := patient.ParseStatus(raw); err == nil {
+		t.Fatal("expected multiple status error")
+	}
+}
+
 func TestParseStatusProcedureText(t *testing.T) {
 	status, err := patient.ParseStatus(json.RawMessage(`{"kind":"received_medical_procedure","medical_procedure":"간 이식"}`))
 	if err != nil {

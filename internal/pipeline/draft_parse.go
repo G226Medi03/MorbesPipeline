@@ -2,10 +2,11 @@ package csolve
 
 import (
 	"encoding/json"
+	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
+	medicalentityparser "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
 )
 
 func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
@@ -20,7 +21,17 @@ func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	return morbesllm.ParseStatusResponse(string(encoded))
+	statuses, err := medicalentityparser.DecodeStatuses(string(encoded))
+	if err != nil {
+		return nil, err
+	}
+	if len(statuses) != 1 {
+		return nil, fmt.Errorf("status response must contain exactly one status: got %d", len(statuses))
+	}
+	for _, value := range statuses {
+		return value, nil
+	}
+	return nil, fmt.Errorf("status response is empty")
 }
 
 func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {

@@ -34,6 +34,22 @@ func TestToStatuses(t *testing.T) {
 	}
 }
 
+func TestToStatusesRejectsMultipleInOneEntry(t *testing.T) {
+	raw := `{
+		"findings":{"status":[[
+			{"kind":"have_disease","disease":"고혈압"},
+			{"kind":"have_disease","disease":"저혈압"}
+		]]}
+	}`
+	var situation Situation
+	if err := json.Unmarshal([]byte(raw), &situation); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, err := situation.ToStatuses(); err == nil {
+		t.Fatal("expected multiple status error")
+	}
+}
+
 func TestToStatusesProcedureText(t *testing.T) {
 	raw := `{
 		"findings":{"status":[
