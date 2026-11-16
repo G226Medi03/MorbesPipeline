@@ -64,10 +64,13 @@ internal/external/
 {
   "repos": [{ "path": ".", "module": "github.com/G226Medi03/MorbesPipeline", "enforce": true }],
   "forbidden": [
-    "github.com/G226Medi03/MedicalEntity",
-    "github.com/G226Medi03/MedicalEntityParser"
+    "github.com/G226Medi03/MedicalEntity"
   ],
   "adapters": [
+    {
+      "external": "github.com/G226Medi03/MedicalEntityParser",
+      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
+    },
     {
       "external": "github.com/G226Medi03/PipeLineCore",
       "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
