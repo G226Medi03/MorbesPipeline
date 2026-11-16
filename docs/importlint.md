@@ -34,7 +34,8 @@ go run ./tools/importlint --config importlint.json --report-only
   - `SourceEntityRepository`
   - `SQLCore`
   - `log-sqlite`
-- `llm-client`, `go-duration`은 `MorbesLLMService` 경유로만 사용한다.
+- `llm-client/call`은 `internal/pipeline`에서 직접 사용한다.
+- `go-duration`은 `MorbesLLMService` / `MedicalEntityParser` 경유로만 사용한다.
 - `MedicalEntityRepository`와 `MorbesLLMService`는 직접 import할 수 있다.
 - `MedicalEntityParser`는 `MorbesLLMService` 내부에서만 사용한다.
 - adapter 패키지 자신만 해당 외부 모듈을 직접 import할 수 있다.
