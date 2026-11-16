@@ -96,7 +96,8 @@
 ## LLM 캐시
 
 LLM 호출과 캐시 정책은 `github.com/G226Medi03/MorbesLLMService`가 소유한다.
-`Service.generate_extraction`은 `morbesllm.Service.AskRole`을 호출한다.
+`Service.generate_extraction`은 `morbesllm.Service.AskRole`을 호출하며,
+status/action/actor/relation은 `MorbesLLMService`의 typed extraction 메서드를 사용한다.
 
 | 모드 | 동작 |
 | --- | --- |
