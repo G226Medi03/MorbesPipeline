@@ -12,4 +12,14 @@ This repository owns:
 
 The generic pipeline model lives in `github.com/G226Medi03/PipeLineCore`.
 
+## Node construction
+
+Use `core.NewNode` through the `internal/external/pipelinecore` adapter.
+Direct `core.Node` composite literals are rejected by the
+`nodeconstructor` golangci-lint module plugin.
+
+```powershell
+scripts/lint.ps1
+```
+
 See [docs/README.md](docs/README.md) for the code structure and pipeline documentation.

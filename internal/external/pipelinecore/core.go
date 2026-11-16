@@ -11,6 +11,7 @@ type (
 	NodeName     = ext.NodeName
 	NodeKind     = ext.NodeKind
 	NodeState    = ext.NodeState
+	CacheMode    = ext.CacheMode
 	Event        = ext.Event
 )
 
@@ -29,6 +30,14 @@ const (
 	NodeSucceeded = ext.NodeSucceeded
 	NodeFailed    = ext.NodeFailed
 	NodeSkipped   = ext.NodeSkipped
+
+	CacheInherit = ext.CacheInherit
+	CacheUse     = ext.CacheUse
+	CacheBypass  = ext.CacheBypass
+	CacheRefresh = ext.CacheRefresh
 )
 
-var NewState = ext.NewState
+var (
+	NewState = ext.NewState
+	NewNode  = ext.NewNode
+)

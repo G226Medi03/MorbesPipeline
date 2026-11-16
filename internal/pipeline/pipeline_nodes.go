@@ -36,11 +36,11 @@ func newSolveNodePipeline(runtime *Service) core.Pipeline {
 	return core.Pipeline{
 		Name: "SolvePipeline",
 		Nodes: []core.Node{
-			{Name: solveLoadNode, Stage: "prepare", Kind: core.KindPrepare, Run: runtime.caseLoadNode},
-			{Name: explainNode, Stage: NodeExplain, Kind: core.KindLLM, Run: runtime.caseExplainNode},
-			{Name: extractionNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Run: runtime.caseExtractionNode},
-			{Name: resolveNode, Stage: NodeResolve, Kind: core.KindResolve, Run: runtime.caseResolveNode},
-			{Name: causeNode, Stage: NodeCause, Kind: core.KindGraph, Run: runtime.caseCauseNode},
+			core.NewNode(solveLoadNode, "prepare", core.KindPrepare, core.CacheInherit, runtime.caseLoadNode, false),
+			core.NewNode(explainNode, NodeExplain, core.KindLLM, core.CacheInherit, runtime.caseExplainNode, false),
+			core.NewNode(extractionNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, runtime.caseExtractionNode, false),
+			core.NewNode(resolveNode, NodeResolve, core.KindResolve, core.CacheInherit, runtime.caseResolveNode, false),
+			core.NewNode(causeNode, NodeCause, core.KindGraph, core.CacheInherit, runtime.caseCauseNode, false),
 		},
 	}
 }

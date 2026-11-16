@@ -6,8 +6,8 @@ github.com/G226Medi03/MedicalEntityRepository v0.10.1 h1:bIvMOCuapSmbRyeV9bmXMFP
 github.com/G226Medi03/MedicalEntityRepository v0.10.1/go.mod h1:nRuikSpPKUB/vBXaEyIaUKy+RI3z/wIc3Flwo5wX8o0=
 github.com/G226Medi03/MorbesLLMService v0.9.0 h1:iry/fi02nYxW5rwl6/FuC8+r2Ap8M4hEhOV3WUHWdp0=
 github.com/G226Medi03/MorbesLLMService v0.9.0/go.mod h1:tYjTYn73tbAvb9PlNdL5wXRqUzkxep70VLnangGibDo=
-github.com/G226Medi03/PipeLineCore v0.1.0 h1:qfB5BLwzeqz6IIrGoK6RMBKIAI33M6v/snPbAuJZZlg=
-github.com/G226Medi03/PipeLineCore v0.1.0/go.mod h1:Yb54rUstYvfKPVEHncsp+UaGbyYusekxGqAVHLmYvCc=
+github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116115637-a4a3a6eb5f06 h1:njz9kUCqEy/RzB/NBarTGTWzXvilaFNvMWpEIVAcYmQ=
+github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116115637-a4a3a6eb5f06/go.mod h1:Yb54rUstYvfKPVEHncsp+UaGbyYusekxGqAVHLmYvCc=
 github.com/G226Medi03/SQLCore v0.2.0 h1:Om4N7UzJJh1tNVAt2s9NzmVXjQB2w1WJkMo8WJMqIB0=
 github.com/G226Medi03/SQLCore v0.2.0/go.mod h1:AQso4yvKY6JTLMARKV5jcqlgwcpKz5oRAuXuob5yyVY=
 github.com/G226Medi03/SourceEntity v0.3.0 h1:/3hcvrZT8aeJMJKwhXXKuM1QnMfwz76KEs16RGyHCuE=
