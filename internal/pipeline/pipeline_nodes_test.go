@@ -33,12 +33,12 @@ func TestExtractionPipelineOrder(t *testing.T) {
 	pipeline := core.Pipeline{
 		Name: "CaseExtractionPipeline",
 		Nodes: []core.Node{
-			{Name: extractQuestionTypeNode, Run: func(context.Context, *core.State) error { return nil }},
-			{Name: extractParallelNode, Run: func(context.Context, *core.State) error { return nil }},
-			{Name: extractPatientNode, Optional: true, Run: func(context.Context, *core.State) error { return nil }},
-			{Name: extractRelationNode, Run: func(context.Context, *core.State) error { return nil }},
-			{Name: extractOptionNode, Run: func(context.Context, *core.State) error { return nil }},
-			{Name: extractAssembleNode, Run: func(context.Context, *core.State) error { return nil }},
+			core.NewNode(extractQuestionTypeNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, false),
+			core.NewNode(extractParallelNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, false),
+			core.NewNode(extractPatientNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, true),
+			core.NewNode(extractRelationNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, false),
+			core.NewNode(extractOptionNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, false),
+			core.NewNode(extractAssembleNode, "", "", core.CacheInherit, func(context.Context, *core.State) error { return nil }, false),
 		},
 	}
 	if err := pipeline.Validate(); err != nil {

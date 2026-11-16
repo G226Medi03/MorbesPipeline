@@ -1,0 +1,15 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - nodeconstructor
+
+  settings:
+    custom:
+      nodeconstructor:
+        type: module
+        description: forbid direct construction of core.Node

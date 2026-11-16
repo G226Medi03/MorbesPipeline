@@ -1,0 +1,7 @@
+version: v2.15.0
+name: custom-gcl
+destination: ./bin
+
+plugins:
+  - module: 'github.com/G226Medi03/PipeLineCore/tools/nodeconstructor'
+    version: v0.0.0-20261116115637-a4a3a6eb5f06

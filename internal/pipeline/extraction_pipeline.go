@@ -29,12 +29,12 @@ func (self *Service) extractionPipeline(ctx context.Context, id domain.CaseID, s
 	pipeline := core.Pipeline{
 		Name: "CaseExtractionPipeline",
 		Nodes: []core.Node{
-			{Name: extractQuestionTypeNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Run: self.extractQuestionTypeNode},
-			{Name: extractParallelNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Run: self.extractParallelNode},
-			{Name: extractPatientNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Optional: true, Run: self.extractPatientNode},
-			{Name: extractRelationNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Run: self.extractRelationNode},
-			{Name: extractOptionNode, Stage: NodeCaseExtraction, Kind: core.KindLLM, Run: self.extractOptionNode},
-			{Name: extractAssembleNode, Stage: NodeCaseExtraction, Kind: core.KindTransform, Run: self.extractAssembleNode},
+			core.NewNode(extractQuestionTypeNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, self.extractQuestionTypeNode, false),
+			core.NewNode(extractParallelNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, self.extractParallelNode, false),
+			core.NewNode(extractPatientNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, self.extractPatientNode, true),
+			core.NewNode(extractRelationNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, self.extractRelationNode, false),
+			core.NewNode(extractOptionNode, NodeCaseExtraction, core.KindLLM, core.CacheInherit, self.extractOptionNode, false),
+			core.NewNode(extractAssembleNode, NodeCaseExtraction, core.KindTransform, core.CacheInherit, self.extractAssembleNode, false),
 		},
 	}
 	pipelineState := core.NewState()
