@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 // migrateLegacyMedicalSchema renames the pre-MedicalEntity tables and columns

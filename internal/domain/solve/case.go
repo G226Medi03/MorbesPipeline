@@ -3,8 +3,8 @@ package domain
 import (
 	"time"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	"github.com/G226Medi03/SourceEntity"
 )
 
 const (

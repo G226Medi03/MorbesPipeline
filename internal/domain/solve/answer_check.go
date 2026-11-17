@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // AnswerCheck is the latest answer-check decision for one solve case.

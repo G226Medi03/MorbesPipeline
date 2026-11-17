@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func TestTraceSourceFollowsLlmReferedChainToOriginal(t *testing.T) {

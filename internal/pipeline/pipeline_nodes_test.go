@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
+	"github.com/G226Medi03/PipeLineCore"
 )
 
 func TestSolveNodePipelineOrder(t *testing.T) {

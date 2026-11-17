@@ -7,8 +7,8 @@ import (
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 type CallTable struct{}

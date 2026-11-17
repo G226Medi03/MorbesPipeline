@@ -67,15 +67,9 @@ func ParseStatus(raw json.RawMessage) (repo.IEStatus, error) {
 	if payload.Kind == "" {
 		return nil, fmt.Errorf("patient description status.kind 가 비어 있습니다")
 	}
-	statuses, err := medicalentityparser.DecodeStatuses(string(raw))
+	value, err := medicalentityparser.DecodeSingleStatus(string(raw))
 	if err != nil {
 		return nil, fmt.Errorf("patient description status 정규화 실패: %w", err)
 	}
-	if len(statuses) != 1 {
-		return nil, fmt.Errorf("patient description status response must contain exactly one status: got %d", len(statuses))
-	}
-	for _, value := range statuses {
-		return value, nil
-	}
-	return nil, fmt.Errorf("patient description status response is empty")
+	return value, nil
 }

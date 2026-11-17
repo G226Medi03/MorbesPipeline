@@ -3,8 +3,8 @@ package domain
 import (
 	"context"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	"github.com/G226Medi03/SourceEntity"
 )
 
 // QuestionInput is the exam question payload handed to the solve pipeline.

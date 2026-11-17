@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	sourcedomain "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
+	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
 func (s *Store) GetSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceRow, bool, error) {

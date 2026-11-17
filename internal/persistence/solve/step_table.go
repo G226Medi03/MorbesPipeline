@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 type StepTable struct{}

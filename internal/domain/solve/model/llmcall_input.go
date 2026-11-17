@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	"github.com/G226Medi03/SourceEntity"
 )
 
 type LLMCallInput struct {

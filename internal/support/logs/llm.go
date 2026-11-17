@@ -1,7 +1,7 @@
 package logs
 
 import (
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // LLMError records which stored LLM response caused a parse or canonicalization error.

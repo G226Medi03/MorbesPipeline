@@ -6,8 +6,8 @@ import (
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	"github.com/G226Medi03/SourceEntity"
 )
 
 func actorValueByKind(kind, name string) (repo.IEActor, error) {

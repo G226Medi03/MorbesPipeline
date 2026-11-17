@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
-	storesource "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentityrepository"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 	storegraph "github.com/G226Medi03/MorbesPipeline/internal/persistence/graph"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence/option"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
+	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 type Store struct {

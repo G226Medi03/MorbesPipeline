@@ -3,7 +3,7 @@ package solve
 import (
 	"context"
 
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 type Repository struct {

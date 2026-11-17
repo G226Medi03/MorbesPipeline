@@ -7,8 +7,8 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 var ErrSourceRequired = errors.New("source가 필요합니다")

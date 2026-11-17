@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
+	"github.com/G226Medi03/PipeLineCore"
 )
 
 const (

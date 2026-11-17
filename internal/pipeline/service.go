@@ -7,9 +7,9 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	core "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
-	sourceentity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence"
+	core "github.com/G226Medi03/PipeLineCore"
+	sourceentity "github.com/G226Medi03/SourceEntity"
 	cllmcall "github.com/G226Medi03/llm-client/call"
 )
 

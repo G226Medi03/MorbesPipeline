@@ -5,9 +5,9 @@ import (
 	"sort"
 
 	medicalprocedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/sliceutil"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type Container struct {

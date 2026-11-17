@@ -2,8 +2,8 @@ package domain
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // MedicalProcedureOptionGraph is the candidate graph used for procedure
