@@ -55,9 +55,11 @@
   - source row / llm response row
 - 대응 패키지:
   - `internal/persistence/source.go`
+  - `internal/persistence/response_store.go`
 - 확인:
   - `SourceId`/`RespId`는 `SourceEntity.NewSourceId` / `NewRespId` 직접 사용
-  - `GetOrInsertLlmResponse`, `RefreshLlmResponse`, `TraceSource` 유지
+  - LLM response cache는 `MorbesLLMService/responsestore`에 위임
+  - `TraceSource`는 MorbesPipeline에 유지
 
 ## 4. SQLCore
 

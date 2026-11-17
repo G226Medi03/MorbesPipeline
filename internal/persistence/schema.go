@@ -1,6 +1,7 @@
 package store
 
 import (
+	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -14,9 +15,11 @@ func (s *Store) InitSchema() error {
 	if err := s.OptionRepository.Init(); err != nil {
 		return err
 	}
-	if err := s.SourceRepository.Init(s.ctx, s.sourceExecutor()); err != nil {
+	responseStore, err := responsestore.NewStore(s.ctx, s.sourceExecutor())
+	if err != nil {
 		return err
 	}
+	s.responseStore = responseStore
 	if err := s.SolveRepository.Init(s.ctx, s.solveExecutor()); err != nil {
 		return err
 	}

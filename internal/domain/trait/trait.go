@@ -1,33 +1,37 @@
 package trait
 
-import "strings"
+import (
+	"strings"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+)
 
 // Trait is a semantic property of a medical procedure or of a procedure
 // option in a case context.
-type Trait string
+type Trait = repo.Trait
 
 // ProcedureType is the canonical procedure kind used for trait defaults.
 type ProcedureType string
 
 const (
-	TraitResuscitative Trait = "resuscitative"
-	TraitAcute         Trait = "acute"
-	TraitDefinitive    Trait = "definitive"
-	TraitFirstLine     Trait = "first_line"
-	TraitRescue        Trait = "rescue"
+	TraitResuscitative = repo.TraitResuscitative
+	TraitAcute         = repo.TraitAcute
+	TraitDefinitive    = repo.TraitDefinitive
+	TraitFirstLine     = repo.TraitFirstLine
+	TraitRescue        = repo.TraitRescue
 
-	TraitInvasive      Trait = "invasive"
-	TraitNonInvasive   Trait = "non_invasive"
-	TraitSurgical      Trait = "surgical"
-	TraitPharmacologic Trait = "pharmacologic"
-	TraitDiagnostic    Trait = "diagnostic"
-	TraitMonitoring    Trait = "monitoring"
-	TraitSupportive    Trait = "supportive"
-	TraitChronic       Trait = "chronic"
-	TraitMaintenance   Trait = "maintenance"
-	TraitProphylactic  Trait = "prophylactic"
-	TraitEducational   Trait = "educational"
-	TraitNursing       Trait = "nursing"
+	TraitInvasive      = repo.TraitInvasive
+	TraitNonInvasive   = repo.TraitNonInvasive
+	TraitSurgical      = repo.TraitSurgical
+	TraitPharmacologic = repo.TraitPharmacologic
+	TraitDiagnostic    = repo.TraitDiagnostic
+	TraitMonitoring    = repo.TraitMonitoring
+	TraitSupportive    = repo.TraitSupportive
+	TraitChronic       = repo.TraitChronic
+	TraitMaintenance   = repo.TraitMaintenance
+	TraitProphylactic  = repo.TraitProphylactic
+	TraitEducational   = repo.TraitEducational
+	TraitNursing       = repo.TraitNursing
 
 	KindProcedure      ProcedureType = "unknown"
 	KindSurgery        ProcedureType = "surgery"
@@ -40,20 +44,6 @@ const (
 	KindInsertion      ProcedureType = "insertion"
 	KindUnknown        ProcedureType = "unknown"
 )
-
-var intrinsicTraitSet = map[Trait]struct{}{
-	TraitInvasive:      {},
-	TraitNonInvasive:   {},
-	TraitSurgical:      {},
-	TraitPharmacologic: {},
-	TraitDiagnostic:    {},
-	TraitMonitoring:    {},
-	TraitSupportive:    {},
-	TraitDefinitive:    {},
-	TraitResuscitative: {},
-	TraitEducational:   {},
-	TraitNursing:       {},
-}
 
 var priorityTraitOrder = []Trait{
 	TraitResuscitative,
@@ -201,8 +191,7 @@ func IsPriorityTrait(value Trait) bool {
 }
 
 func IsIntrinsicTrait(value Trait) bool {
-	_, ok := intrinsicTraitSet[value]
-	return ok
+	return repo.IsIntrinsicTrait(value)
 }
 
 func IsContextTrait(value Trait) bool {
@@ -213,13 +202,7 @@ func IsContextTrait(value Trait) bool {
 // IntrinsicTraits returns traits that describe the procedure itself. They are
 // persisted with the canonical procedure.
 func IntrinsicTraits(values []Trait) []Trait {
-	result := make([]Trait, 0, len(values))
-	for _, value := range values {
-		if IsIntrinsicTrait(value) {
-			result = append(result, value)
-		}
-	}
-	return result
+	return repo.IntrinsicTraits(values)
 }
 
 // ContextTraits returns traits that depend on the case context. They are

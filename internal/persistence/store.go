@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
+	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	storegraph "github.com/G226Medi03/MorbesPipeline/internal/persistence/graph"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence/option"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
@@ -29,6 +30,8 @@ type Store struct {
 	entityStore *repo.Store
 	entityErr   error
 	entityMu    *sync.Mutex
+
+	responseStore *responsestore.Store
 
 	OptionRepository medicalprocedureoption.Repository
 	SourceRepository storesource.Repository
@@ -64,8 +67,16 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 func (s *Store) bind() {
 	s.entityStore = nil
 	s.entityErr = nil
+	s.responseStore = nil
 	s.OptionRepository = medicalprocedureoption.NewRepository(s.ctx, s)
 	s.GraphRepository = storegraph.NewRepository(s.ctx, s)
+}
+
+func (s *Store) responseStoreWithExecutor() *responsestore.Store {
+	if s.responseStore == nil {
+		return nil
+	}
+	return s.responseStore.WithExecutor(s.sourceExecutor())
 }
 
 func (s *Store) entities() (*repo.Store, error) {
@@ -92,12 +103,14 @@ func (s *Store) withTx(tx *sql.Tx) *Store {
 	clone.sourceTx = nil
 	clone.solveTx = nil
 	clone.bind()
+	clone.responseStore = s.responseStoreWithExecutor()
 	return &clone
 }
 
 func (s *Store) withSourceTx(tx *sql.Tx) *Store {
 	clone := *s
 	clone.sourceTx = tx
+	clone.responseStore = s.responseStore.WithExecutor(tx)
 	return &clone
 }
 
