@@ -47,7 +47,7 @@ flowchart TD
 | 포트 | `ports` | 파이프라인이 요구하는 저장소 인터페이스 |
 | 어댑터 | `store` | SQLite 기반 `ports.Store` 구현과 테이블 관리 |
 | 공유 커널 | `legacy`, `trait`, `label`, `entityconv`, `logs` | 레거시 호환 DTO, trait 규칙, 라벨, 로깅 |
-| 외부 연동 | `PipeLineCore`, `SourceEntity*`, `SQLCore`, `log-sqlite`, `llm-client` | 직접 import. `MedicalEntityParser`만 adapter 사용 |
+| 외부 연동 | `MedicalEntityParser`, `PipeLineCore`, `SourceEntity*`, `SQLCore`, `log-sqlite`, `llm-client` | 직접 import |
 
 ## 의존 방향
 

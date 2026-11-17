@@ -9,11 +9,5 @@
   "forbidden": [
     "github.com/G226Medi03/MedicalEntity"
   ],
-  "adapters": [
-    {
-      "name": "medicalentityparser",
-      "external": "github.com/G226Medi03/MedicalEntityParser",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
-    }
-  ]
+  "adapters": []
 }
