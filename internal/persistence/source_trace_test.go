@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	"path/filepath"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestTraceSourceFollowsLlmReferedChainToOriginal(t *testing.T) {
 			t.Fatalf("insert: %v", err)
 		}
 	}
-	trace, err := st.TraceSource(sourceutil.SourceID(3))
+	trace, err := st.TraceSource(source.NewSourceId(3))
 	if err != nil {
 		t.Fatalf("TraceSource: %v", err)
 	}
@@ -64,7 +63,7 @@ func TestTraceSourceStopsAtUnresolvedLlmSource(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO llm_responses (resp_id, model, prompt, refered_source_id, output) VALUES (10, 'test', 'p', 0, 'o')`); err != nil {
 		t.Fatalf("insert response: %v", err)
 	}
-	trace, err := st.TraceSource(sourceutil.SourceID(1))
+	trace, err := st.TraceSource(source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("TraceSource: %v", err)
 	}

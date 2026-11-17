@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	source "github.com/G226Medi03/SourceEntity"
+
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 	graph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 )
@@ -23,7 +25,7 @@ func TestPublicFacade(t *testing.T) {
 	}
 	container := graph.New_Container()
 	status := HaveSymptom{Symptom: EOtherSymptom{Name: "고혈압"}}
-	if _, err := store.EnsureStatusIn(container, status, SourceID(1)); err != nil {
+	if _, err := store.EnsureStatusIn(container, status, source.NewSourceId(1)); err != nil {
 		t.Fatalf("EnsureStatusIn: %v", err)
 	}
 	if _, err := store.LoadGraph(); err != nil {

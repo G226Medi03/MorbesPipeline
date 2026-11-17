@@ -13,7 +13,7 @@ import morbes "github.com/G226Medi03/MorbesPipeline"
 | `facade.go` | entity/domain 타입 alias, trait helper |
 | `solve.go` | `Service`, `Dependencies`, `Run`, replay, prompt, option 선택 |
 | `store.go` | `Store`, `New`, `NewWithDBs`, read model |
-| `support.go` | IDs, logs, label, sourceutil, sliceutil |
+| `support.go` | IDs, logs, label, sliceutil |
 | `tracing.go` | `Container`, `Candidate`, `TraceNode`, cause service |
 
 공개 facade는 내부 구현을 **type alias + 얇은 wrapper**로 노출한다.
@@ -42,7 +42,6 @@ root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` a
 | `internal/domain/trait/` | `trait` | trait 규칙 |
 | `internal/support/ids/` | `ids` | DB row ID |
 | `internal/support/logs/` | `logs` | log-sqlite facade |
-| `internal/support/sourceutil/` | `sourceutil` | SourceId 변환 |
 | `internal/support/sliceutil/` | `sliceutil` | slice helper |
 
 | `internal/testdb/` | `testdb` | 테스트 SQLite |

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
@@ -99,7 +98,7 @@ func (s *Store) getLlmResponseBySource(sourceID sourcedomain.SourceId) (*sourced
 	if err != nil || !found {
 		return nil, err
 	}
-	row, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourceutil.RespID(sourceRow.IDPtr))
+	row, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourcedomain.NewRespId(sourceRow.IDPtr))
 	if err != nil || !found {
 		return nil, err
 	}
@@ -148,7 +147,7 @@ func (s *Store) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.Source
 			}
 			break
 		}
-		response, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourceutil.RespID(row.IDPtr))
+		response, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourcedomain.NewRespId(row.IDPtr))
 		if err != nil {
 			return trace, err
 		}

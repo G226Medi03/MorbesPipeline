@@ -8,8 +8,8 @@ import (
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type AnswerCheckTable struct{}
@@ -192,7 +192,7 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID dom
 		return domain.AnswerCheck{}, false, fmt.Errorf("answer check 조회 실패: %w", err)
 	}
 	value.CaseID = domain.CaseID(caseIDValue)
-	value.RespID = sourceutil.RespID(respID)
+	value.RespID = source.NewRespId(respID)
 	value.ContainsAnswer = contains != 0
 	value.AnswerPresent = answer_present.Valid && answer_present.Int64 != 0
 	value.AnswerSatisfied = answer_satisfied.Valid && answer_satisfied.Int64 != 0

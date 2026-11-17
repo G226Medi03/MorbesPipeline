@@ -60,7 +60,6 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
     ├── support/
     │   ├── ids/
     │   ├── logs/
-    │   ├── sourceutil/
     │   └── sliceutil/
     └── testdb/
 

@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 	"github.com/G226Medi03/SourceEntity"
 	"path/filepath"
@@ -21,18 +20,18 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 	if err := st.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	sources := []source.SourceRef{{SourceID: sourceutil.SourceID(1)}}
+	sources := []source.SourceRef{{SourceID: source.NewSourceId(1)}}
 	container, err := st.LoadGraph()
 	if err != nil {
 		t.Fatalf("LoadGraph: %v", err)
 	}
 	status := repo.HaveDisease{Disease: repo.EDisease("고혈압")}
-	statusID, err := st.EnsureStatusIn(container, status, sourceutil.SourceID(1))
+	statusID, err := st.EnsureStatusIn(container, status, source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("EnsureStatusIn: %v", err)
 	}
 	action := repo.CauseStatus{Status: status}
-	actionID, err := st.EnsureActionIn(container, action, sourceutil.SourceID(1))
+	actionID, err := st.EnsureActionIn(container, action, source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("EnsureActionIn: %v", err)
 	}
