@@ -1,6 +1,6 @@
 # 참조 GitHub repo 동기화
 
-기준일: 2026-11-16
+기준일: 2026-11-17
 
 패키지 분리 후 각 영역은 아래 upstream repo에 대응한다.
 동기화는 **위에서 아래 순서**로 하나씩 진행한다.
@@ -8,16 +8,16 @@
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1 | `MedicalEntity` | `v0.15.0` | `MedicalEntityRepository/repo` facade 경유 | 직접 import 제거 |
-| 2 | `MedicalEntityParser` | `v0.3.0` | `MorbesLLMService` facade 경유 | 직접 import 제거 |
+| 2 | `MedicalEntityParser` | `v0.4.0` | `MorbesLLMService` facade 경유 | 직접 import 제거 |
 | 3 | `SourceEntity` | `v0.3.0` | `internal/support/sourceutil`, `internal/persistence/source.go` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.2.0` | `internal/persistence/source.go` | 동기화 완료 |
 | 5 | `SQLCore` | `v0.2.0` | `internal/persistence`, `internal/persistence/*` | 동기화 완료 |
 | 6 | `MedicalEntityRepository` | `v0.10.1` | `repo` facade + `internal/persistence/entity*.go`, `internal/persistence/graph`, `internal/persistence/option` | pain/symptom schema 반영 |
-| 7 | `PipeLineCore` | `v0.1.0` | `internal/pipeline/pipeline_nodes.go`, `internal/pipeline/service.go` | 동기화 완료 |
+| 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/pipeline/pipeline_nodes.go`, `internal/pipeline/service.go` | 동기화 완료 |
 | 8 | `llm-client` | `v0.5.0` | `internal/pipeline` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logs` | 동기화 완료 |
 | 10 | `go-duration` | `v0.1.0` | `MorbesLLMService` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLMService` | `v0.9.0` | LLM 호출, 캐시, relation, actor 추출, replay | 동기화 완료 |
+| 11 | `MorbesLLMService` | `v0.10.1` | prompt 소유, typed extraction, replay | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -38,17 +38,15 @@
 
 ## 2. MedicalEntityParser
 
-- 사용 API (via `MorbesLLMService`):
-  - `ParseStatusResponse`
-  - `ExtractStatuses`, `ExtractActions`, `ExtractActors`, `ExtractRelations`
+- 사용 API (via `internal/external/medicalentityparser`):
+  - `DecodeStatuses`
 - 대응 패키지:
+  - `internal/external/medicalentityparser`
   - `internal/domain/patient`
   - `internal/domain/situation`
-  - `internal/pipeline/draft_parse.go`
-  - `internal/pipeline/extraction_v2.go`
 - 확인:
-  - parser direct import 0건
-  - typed status/action/actor 결과를 draft value로 변환
+  - parser direct import는 adapter 내부에서만 허용
+  - typed status 결과를 patient/situation 값으로 변환
 
 ## 3. SourceEntity / SourceEntityRepository
 
@@ -131,7 +129,7 @@
   - `internal/pipeline/service.go`
 - 확인:
   - `MorbesPipeline`은 `*call.Client`를 직접 사용
-  - replay와 cache mode는 `MorbesLLMService`가 소유
+  - replay는 `MorbesLLMService`, `CacheMode` 타입은 `PipeLineCore`가 소유
   - live stage override는 `SetReplayLive`로 전달
 
 ## 8. log-sqlite
@@ -157,20 +155,19 @@
 ## 10. MorbesLLMService
 
 - 사용 API:
-  - `Service`, `Clients`, `CacheMode`
-  - `AskRole`, `ExplainResult`
+  - `New`, `Service`, `PromptStore`, `LlmResponseStore`
+  - `ExplainResult`
+  - `ExtractQuestionType`, `ExtractPatientDescription`, `ExtractMedicalProcedureOption`
   - `ExtractStatuses`, `ExtractActions`, `ExtractActors`, `ExtractRelations`
-  - `BuildRelationPrompt`, `BuildActorPrompt`, `ActorDraft`
-  - `ParseStatusResponse`
-  - `WithReplay`, `WithReplayLive`
+  - `QuestionTypeResult`, `PatientDescriptionResult`, `MedicalProcedureOptionResult`
+  - `ActorDraft`, `WithReplayLive`
 - 대응 패키지:
   - `internal/pipeline/*`
-  - `internal/domain/patient`
-  - `internal/domain/situation`
+  - `internal/persistence` (`PromptStore`, `LlmResponseStore`)
 - 확인:
-  - `MorbesLLMService v0.9.0`
-  - LLM 호출/캐시/relation/actor 추출/replay 소유
-  - `Clients`는 `*cllmcall.Client` 사용
+  - `MorbesLLMService v0.10.1`
+  - prompt 조회/렌더링, LLM 호출, 파싱, replay 소유
+  - `CacheMode`/`ReplayCall`은 `PipeLineCore` 소유
 
 ## 동기화 절차
 

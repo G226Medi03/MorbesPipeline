@@ -50,15 +50,3 @@ func problem_choices(problem string) []ProblemChoice {
 	}
 	return result
 }
-
-func problem_only_instruction(stage string) string {
-	base := "\n\n[중요] [정답]과 [해설]은 사용하지 말고 [문제] 본문만 근거로 판단하라."
-	switch stage {
-	case PromptMedicalProcedureOption:
-		return base + " 문제의 모든 선택지(①~⑤)를 빠짐없이 후보로 추출하라. 정답 번호를 기준으로 후보를 고르지 마라."
-	case PromptStatus, PromptAction, PromptRelation, PromptPatientDescription:
-		return base + " 문제의 선택지에 나열된 치료/약물/검사는 환자 소견으로 추출하지 마라."
-	default:
-		return base
-	}
-}

@@ -1,40 +1,48 @@
 # 추출과 LLM 단계
 
-## 프롬프트 모델
+## 소유권
 
-프롬프트는 `solve_prompt_versions` 테이블에서 stage별로 읽는다.
-`solve/domain/prompt.go`가 stage 이름과 필수 placeholder를 정의한다.
+프롬프트 조회, 렌더링, LLM 호출, 캐시, replay는
+`github.com/G226Medi03/MorbesLLMService`가 소유한다.
 
-| stage | placeholder | 파이프라인 사용 |
+MorbesPipeline은 다음만 담당한다.
+
+1. case 데이터와 status/action map 구성
+2. `MorbesLLMService` typed extraction 메서드 호출
+3. 결과를 pipeline draft로 변환
+4. 호출 기록 저장
+
+파이프라인은 더 이상 LLM 프롬프트를 직접 렌더링하지 않는다.
+`RenderPrompt`/`BuildActorPrompt`/`BuildRelationPrompt`/`AskRole` 경로는 제거됐다.
+
+## 프롬프트 stage
+
+프롬프트는 `solve_prompt_versions` 테이블에 있고,
+`persistence.Store.Prompt(stage)`가 `MorbesLLMService`의 `PromptStore`로 전달된다.
+
+| stage | placeholder | 사용 |
 | --- | --- | --- |
 | `explain` | `problem`, `answer` | 해설 생성 |
 | `question_type` | `problem`, `answer`, `explanation` | 질문 유형 분류 |
 | `actor` | `problem`, `answer`, `explanation` | actor 추출 |
-| `other_names` | `problem`, `answer`, `explanation`, `actor_json` | 현재 미사용 |
 | `status` | `problem`, `answer`, `explanation` | 상태 추출 |
 | `action` | `problem`, `answer`, `explanation` | 행동 추출 |
-| `actor_action` | `problem`, `answer`, `explanation`, `actor_json`, `action_json` | 현재 미사용 |
 | `patient_description` | `problem`, `answer`, `explanation`, `status_json` | 환자 서술 추출 |
 | `medical_procedure_option` | `problem`, `answer`, `explanation`, `status_json`, `patient_description_json` | 치료 선택지 추출 |
 | `relation` | `problem`, `answer`, `explanation`, `status_json`, `action_json` | 관계 추출 |
-| `situation` | `problem`, `answer`, `explanation` | stage만 정의, 현재 로드/사용 안 함 |
-| `case_extraction` | `problem`, `answer`, `explanation`, `patient_description_eligible` | stage만 정의, 현재 로드/사용 안 함 |
 
-`promptStages`에 실제로 로드되는 것은 `explain`, `question_type`, `actor`,
-`status`, `action`, `patient_description`, `medical_procedure_option`, `relation`이다.
+`other_names`, `actor_action`, `case_extraction`, `situation`은 현재 실행 경로에서
+사용하지 않는다.
 
-### 로딩과 누락 허용
+### 누락 처리
 
-`Service.load_prompts`는 각 stage에 대해 `store.GetPrompt(stage)`를 호출한다.
+`Service.load_prompts`는 pipeline 상태에 stage별 template/version을 캐시한다.
+실제 LLM 호출은 `MorbesLLMService`가 같은 store에서 다시 조회한다.
 
-- 누락을 허용하는 stage: `actor`, `other_names`, `patient_description`, `question_type`
-- 그 외(`explain`, `status`, `action`, `medical_procedure_option`, `relation`)는
-  프롬프트가 없으면 파이프라인이 실패한다.
-
-### 렌더링
-
-`RenderPrompt`는 `{{key}}`를 값으로 단순 치환하고 앞뒤 공백을 제거한다.
-`ValidatePromptTemplate`은 stage별 필수 placeholder가 모두 있는지 검사한다.
+- `actor`, `patient_description`: template이 비어 있으면 단계 skip
+- `relation`: template이 비어 있으면 실패
+- `question_type`: template이 비어 있으면 LLM 호출 없이 규칙 기반 추론만 사용
+- `status`, `action`, `medical_procedure_option`: 서비스 조회 실패 시 오류
 
 ## 문제 본문과 선택지
 
@@ -43,31 +51,29 @@
 - `problem_stem(problem)`: 줄 단위로 선택지를 제거한 본문
   - 정규식: `^\s*(?:([0-9]+)[.)]|([①-⑳]))\s*(.+?)\s*$`
   - `1.`, `1)`, `①`~`⑳` 형태를 선택지로 본다.
-- `problem_choices(problem)`: `[]{Index, Text}`로 선택지 파싱
-- `problem_only_instruction(stage)`: 정답/해설 사용 금지 지시문을 덧붙인다.
-  - status/action/relation/patient: 선택지의 치료/약물/검사는 소견으로 추출하지 말라는 지시 추가
-  - medical_procedure_option: 모든 선택지를 빠짐없이 후보로 추출하고 정답 번호를
-    기준으로 고르지 말라는 지시 추가
+- `problem_choices(problem)`: `[]{Index, Text}`로 선택지 파싱 (테스트/유틸)
 
-소견 추출 단계는 `problem_stem`을 사용하고, 선택지 추출 단계는 원문 문제와
-선택지 JSON을 함께 사용한다.
+소견 추출 단계(status/action/relation/patient_description/question_type)는
+`problem_stem`을 넘긴다.
+선택지 추출 단계(medical_procedure_option)는 원문 문제를 넘긴다.
+
+정답/해설 사용 금지, 선택지 오염 방지 같은 지시문은 이제 파이프라인이 아니라
+프롬프트 template이 소유한다.
 
 ## 질문 유형 분류
 
-`Service.run_question_type`은 LLM과 규칙 기반 정책을 결합한다.
+`Service.run_question_type`은 `MorbesLLMService.ExtractQuestionType`을 호출한다.
 
-1. DB의 `question_type` 템플릿을 사용한다. 없으면 내장
-   `defaultQuestionTypePrompt`를 사용한다.
-2. `problem_stem`만 렌더링하고 `[정답]`, `[해설]`은 빈 값으로 둔다.
-3. 추가 지시문으로 mechanism/device_action/교육·간호중재 규칙을 보강한다.
-4. LLM JSON의 `questionType`을 `NormalizeQuestionType`으로 정규화한다.
-5. `InferQuestionPolicy(problem)` 결과와 병합한다.
+1. `problem_stem`만 전달하고 answer/explanation은 빈 값으로 둔다.
+2. 서비스가 `question_type` template을 조회/렌더링하고 JSON을 파싱한다.
+3. `QuestionTypeResult.QuestionType`을 `NormalizeQuestionType`으로 정규화한다.
+4. `InferQuestionPolicy(problem)` 결과와 병합한다.
    - 추론된 유형이 `device_action`이면 항상 그것을 사용
    - LLM이 `status`인데 추론이 `procedure`면 `procedure`
    - 추론이 `mechanism`인데 LLM이 mechanism이 아니면 `mechanism`
    - LLM 결과가 비어 있으면 추론값 사용
    - 그래도 비어 있으면 `procedure`
-6. `SetQuestionType`으로 case에 저장하고 LLM 호출을 기록한다.
+5. `SetQuestionType`으로 case에 저장하고 LLM 호출을 기록한다.
 
 ### 질문 유형
 
@@ -95,18 +101,14 @@
 
 ## LLM 캐시
 
-LLM 호출과 캐시 정책은 `github.com/G226Medi03/MorbesLLMService`가 소유한다.
-`Service.generate_extraction`은 `morbesllm.Service.AskRole`을 호출하며,
-status/action/actor/relation은 `MorbesLLMService`의 typed extraction 메서드를 사용한다.
+LLM 호출과 캐시 정책은 `MorbesLLMService`가 소유한다.
+Pipeline은 `pipeLineCore` adapter의 `CacheMode`를 사용한다.
 
 | 모드 | 동작 |
 | --- | --- |
-| `morbesllm.CacheUse` | `FindLlmResponse`로 캐시를 먼저 조회하고, miss면 호출 후 `GetOrInsertLlmResponse` |
-| `morbesllm.CacheRefresh` | 캐시를 읽지 않고 호출한 뒤 `RefreshLlmResponse`로 기존 행 갱신 |
-| `morbesllm.CacheBypass` | 캐시를 읽지 않고, 호출한 뒤 `GetOrInsertLlmResponse`를 사용한다(code replay용) |
-
-relation 추출도 같은 `morbesllm.Service`를 사용한다.
-`explain`은 solver role을 사용한다.
+| `core.CacheUse` | `FindLlmResponse`로 캐시를 먼저 조회하고, miss면 호출 후 `GetOrInsertLlmResponse` |
+| `core.CacheRefresh` | 캐시를 읽지 않고 호출한 뒤 `RefreshLlmResponse`로 기존 행 갱신 |
+| `core.CacheBypass` | 캐시를 읽지 않고, 호출한 뒤 `GetOrInsertLlmResponse`를 사용한다(code replay용) |
 
 캐시 키는 `(model, prompt, refered_source_id)`이다. 참조 source는
 `ExplanationSourceID`가 있으면 그것, 없으면 `Case.SourceID`다.
@@ -115,17 +117,16 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 
 `extractionPipeline`의 각 LLM 단계는 다음 패턴을 따른다.
 
-1. 프롬프트 템플릿 확인(없으면 단계별로 skip 또는 실패)
-2. stage별 입력으로 프롬프트 렌더링
-3. `generate_extraction` 또는 `MorbesLLMService` 추출 메서드 호출
-4. typed 값 또는 draft 생성
+1. template 존재 여부 확인(단계별 skip/실패)
+2. case 데이터로 typed 파라미터 구성
+3. `MorbesLLMService` typed extraction 메서드 호출
+4. typed 결과를 pipeline draft로 변환
 5. `record_v2_extraction_call`로 호출 기록
 
 ### actor
 
 - 함수: `run_v2_actor_extraction`
-- prompt: `morbesllm.BuildActorPrompt`
-- 추출/파싱: `morbesllm.Service.ExtractActors`
+- 호출: `Service.ExtractActors(ctx, problem, "", "", sourceID, mode)`
 - 결과: `[]morbesllm.ActorDraft{Key: "o1", Kind, Name, SourceID}`
 - actor kind 보정과 draft 변환은 `MorbesLLMService`가 담당한다.
 - 템플릿이 비어 있으면 `nil`을 반환한다(오류 아님).
@@ -133,7 +134,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### status
 
 - 함수: `run_v2_status_extraction`
-- 추출/파싱: `morbesllm.Service.ExtractStatuses`
+- 호출: `Service.ExtractStatuses(ctx, problemStem, "", "", sourceID, mode)`
 - 결과: `[]StatusDraft{Key, Kind, Value(json.RawMessage), SourceID}`
 - typed status를 `entityjson.EncodeStatus`로 직렬화해 draft value로 보관한다.
 - key는 LLM이 준 key를 유지하고 사전순으로 정렬한다.
@@ -141,7 +142,7 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### action
 
 - 함수: `run_v2_action_extraction`
-- 추출/파싱: `morbesllm.Service.ExtractActions`
+- 호출: `Service.ExtractActions(ctx, problemStem, "", "", sourceID, mode)`
 - typed action을 `entityjson.EncodeAction`으로 직렬화한다.
 - 결과: `[]ActionDraft{Key, Variant, Value, SourceID}`
 
@@ -150,23 +151,10 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 - 함수: `run_v2_patient_description_extraction`
 - `looks_like_patient_description(problem)`가 참일 때만 실행
   - "진술", "서술", "표현", "이해한", "말한", "호소" 또는 인용부호 포함
-- 입력: `status_json`
-- 기대 출력:
-
-```json
-{
-  "patientDescriptions": [
-    {
-      "choice": "②",
-      "description": [
-        {"kind": "have_symptom", "name": "육안적 혈뇨"}
-      ],
-      "knowledge": ["방광경 검사 후 소변에 피가 섞일 수 있음을 알고 있음"]
-    }
-  ]
-}
-```
-
+- 입력: `map[string]repo.IEStatus`
+- 호출:
+  `Service.ExtractPatientDescription(ctx, problemStem, "", "", statuses, sourceID, mode)`
+- 서비스가 `status_json`을 만들고 `patientDescriptions`를 파싱한다.
 - 각 description 항목은 `status_draft_from_raw`로 `StatusDraft`가 된다.
   fallback key는 `pN_M`.
 - description/knowledge가 모두 비면 버린다.
@@ -174,24 +162,10 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### medical procedure option
 
 - 함수: `run_v2_medical_procedure_option_extraction`
-- 입력: `status_json`, `patient_description_json`, 선택지 JSON이 덧붙은 문제
-- 기대 출력:
-
-```json
-{
-  "medical_procedure_options": [
-    {
-      "id": "m1",
-      "category": "treatment",
-      "traits": ["first_line", "pharmacologic"],
-      "medical_procedure": {"kind": "infuse", "infuse": {"material": {"kind": "unknown_actor", "name": "약물"}, "route": "iv"}},
-      "indications": ["s1"],
-      "expected_effects": ["s2"]
-    }
-  ]
-}
-```
-
+- 입력: `map[string]repo.IEStatus`, `[]morbesllm.PatientDescription`
+- 호출:
+  `Service.ExtractMedicalProcedureOption(ctx, problem, "", "", statuses, patients, sourceID, mode)`
+- 서비스가 `status_json`, `patient_description_json`을 만들고 옵션을 파싱한다.
 - `traits`는 `trait.NormalizeTraits`로 정규화한다.
 - `medical_procedure`가 없거나 `null`이면 버린다.
 - `indications`, `expected_effects`는 status key 목록이다.
@@ -199,8 +173,10 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 ### relation
 
 - 함수: `run_v2_relation_extraction`
-- `build_relation_prompt_from_drafts`가 typed status/action map을 `morbesllm.BuildRelationPrompt`로 렌더링
-- `morbesllm.Service.ExtractRelations`가 `llmparser.DecodeRelations`로 relation을 해석한다.
+- 입력: `map[string]repo.IEStatus`, `map[string]repo.IEAction`
+- 호출:
+  `Service.ExtractRelations(ctx, problemStem, "", "", statuses, actions, explanationSourceID, mode)`
+- 서비스가 relation prompt JSON을 만들고 `DecodeRelations`로 파싱한다.
 - parser 결과는 `[causeKey, actionKey, resultKey, actionKey, ...]` 형태의 경로다.
   인접한 세 개를 묶어 `RelationDraft{CauseStatusKey, ActionKey, ResultStatusKey}`로
   변환한다.
@@ -212,9 +188,9 @@ relation 추출도 같은 `morbesllm.Service`를 사용한다.
 
 - `Seq`: 단계별 상수(12/15/20/30/36/37/40)
 - `Stage`, `Role`
-- `PromptVersion`
-- `Prompt`
-- `RawOutput`
+- `PromptVersion`: 서비스 결과의 `PromptVersion`
+- `Prompt`: `LlmResponse.Prompt`
+- `RawOutput`: `LlmResponse.OutputText()`
 - `ParsedOutput` (draft 목록 JSON)
 - `SourceID`, `RespID`
 - `State`, `Error`, `DurationMS`

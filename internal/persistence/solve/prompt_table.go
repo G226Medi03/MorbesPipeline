@@ -3,11 +3,15 @@ package solve
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 )
+
+// ErrPromptNotFound reports a missing prompt stage.
+var ErrPromptNotFound = errors.New("prompt not found in DB")
 
 type PromptTable struct{}
 
@@ -30,7 +34,7 @@ func (PromptTable) Get(ctx context.Context, db sqlutil.Executor, stage string) (
 	err := db.QueryRowContext(ctx, `SELECT template, version FROM solve_prompt_versions WHERE stage = ?`, stage).
 		Scan(&template, &version)
 	if err == sql.ErrNoRows {
-		return "", 0, fmt.Errorf("prompt not found in DB: %s", stage)
+		return "", 0, fmt.Errorf("%w: %s", ErrPromptNotFound, stage)
 	}
 	if err != nil {
 		return "", 0, fmt.Errorf("%s: %w", "solve prompt get failed", err)

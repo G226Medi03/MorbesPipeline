@@ -89,13 +89,16 @@ if err := store.InitSchema(); err != nil {
     return err
 }
 
-svc := morbes.NewService(ctx, morbes.Dependencies{
+svc, err := morbes.NewService(ctx, morbes.Dependencies{
     Store: store,
     Solver: solver,
     ExtractLLM: extractor,
 })
+if err != nil {
+    return err
+}
 
-err := svc.Run(ctx, caseID)
+err = svc.Run(ctx, caseID)
 ```
 
 ## 검증
