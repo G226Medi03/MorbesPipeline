@@ -2,12 +2,12 @@ package store
 
 import (
 	"context"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func TestCountAndListFailedCases(t *testing.T) {
@@ -22,7 +22,7 @@ func TestCountAndListFailedCases(t *testing.T) {
 		t.Fatalf("InitSchema: %v", err)
 	}
 
-	failedID, err := st.CreateForExamQuestionWithSource(101, sourceutil.SourceID(1))
+	failedID, err := st.CreateForExamQuestionWithSource(101, source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestCountAndListFailedCases(t *testing.T) {
 		t.Fatalf("SetFailed: %v", err)
 	}
 
-	notFoundID, err := st.CreateForExamQuestionWithSource(102, sourceutil.SourceID(1))
+	notFoundID, err := st.CreateForExamQuestionWithSource(102, source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("Create not found: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestCountAndListFailedCases(t *testing.T) {
 		t.Fatalf("SaveAnswerCheck: %v", err)
 	}
 
-	successID, err := st.CreateForExamQuestionWithSource(103, sourceutil.SourceID(1))
+	successID, err := st.CreateForExamQuestionWithSource(103, source.NewSourceId(1))
 	if err != nil {
 		t.Fatalf("Create success: %v", err)
 	}

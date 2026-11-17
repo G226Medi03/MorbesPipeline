@@ -1,11 +1,12 @@
 package morbes_pipeline
 
 import (
+	source "github.com/G226Medi03/SourceEntity"
+
 	label "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 )
 
 type (
@@ -32,8 +33,8 @@ var (
 	SetDefault          = logs.SetDefault
 	InstallStdlogBridge = logs.InstallStdlogBridge
 
-	SourceID = sourceutil.SourceID
-	RespID   = sourceutil.RespID
+	SourceID = source.NewSourceId
+	RespID   = source.NewRespId
 
 	ProcedureLabel = label.ProcedureLabel
 

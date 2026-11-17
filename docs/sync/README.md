@@ -9,7 +9,7 @@
 | --- | --- | --- | --- | --- |
 | 1 | `MedicalEntity` | `v0.15.0` | `MedicalEntityRepository/repo` facade 경유 | 직접 import 제거 |
 | 2 | `MedicalEntityParser` | `v0.4.0` | `patient`, `situation`, `draft_parse` | 직접 import 허용 |
-| 3 | `SourceEntity` | `v0.3.0` | `internal/support/sourceutil`, `internal/persistence/source.go` | 동기화 완료 |
+| 3 | `SourceEntity` | `v0.3.0` | `internal/persistence/source.go` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.2.0` | `internal/persistence/source.go` | 동기화 완료 |
 | 5 | `SQLCore` | `v0.2.0` | `internal/persistence`, `internal/persistence/*` | 동기화 완료 |
 | 6 | `MedicalEntityRepository` | `v0.10.1` | `repo` facade + `internal/persistence/entity*.go`, `internal/persistence/graph`, `internal/persistence/option` | pain/symptom schema 반영 |
@@ -54,10 +54,9 @@
   - `SourceId`, `RespId`, `SourceRef`, `LlmResponse`
   - source row / llm response row
 - 대응 패키지:
-  - `internal/support/sourceutil`
   - `internal/persistence/source.go`
 - 확인:
-  - `SourceId`/`RespId` Scan 기반 복원
+  - `SourceId`/`RespId`는 `SourceEntity.NewSourceId` / `NewRespId` 직접 사용
   - `GetOrInsertLlmResponse`, `RefreshLlmResponse`, `TraceSource` 유지
 
 ## 4. SQLCore
