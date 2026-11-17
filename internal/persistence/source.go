@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	sourcedomain "github.com/G226Medi03/SourceEntity"
@@ -22,91 +21,6 @@ func (s *Store) EnsureSource(sourceType string, idPtr int64) (sourcedomain.Sourc
 
 func (s *Store) GetLlmResponseRow(respID sourcedomain.RespId) (sourcedomain.LlmResponseRow, bool, error) {
 	return s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), respID)
-}
-
-func (s *Store) FindLlmResponse(model, prompt string, referedSourceID sourcedomain.SourceId) (*sourcedomain.LlmResponse, bool, error) {
-	row, found, err := s.SourceRepository.LlmResponse.Find(s.ctx, s.sourceExecutor(), model, prompt, referedSourceID)
-	if err != nil || !found {
-		return nil, false, err
-	}
-	sourceRow, found, err := s.SourceRepository.Source.FindByVariant(s.ctx, s.sourceExecutor(), sourcedomain.SourceTypeLlmResponse, row.RespID.ToI64())
-	if err != nil || !found {
-		return nil, false, err
-	}
-	response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, row.Output)
-	response.SourceID = sourceRow.SourceID
-	response.RespID = row.RespID
-	response.ReferedSourceID = row.ReferedSourceID
-	return &response, true, nil
-}
-
-func (s *Store) GetOrInsertLlmResponse(model, prompt string, referedSourceID sourcedomain.SourceId, output string) (*sourcedomain.LlmResponse, error) {
-	unlock := s.lockWrite()
-	defer unlock()
-	respID, err := s.SourceRepository.LlmResponse.EnsureID(s.ctx, s.sourceExecutor(), model, prompt, referedSourceID, output)
-	if err != nil {
-		return nil, err
-	}
-	sourceID, err := s.SourceRepository.Source.Ensure(s.ctx, s.sourceExecutor(), "", sourcedomain.SourceTypeLlmResponse, respID.ToI64())
-	if err != nil {
-		return nil, err
-	}
-	return s.getLlmResponseBySource(sourceID)
-}
-
-// RefreshLlmResponse updates the cached output for an existing prompt/model
-// pair, or inserts a new response when no cache row exists. The resp_id remains
-// stable so existing solve_llm_calls and answer-check links stay valid.
-func (s *Store) RefreshLlmResponse(model, prompt string, referedSourceID sourcedomain.SourceId, output string) (*sourcedomain.LlmResponse, error) {
-	unlock := s.lockWrite()
-	defer unlock()
-	row, found, err := s.SourceRepository.LlmResponse.Find(s.ctx, s.sourceExecutor(), model, prompt, referedSourceID)
-	if err != nil {
-		return nil, err
-	}
-	if found {
-		if err := s.SourceRepository.LlmResponse.UpdateOutput(s.ctx, s.sourceExecutor(), row.RespID, output); err != nil {
-			return nil, err
-		}
-		sourceRow, sourceFound, sourceErr := s.SourceRepository.Source.FindByVariant(
-			s.ctx, s.sourceExecutor(), sourcedomain.SourceTypeLlmResponse, row.RespID.ToI64())
-		if sourceErr != nil {
-			return nil, sourceErr
-		}
-		if !sourceFound {
-			return nil, fmt.Errorf("llm response source 를 찾지 못했습니다: %d", row.RespID)
-		}
-		response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, output)
-		response.SourceID = sourceRow.SourceID
-		response.RespID = row.RespID
-		response.ReferedSourceID = row.ReferedSourceID
-		return &response, nil
-	}
-	respID, err := s.SourceRepository.LlmResponse.EnsureID(s.ctx, s.sourceExecutor(), model, prompt, referedSourceID, output)
-	if err != nil {
-		return nil, err
-	}
-	sourceID, err := s.SourceRepository.Source.Ensure(s.ctx, s.sourceExecutor(), "", sourcedomain.SourceTypeLlmResponse, respID.ToI64())
-	if err != nil {
-		return nil, err
-	}
-	return s.getLlmResponseBySource(sourceID)
-}
-
-func (s *Store) getLlmResponseBySource(sourceID sourcedomain.SourceId) (*sourcedomain.LlmResponse, error) {
-	sourceRow, found, err := s.SourceRepository.Source.Get(s.ctx, s.sourceExecutor(), sourceID)
-	if err != nil || !found {
-		return nil, err
-	}
-	row, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourcedomain.NewRespId(sourceRow.IDPtr))
-	if err != nil || !found {
-		return nil, err
-	}
-	response := sourcedomain.NewLlmResponse(row.Model, row.Prompt, row.Output)
-	response.SourceID = sourceID
-	response.RespID = row.RespID
-	response.ReferedSourceID = row.ReferedSourceID
-	return &response, nil
 }
 
 func (s *Store) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.SourceRef {
