@@ -9,14 +9,14 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	storegraph "github.com/G226Medi03/MorbesPipeline/internal/persistence/graph"
-	"github.com/G226Medi03/MorbesPipeline/internal/persistence/option"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
+	storegraph "github.com/G226Medi03/MorbesPipeline/internal/store/graph"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/option"
+	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
-type Store struct {
+type StoreContainer struct {
 	ctx context.Context
 	db  *sql.DB
 	tx  *sql.Tx
@@ -27,100 +27,103 @@ type Store struct {
 	solveDB  *sql.DB
 	solveTx  *sql.Tx
 
-	entityStore *repo.Store
-	entityErr   error
-	entityMu    *sync.Mutex
+	Medical    *repo.Store
+	medicalErr error
+	medicalMu  *sync.Mutex
 
-	responseStore *responsestore.Store
+	Response *responsestore.Store
 
-	OptionRepository medicalprocedureoption.Repository
-	SourceRepository storesource.Repository
-	SolveRepository  storesolve.Repository
-	GraphRepository  storegraph.Repository
+	Option medicalprocedureoption.Repository
+	Source storesource.Repository
+	Solve  storesolve.Repository
+	Graph  storegraph.Repository
 }
+
+// Store is kept as an alias for the existing public API.
+type Store = StoreContainer
 
 // New keeps the single-file behavior used by tests and command-line tools.
 // The server opens the medical/source/solve files separately with NewWithDBs.
-func New(ctx context.Context, db *sql.DB) *Store {
+func New(ctx context.Context, db *sql.DB) *StoreContainer {
 	return NewWithDBs(ctx, db, db, db)
 }
 
-func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Store {
+func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *StoreContainer {
 	if sourceDB == nil {
 		sourceDB = medicalDB
 	}
 	if solveDB == nil {
 		solveDB = medicalDB
 	}
-	value := &Store{
-		ctx:      ctx,
-		db:       medicalDB,
-		mu:       &sync.Mutex{},
-		entityMu: &sync.Mutex{},
-		sourceDB: sourceDB,
-		solveDB:  solveDB,
+	value := &StoreContainer{
+		ctx:       ctx,
+		db:        medicalDB,
+		mu:        &sync.Mutex{},
+		medicalMu: &sync.Mutex{},
+		sourceDB:  sourceDB,
+		solveDB:   solveDB,
 	}
 	value.bind()
 	return value
 }
 
-func (s *Store) bind() {
-	s.entityStore = nil
-	s.entityErr = nil
-	s.responseStore = nil
-	s.OptionRepository = medicalprocedureoption.NewRepository(s.ctx, s)
-	s.GraphRepository = storegraph.NewRepository(s.ctx, s)
+func (s *StoreContainer) bind() {
+	s.Medical = nil
+	s.medicalErr = nil
+	s.Response = nil
+	s.Option = medicalprocedureoption.NewRepository(s.ctx, s)
+	s.Graph = storegraph.NewRepository(s.ctx, s)
 }
 
-func (s *Store) responseStoreWithExecutor() *responsestore.Store {
-	if s.responseStore == nil {
+func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {
+	if s.Response == nil {
 		return nil
 	}
-	return s.responseStore.WithExecutor(s.sourceExecutor())
+	return s.Response.WithExecutor(s.sourceExecutor())
 }
 
-func (s *Store) entities() (*repo.Store, error) {
-	s.entityMu.Lock()
-	defer s.entityMu.Unlock()
-	if s.entityStore != nil {
-		return s.entityStore, nil
+func (s *StoreContainer) entities() (*repo.Store, error) {
+	s.medicalMu.Lock()
+	defer s.medicalMu.Unlock()
+	if s.Medical != nil {
+		return s.Medical, nil
 	}
-	if s.entityErr != nil {
-		return nil, s.entityErr
+	if s.medicalErr != nil {
+		return nil, s.medicalErr
 	}
-	entityStore, err := repo.NewStore(s.ctx, s)
+	medical, err := repo.NewStore(s.ctx, s)
 	if err != nil {
-		s.entityErr = err
+		s.medicalErr = err
 		return nil, err
 	}
-	s.entityStore = entityStore
-	return entityStore, nil
+	s.Medical = medical
+	return medical, nil
 }
 
-func (s *Store) withTx(tx *sql.Tx) *Store {
+func (s *StoreContainer) withTx(tx *sql.Tx) *StoreContainer {
 	clone := *s
 	clone.tx = tx
 	clone.sourceTx = nil
 	clone.solveTx = nil
 	clone.bind()
-	clone.responseStore = s.responseStoreWithExecutor()
+	clone.Response = s.responseStoreWithExecutor()
 	return &clone
 }
 
-func (s *Store) withSourceTx(tx *sql.Tx) *Store {
+func (s *StoreContainer) withSourceTx(tx *sql.Tx) *StoreContainer {
 	clone := *s
 	clone.sourceTx = tx
-	clone.responseStore = s.responseStore.WithExecutor(tx)
+	clone.Response = s.Response.WithExecutor(tx)
 	return &clone
 }
 
-func (s *Store) withSolveTx(tx *sql.Tx) *Store {
+func (s *StoreContainer) withSolveTx(tx *sql.Tx) *StoreContainer {
 	clone := *s
 	clone.solveTx = tx
 	return &clone
 }
 
-func (s *Store) sourceExecutor() sqlutil.Executor {
+func (s *StoreContainer) sourceExecutor() sqlutil.Executor {
 	if s.sourceTx != nil {
 		return s.sourceTx
 	}
@@ -130,7 +133,7 @@ func (s *Store) sourceExecutor() sqlutil.Executor {
 	return s
 }
 
-func (s *Store) solveExecutor() sqlutil.Executor {
+func (s *StoreContainer) solveExecutor() sqlutil.Executor {
 	if s.solveTx != nil {
 		return s.solveTx
 	}
@@ -142,7 +145,7 @@ func (s *Store) solveExecutor() sqlutil.Executor {
 
 // lockWrite serializes application writes while keeping LLM calls outside the
 // lock. Calls made through a transaction clone already hold the parent lock.
-func (s *Store) lockWrite() func() {
+func (s *StoreContainer) lockWrite() func() {
 	if s == nil || s.mu == nil || s.tx != nil {
 		return func() {}
 	}
@@ -150,7 +153,7 @@ func (s *Store) lockWrite() func() {
 	return s.mu.Unlock
 }
 
-func (s *Store) WithTx(ctx context.Context, fn func(*Store) error) error {
+func (s *StoreContainer) WithTx(ctx context.Context, fn func(*StoreContainer) error) error {
 	if s == nil || s.db == nil {
 		return fmt.Errorf("store db 가 없습니다")
 	}
@@ -173,7 +176,7 @@ func (s *Store) WithTx(ctx context.Context, fn func(*Store) error) error {
 	return nil
 }
 
-func (s *Store) WithSolveTx(ctx context.Context, fn func(*Store) error) error {
+func (s *StoreContainer) WithSolveTx(ctx context.Context, fn func(*StoreContainer) error) error {
 	if s == nil || s.solveDB == nil {
 		return fmt.Errorf("solve db 가 없습니다")
 	}
@@ -196,7 +199,7 @@ func (s *Store) WithSolveTx(ctx context.Context, fn func(*Store) error) error {
 	return nil
 }
 
-func (s *Store) WithSourceTx(ctx context.Context, fn func(*Store) error) error {
+func (s *StoreContainer) WithSourceTx(ctx context.Context, fn func(*StoreContainer) error) error {
 	if s == nil || s.sourceDB == nil {
 		return fmt.Errorf("source db 가 없습니다")
 	}
@@ -219,21 +222,21 @@ func (s *Store) WithSourceTx(ctx context.Context, fn func(*Store) error) error {
 	return nil
 }
 
-func (s *Store) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (s *StoreContainer) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if s.tx != nil {
 		return s.tx.ExecContext(ctx, query, args...)
 	}
 	return s.db.ExecContext(ctx, query, args...)
 }
 
-func (s *Store) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+func (s *StoreContainer) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	if s.tx != nil {
 		return s.tx.QueryContext(ctx, query, args...)
 	}
 	return s.db.QueryContext(ctx, query, args...)
 }
 
-func (s *Store) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+func (s *StoreContainer) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	if s.tx != nil {
 		return s.tx.QueryRowContext(ctx, query, args...)
 	}

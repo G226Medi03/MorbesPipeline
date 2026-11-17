@@ -11,7 +11,7 @@ import (
 // migrateLegacyMedicalSchema renames the pre-MedicalEntity tables and columns
 // to the schema used by entity.*Repository. Renames preserve ids and data.
 // It is intentionally idempotent and safe on a fresh database.
-func (s *Store) migrateLegacyMedicalSchema(ctx context.Context) error {
+func (s *StoreContainer) migrateLegacyMedicalSchema(ctx context.Context) error {
 	renames := []struct {
 		oldTable string
 		newTable string

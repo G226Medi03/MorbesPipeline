@@ -5,22 +5,22 @@ import (
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
-func (s *Store) InitSchema() error {
+func (s *StoreContainer) InitSchema() error {
 	if err := s.migrateLegacyMedicalSchema(s.ctx); err != nil {
 		return err
 	}
 	if _, err := s.entities(); err != nil {
 		return err
 	}
-	if err := s.OptionRepository.Init(); err != nil {
+	if err := s.Option.Init(); err != nil {
 		return err
 	}
 	responseStore, err := responsestore.NewStore(s.ctx, s.sourceExecutor())
 	if err != nil {
 		return err
 	}
-	s.responseStore = responseStore
-	if err := s.SolveRepository.Init(s.ctx, s.solveExecutor()); err != nil {
+	s.Response = responseStore
+	if err := s.Solve.Init(s.ctx, s.solveExecutor()); err != nil {
 		return err
 	}
 	if err := s.ensure_llm_problem_results(); err != nil {
@@ -38,7 +38,7 @@ func (s *Store) InitSchema() error {
 	return nil
 }
 
-func (s *Store) ensure_solve_id_columns() error {
+func (s *StoreContainer) ensure_solve_id_columns() error {
 	executor := s.solveExecutor()
 	for _, item := range []struct {
 		table     string
@@ -56,7 +56,7 @@ func (s *Store) ensure_solve_id_columns() error {
 	return nil
 }
 
-func (s *Store) ensure_entity_sources() error {
+func (s *StoreContainer) ensure_entity_sources() error {
 	if _, err := s.ExecContext(s.ctx, `CREATE TABLE IF NOT EXISTS entity_sources (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		entity_kind TEXT NOT NULL,
@@ -78,7 +78,7 @@ func (s *Store) ensure_entity_sources() error {
 	return nil
 }
 
-func (s *Store) ensure_status_other_name() error {
+func (s *StoreContainer) ensure_status_other_name() error {
 	if _, err := s.ExecContext(s.ctx, `CREATE TABLE IF NOT EXISTS status_other_name (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		status_type TEXT NOT NULL,

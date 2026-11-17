@@ -62,7 +62,7 @@ type ProcedureRecord struct {
 	Sources    []source.SourceRef
 }
 
-func (s *Store) sourceRefsFor(table, column string, id int64) ([]source.SourceRef, error) {
+func (s *StoreContainer) sourceRefsFor(table, column string, id int64) ([]source.SourceRef, error) {
 	rows, err := s.QueryContext(s.ctx,
 		`SELECT source_id FROM `+table+` WHERE `+column+` = ? ORDER BY id`, id)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *Store) sourceRefsFor(table, column string, id int64) ([]source.SourceRe
 }
 
 // GetActorRecordByName returns the actor read model for a name.
-func (s *Store) GetActorRecordByName(name string) (ActorRecord, bool, error) {
+func (s *StoreContainer) GetActorRecordByName(name string) (ActorRecord, bool, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return ActorRecord{}, false, nil
@@ -105,7 +105,7 @@ func (s *Store) GetActorRecordByName(name string) (ActorRecord, bool, error) {
 }
 
 // GetDeviceByName returns the device actor read model for a name.
-func (s *Store) GetDeviceByName(name string) (ActorRecord, bool, error) {
+func (s *StoreContainer) GetDeviceByName(name string) (ActorRecord, bool, error) {
 	record, found, err := s.GetActorRecordByName(name)
 	if err != nil || !found {
 		return ActorRecord{}, found, err
@@ -116,7 +116,7 @@ func (s *Store) GetDeviceByName(name string) (ActorRecord, bool, error) {
 	return record, true, nil
 }
 
-func (s *Store) loadActorRecord(actorID int64) (ActorRecord, bool, error) {
+func (s *StoreContainer) loadActorRecord(actorID int64) (ActorRecord, bool, error) {
 	value, err := s.actorValueByID(actorID)
 	if err != nil {
 		return ActorRecord{}, false, err
@@ -171,7 +171,7 @@ func (s *Store) loadActorRecord(actorID int64) (ActorRecord, bool, error) {
 }
 
 // GetActionRecord returns the action read model for a typed action value.
-func (s *Store) GetActionRecord(value repo.IEAction) (ActionRecord, bool, error) {
+func (s *StoreContainer) GetActionRecord(value repo.IEAction) (ActionRecord, bool, error) {
 	actionID, err := s.actionIDForValue(value)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -206,7 +206,7 @@ func (s *Store) GetActionRecord(value repo.IEAction) (ActionRecord, bool, error)
 	return action, true, rows.Err()
 }
 
-func (s *Store) actionValueByID(actionID int64) (repo.IEAction, error) {
+func (s *StoreContainer) actionValueByID(actionID int64) (repo.IEAction, error) {
 	var kind string
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
@@ -217,7 +217,7 @@ func (s *Store) actionValueByID(actionID int64) (repo.IEAction, error) {
 	return s.actionValueByKindPtr(kind, ptr)
 }
 
-func (s *Store) getActionShallow(actionID int64) (ActionRecord, error) {
+func (s *StoreContainer) getActionShallow(actionID int64) (ActionRecord, error) {
 	value, err := s.actionValueByID(actionID)
 	if err != nil {
 		return ActionRecord{}, err
@@ -230,7 +230,7 @@ func (s *Store) getActionShallow(actionID int64) (ActionRecord, error) {
 }
 
 // GetStatusRecord returns the status read model for a typed status value.
-func (s *Store) GetStatusRecord(value repo.IEStatus) (StatusRecord, bool, error) {
+func (s *StoreContainer) GetStatusRecord(value repo.IEStatus) (StatusRecord, bool, error) {
 	statusID, err := s.statusIDForValue(value)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -263,7 +263,7 @@ func (s *Store) GetStatusRecord(value repo.IEStatus) (StatusRecord, bool, error)
 	return status, true, rows.Err()
 }
 
-func (s *Store) getStatusShallow(statusID int64) (StatusRecord, error) {
+func (s *StoreContainer) getStatusShallow(statusID int64) (StatusRecord, error) {
 	value, err := s.statusValueByID(ids.StatusID(statusID))
 	if err != nil {
 		return StatusRecord{}, err
@@ -276,7 +276,7 @@ func (s *Store) getStatusShallow(statusID int64) (StatusRecord, error) {
 }
 
 // GetProcedureRecord returns the procedure read model for a typed value.
-func (s *Store) GetProcedureRecord(value repo.IMedicalProcedure) (ProcedureRecord, bool, error) {
+func (s *StoreContainer) GetProcedureRecord(value repo.IMedicalProcedure) (ProcedureRecord, bool, error) {
 	procedureID, err := s.procedureIDForValue(value)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -21,7 +21,7 @@ func actorValueByKind(kind, name string) (repo.IEActor, error) {
 	}
 }
 
-func (s *Store) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.SourceRef) (ids.ProcedureID, error) {
+func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.SourceRef) (ids.ProcedureID, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
@@ -37,7 +37,7 @@ func (s *Store) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait
 	return s.procedureIDForValue(value)
 }
 
-func (s *Store) SaveMedicalProcedureOption(option medicalprocedureoption.MedicalProcedureOption) (medicalprocedureoption.MedicalProcedureOption, error) {
+func (s *StoreContainer) SaveMedicalProcedureOption(option medicalprocedureoption.MedicalProcedureOption) (medicalprocedureoption.MedicalProcedureOption, error) {
 	unlock := s.lockWrite()
 	defer unlock()
 	if err := option.Validate(); err != nil {
@@ -46,10 +46,10 @@ func (s *Store) SaveMedicalProcedureOption(option medicalprocedureoption.Medical
 	if option.ProcedureID <= 0 {
 		return option, fmt.Errorf("medical procedure option procedure_id is required")
 	}
-	return s.OptionRepository.Save(option)
+	return s.Option.Save(option)
 }
 
-func (s *Store) SaveMedicalProcedureOptionByValues(
+func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
 	procedureID ids.ProcedureID,
 	category string,
 	traits []trait.Trait,
@@ -80,7 +80,7 @@ func (s *Store) SaveMedicalProcedureOptionByValues(
 	))
 }
 
-func (s *Store) statusIDsForValues(values []repo.IEStatus) ([]ids.StatusID, error) {
+func (s *StoreContainer) statusIDsForValues(values []repo.IEStatus) ([]ids.StatusID, error) {
 	result := make([]ids.StatusID, 0, len(values))
 	for _, value := range values {
 		id, err := s.statusIDForValue(value)
@@ -104,7 +104,7 @@ func medicalEntityTraits(values []trait.Trait) []repo.Trait {
 	return result
 }
 
-func (s *Store) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
+func (s *StoreContainer) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
 	actionID, err := s.actionIDForValue(action)
 	if err != nil {
 		return err

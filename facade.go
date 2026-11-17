@@ -16,9 +16,9 @@ import (
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	persistence "github.com/G226Medi03/MorbesPipeline/internal/persistence"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline"
+	persistence "github.com/G226Medi03/MorbesPipeline/internal/store"
+	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
@@ -73,7 +73,9 @@ type (
 )
 
 type (
-	Store               = persistence.Store
+	Store          = persistence.Store
+	StoreContainer = persistence.StoreContainer
+
 	ProblemResultFilter = persistence.ProblemResultFilter
 	ProblemResultRow    = persistence.ProblemResultRow
 

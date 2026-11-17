@@ -7,30 +7,30 @@ import (
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *Store) GetSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceRow, bool, error) {
-	return s.SourceRepository.Source.Get(s.ctx, s.sourceExecutor(), sourceID)
+func (s *StoreContainer) GetSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceRow, bool, error) {
+	return s.Source.Source.Get(s.ctx, s.sourceExecutor(), sourceID)
 }
 
 // EnsureSource returns a stable source row for a non-file entity such as an
 // exam question created without an uploaded source.
-func (s *Store) EnsureSource(sourceType string, idPtr int64) (sourcedomain.SourceId, error) {
+func (s *StoreContainer) EnsureSource(sourceType string, idPtr int64) (sourcedomain.SourceId, error) {
 	unlock := s.lockWrite()
 	defer unlock()
-	return s.SourceRepository.Source.Ensure(s.ctx, s.sourceExecutor(), "", sourceType, idPtr)
+	return s.Source.Source.Ensure(s.ctx, s.sourceExecutor(), "", sourceType, idPtr)
 }
 
-func (s *Store) GetLlmResponseRow(respID sourcedomain.RespId) (sourcedomain.LlmResponseRow, bool, error) {
-	return s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), respID)
+func (s *StoreContainer) GetLlmResponseRow(respID sourcedomain.RespId) (sourcedomain.LlmResponseRow, bool, error) {
+	return s.Source.LlmResponse.Get(s.ctx, s.sourceExecutor(), respID)
 }
 
-func (s *Store) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.SourceRef {
-	return s.SourceRepository.Source.Ref(ctx, s.sourceExecutor(), sourceID)
+func (s *StoreContainer) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.SourceRef {
+	return s.Source.Source.Ref(ctx, s.sourceExecutor(), sourceID)
 }
 
 // TraceSource follows LlmResponse.refered_source_id links from an immediate
 // LLM source to the first upstream source that has a path. The immediate
 // source is retained separately so callers can keep provenance precise.
-func (s *Store) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceTrace, error) {
+func (s *StoreContainer) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceTrace, error) {
 	trace := sourcedomain.SourceTrace{Chain: []sourcedomain.SourceRef{}}
 	if sourceID.ToI64() <= 0 {
 		return trace, nil
@@ -42,7 +42,7 @@ func (s *Store) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.Source
 			break
 		}
 		visited[current] = struct{}{}
-		row, found, err := s.SourceRepository.Source.Get(s.ctx, s.sourceExecutor(), current)
+		row, found, err := s.Source.Source.Get(s.ctx, s.sourceExecutor(), current)
 		if err != nil {
 			return trace, err
 		}
@@ -61,7 +61,7 @@ func (s *Store) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.Source
 			}
 			break
 		}
-		response, found, err := s.SourceRepository.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourcedomain.NewRespId(row.IDPtr))
+		response, found, err := s.Source.LlmResponse.Get(s.ctx, s.sourceExecutor(), sourcedomain.NewRespId(row.IDPtr))
 		if err != nil {
 			return trace, err
 		}
@@ -73,7 +73,7 @@ func (s *Store) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.Source
 	return trace, nil
 }
 
-func (s *Store) refs(ctx context.Context, ids []sourcedomain.SourceId) []sourcedomain.SourceRef {
+func (s *StoreContainer) refs(ctx context.Context, ids []sourcedomain.SourceId) []sourcedomain.SourceRef {
 	result := make([]sourcedomain.SourceRef, 0, len(ids))
 	for _, sourceID := range ids {
 		result = append(result, s.ref(ctx, sourceID))

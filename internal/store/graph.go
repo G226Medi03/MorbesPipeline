@@ -13,8 +13,8 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *Store) LoadGraph() (*cgraph.Container, error) {
-	rows, err := s.GraphRepository.Load()
+func (s *StoreContainer) LoadGraph() (*cgraph.Container, error) {
+	rows, err := s.Graph.Load()
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *Store) LoadGraph() (*cgraph.Container, error) {
 	return c, nil
 }
 
-func (s *Store) EnsureStatusIn(c *cgraph.Container, value repo.IEStatus, sourceID source.SourceId) (ids.StatusID, error) {
+func (s *StoreContainer) EnsureStatusIn(c *cgraph.Container, value repo.IEStatus, sourceID source.SourceId) (ids.StatusID, error) {
 	if sourceID.ToI64() <= 0 {
 		return 0, fmt.Errorf("status source is required: kind=%s", value.Kind())
 	}
@@ -121,7 +121,7 @@ func (s *Store) EnsureStatusIn(c *cgraph.Container, value repo.IEStatus, sourceI
 	return id, nil
 }
 
-func (s *Store) EnsureActionIn(c *cgraph.Container, value repo.IEAction, sourceID source.SourceId) (ids.ActionID, error) {
+func (s *StoreContainer) EnsureActionIn(c *cgraph.Container, value repo.IEAction, sourceID source.SourceId) (ids.ActionID, error) {
 	if sourceID.ToI64() <= 0 {
 		return 0, fmt.Errorf("action source is required: kind=%s", value.Kind())
 	}
@@ -142,7 +142,7 @@ func (s *Store) EnsureActionIn(c *cgraph.Container, value repo.IEAction, sourceI
 	return id, nil
 }
 
-func (s *Store) LinkStatusActionIn(c *cgraph.Container, statusID ids.StatusID, actionID ids.ActionID) error {
+func (s *StoreContainer) LinkStatusActionIn(c *cgraph.Container, statusID ids.StatusID, actionID ids.ActionID) error {
 	sourceID := firstSourceIDFromIDs(c.StatusSourceIDs[statusID], c.ActionSourceIDs[actionID])
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("status-action source is missing: status=%d action=%d", statusID, actionID)
@@ -154,7 +154,7 @@ func (s *Store) LinkStatusActionIn(c *cgraph.Container, statusID ids.StatusID, a
 	return nil
 }
 
-func (s *Store) LinkActionResultStatusIn(c *cgraph.Container, actionID ids.ActionID, statusID ids.StatusID) error {
+func (s *StoreContainer) LinkActionResultStatusIn(c *cgraph.Container, actionID ids.ActionID, statusID ids.StatusID) error {
 	sourceID := firstSourceIDFromIDs(c.ActionSourceIDs[actionID], c.StatusSourceIDs[statusID])
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("action-result source is missing: action=%d status=%d", actionID, statusID)
@@ -166,7 +166,7 @@ func (s *Store) LinkActionResultStatusIn(c *cgraph.Container, actionID ids.Actio
 	return nil
 }
 
-func (s *Store) LinkStatusAction(statusID ids.StatusID, actionID ids.ActionID, sourceID source.SourceId) error {
+func (s *StoreContainer) LinkStatusAction(statusID ids.StatusID, actionID ids.ActionID, sourceID source.SourceId) error {
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("status-action source가 필요합니다")
 	}
@@ -178,7 +178,7 @@ func (s *Store) LinkStatusAction(statusID ids.StatusID, actionID ids.ActionID, s
 	return err
 }
 
-func (s *Store) LinkActionResultStatus(actionID ids.ActionID, statusID ids.StatusID, sourceID source.SourceId) error {
+func (s *StoreContainer) LinkActionResultStatus(actionID ids.ActionID, statusID ids.StatusID, sourceID source.SourceId) error {
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("action-result source가 필요합니다")
 	}
@@ -190,7 +190,7 @@ func (s *Store) LinkActionResultStatus(actionID ids.ActionID, statusID ids.Statu
 	return err
 }
 
-func (s *Store) DeleteStatusAction(statusID ids.StatusID, actionID ids.ActionID) error {
+func (s *StoreContainer) DeleteStatusAction(statusID ids.StatusID, actionID ids.ActionID) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,
@@ -199,7 +199,7 @@ func (s *Store) DeleteStatusAction(statusID ids.StatusID, actionID ids.ActionID)
 	return err
 }
 
-func (s *Store) DeleteActionResultStatus(actionID ids.ActionID, statusID ids.StatusID) error {
+func (s *StoreContainer) DeleteActionResultStatus(actionID ids.ActionID, statusID ids.StatusID) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,

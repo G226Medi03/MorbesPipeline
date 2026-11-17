@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/persistence/benchmark"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
@@ -31,11 +31,11 @@ type ProblemResultRow struct {
 	CreatedAt      string
 }
 
-func (s *Store) ensure_llm_problem_results() error {
+func (s *StoreContainer) ensure_llm_problem_results() error {
 	return benchmarkresult.Table{}.Init(s.ctx, s.solveExecutor())
 }
 
-func (s *Store) GetProblemResultByID(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
+func (s *StoreContainer) GetProblemResultByID(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
 	row, found, err := benchmarkresult.Table{}.GetByID(ctx, s.solveExecutor(), id)
 	if err != nil || !found {
 		return ProblemResultRow{}, found, err
@@ -53,7 +53,7 @@ func (s *Store) GetProblemResultByID(ctx context.Context, id ids.LLMProblemResul
 	return composeProblemResult(row, response), true, nil
 }
 
-func (s *Store) ListProblemResults(ctx context.Context, filter ProblemResultFilter) ([]ProblemResultRow, error) {
+func (s *StoreContainer) ListProblemResults(ctx context.Context, filter ProblemResultFilter) ([]ProblemResultRow, error) {
 	responseIDs, err := s.problem_result_response_ids(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (s *Store) ListProblemResults(ctx context.Context, filter ProblemResultFilt
 	return result, nil
 }
 
-func (s *Store) CountProblemResults(ctx context.Context, filter ProblemResultFilter) (int, error) {
+func (s *StoreContainer) CountProblemResults(ctx context.Context, filter ProblemResultFilter) (int, error) {
 	responseIDs, err := s.problem_result_response_ids(ctx, filter)
 	if err != nil {
 		return 0, err
@@ -101,11 +101,11 @@ func (s *Store) CountProblemResults(ctx context.Context, filter ProblemResultFil
 }
 
 // ProblemResults returns a consistent result page and model list.
-func (s *Store) ProblemResults(ctx context.Context, filter ProblemResultFilter) ([]ProblemResultRow, int, []string, error) {
+func (s *StoreContainer) ProblemResults(ctx context.Context, filter ProblemResultFilter) ([]ProblemResultRow, int, []string, error) {
 	var rows []ProblemResultRow
 	var total int
 	var models []string
-	err := s.WithTx(ctx, func(tx *Store) error {
+	err := s.WithTx(ctx, func(tx *StoreContainer) error {
 		var txErr error
 		rows, txErr = tx.ListProblemResults(ctx, filter)
 		if txErr != nil {
@@ -122,10 +122,10 @@ func (s *Store) ProblemResults(ctx context.Context, filter ProblemResultFilter) 
 }
 
 // ProblemResult returns one composed result row.
-func (s *Store) ProblemResult(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
+func (s *StoreContainer) ProblemResult(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
 	var row ProblemResultRow
 	var found bool
-	err := s.WithTx(ctx, func(tx *Store) error {
+	err := s.WithTx(ctx, func(tx *StoreContainer) error {
 		var txErr error
 		row, found, txErr = tx.GetProblemResultByID(ctx, id)
 		return txErr
@@ -133,7 +133,7 @@ func (s *Store) ProblemResult(ctx context.Context, id ids.LLMProblemResultID) (P
 	return row, found, err
 }
 
-func (s *Store) ListProblemResultModels(ctx context.Context) ([]string, error) {
+func (s *StoreContainer) ListProblemResultModels(ctx context.Context) ([]string, error) {
 	responseIDs, err := benchmarkresult.Table{}.ListResponseIDs(ctx, s.solveExecutor())
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (s *Store) ListProblemResultModels(ctx context.Context) ([]string, error) {
 	return models, nil
 }
 
-func (s *Store) problem_result_response_ids(ctx context.Context, filter ProblemResultFilter) ([]sourcedomain.RespId, error) {
+func (s *StoreContainer) problem_result_response_ids(ctx context.Context, filter ProblemResultFilter) ([]sourcedomain.RespId, error) {
 	model := strings.TrimSpace(filter.Model)
 	var modelIDs []sourcedomain.RespId
 	if model != "" {
@@ -208,7 +208,7 @@ func has_problem_result_response_filter(filter ProblemResultFilter) bool {
 	return strings.TrimSpace(filter.Model) != "" || filter.Error != nil
 }
 
-func (s *Store) problem_result_responses(ctx context.Context, rows []benchmarkresult.Row) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
+func (s *StoreContainer) problem_result_responses(ctx context.Context, rows []benchmarkresult.Row) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
 	ids := make([]sourcedomain.RespId, 0, len(rows))
 	seen := make(map[sourcedomain.RespId]struct{}, len(rows))
 	for _, row := range rows {
@@ -221,7 +221,7 @@ func (s *Store) problem_result_responses(ctx context.Context, rows []benchmarkre
 	return storesource.LlmResponseTable{}.GetMany(ctx, s.sourceExecutor(), ids)
 }
 
-func (s *Store) problem_result_response_ids_map(ctx context.Context, ids []sourcedomain.RespId) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
+func (s *StoreContainer) problem_result_response_ids_map(ctx context.Context, ids []sourcedomain.RespId) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
 	respIDs := make([]sourcedomain.RespId, 0, len(ids))
 	for _, id := range ids {
 		respIDs = append(respIDs, sourcedomain.RespId(id))

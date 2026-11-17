@@ -30,7 +30,7 @@ var statusTables = map[string]statusTableInfo{
 	"index":   {"eindex", "index_id", "index_id", "index_sources"},
 }
 
-func (s *Store) ConvertStatusEntity(sourceType string, sourceID ids.StatusEntityID, targetType, direction string) (StatusNameRef, error) {
+func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.StatusEntityID, targetType, direction string) (StatusNameRef, error) {
 	sourceInfo, ok := statusTables[sourceType]
 	if !ok {
 		return StatusNameRef{}, fmt.Errorf("지원하지 않는 status type: %s", sourceType)
@@ -44,7 +44,7 @@ func (s *Store) ConvertStatusEntity(sourceType string, sourceID ids.StatusEntity
 	}
 
 	var ref StatusNameRef
-	err := s.WithTx(s.ctx, func(tx *Store) error {
+	err := s.WithTx(s.ctx, func(tx *StoreContainer) error {
 		var name string
 		var sourceIDValue int64
 		if err := tx.QueryRowContext(s.ctx,
@@ -93,7 +93,7 @@ func (s *Store) ConvertStatusEntity(sourceType string, sourceID ids.StatusEntity
 	return ref, err
 }
 
-func (s *Store) move_status_rows(name, sourceType string, sourceID ids.StatusEntityID, targetType string, targetID ids.StatusEntityID, direction string) error {
+func (s *StoreContainer) move_status_rows(name, sourceType string, sourceID ids.StatusEntityID, targetType string, targetID ids.StatusEntityID, direction string) error {
 	query := ""
 	switch sourceType {
 	case "symptom":
@@ -162,7 +162,7 @@ func (s *Store) move_status_rows(name, sourceType string, sourceID ids.StatusEnt
 	return nil
 }
 
-func (s *Store) merge_status_references(sourceID, targetID ids.StatusID) error {
+func (s *StoreContainer) merge_status_references(sourceID, targetID ids.StatusID) error {
 	for _, item := range []struct {
 		table  string
 		column string
@@ -247,7 +247,7 @@ func (s *Store) merge_status_references(sourceID, targetID ids.StatusID) error {
 	return nil
 }
 
-func (s *Store) move_status_entity_sources(sourceInfo, targetInfo statusTableInfo, sourceID, targetID ids.StatusEntityID) error {
+func (s *StoreContainer) move_status_entity_sources(sourceInfo, targetInfo statusTableInfo, sourceID, targetID ids.StatusEntityID) error {
 	if _, err := s.ExecContext(s.ctx, `
 		INSERT OR IGNORE INTO `+targetInfo.sourceTable+`
 			(`+targetInfo.idColumn+`, source_id)

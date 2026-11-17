@@ -3,8 +3,8 @@ package store
 import (
 	"context"
 
-	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/persistence/benchmark"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
+	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
+	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
@@ -17,7 +17,7 @@ type ExamQuestionDataCounts struct {
 	SolveCaseCount   int
 }
 
-func (s *Store) CountExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) (ExamQuestionDataCounts, error) {
+func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) (ExamQuestionDataCounts, error) {
 	var result ExamQuestionDataCounts
 	executor := s.solveExecutor()
 	llmResultCount, err := (benchmarkresult.Table{}).CountByExamQuestionID(ctx, executor, examQuestionID)
@@ -39,9 +39,9 @@ func (s *Store) CountExamQuestionData(ctx context.Context, examQuestionID ids.Ex
 	}, nil
 }
 
-func (s *Store) DeleteExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) error {
+func (s *StoreContainer) DeleteExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) error {
 	responseIDs := []source.RespId{}
-	err := s.WithSolveTx(ctx, func(tx *Store) error {
+	err := s.WithSolveTx(ctx, func(tx *StoreContainer) error {
 		executor := tx.solveExecutor()
 		caseIDs, err := (storesolve.CaseTable{}).ListIDsByExamQuestionID(ctx, executor, examQuestionID)
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (s *Store) statusValueByID(id ids.StatusID) (repo.IEStatus, error) {
+func (s *StoreContainer) statusValueByID(id ids.StatusID) (repo.IEStatus, error) {
 	var kind string
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
@@ -21,7 +21,7 @@ func (s *Store) statusValueByID(id ids.StatusID) (repo.IEStatus, error) {
 	return s.statusValueByKindPtr(kind, ptr)
 }
 
-func (s *Store) statusValueByKindPtr(kind string, ptr int64) (repo.IEStatus, error) {
+func (s *StoreContainer) statusValueByKindPtr(kind string, ptr int64) (repo.IEStatus, error) {
 	switch repo.StatusKind(kind) {
 	case repo.StatusKindIncreasedIndex:
 		indexID, err := s.subtypeValue("status_increased_index", "index_id", ptr)
@@ -101,26 +101,26 @@ func (s *Store) statusValueByKindPtr(kind string, ptr int64) (repo.IEStatus, err
 	}
 }
 
-func (s *Store) subtypeValue(table, column string, ptr int64) (int64, error) {
+func (s *StoreContainer) subtypeValue(table, column string, ptr int64) (int64, error) {
 	var value int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT `+column+` FROM `+table+` WHERE id = ?`, ptr).Scan(&value)
 	return value, err
 }
 
-func (s *Store) diseaseNameByID(id int64) (string, error) {
+func (s *StoreContainer) diseaseNameByID(id int64) (string, error) {
 	var name string
 	err := s.QueryRowContext(s.ctx, `SELECT name FROM edisease WHERE disease_id = ?`, id).Scan(&name)
 	return name, err
 }
 
-func (s *Store) indexNameByID(id int64) (string, error) {
+func (s *StoreContainer) indexNameByID(id int64) (string, error) {
 	var name string
 	err := s.QueryRowContext(s.ctx, `SELECT name FROM eindex WHERE index_id = ?`, id).Scan(&name)
 	return name, err
 }
 
-func (s *Store) symptomValueByID(id int64) (repo.IESymptom, error) {
+func (s *StoreContainer) symptomValueByID(id int64) (repo.IESymptom, error) {
 	var kind string
 	var ptr int64
 	if err := s.QueryRowContext(s.ctx,
@@ -171,7 +171,7 @@ func actorFromKind(kind, name string) repo.IEActor {
 	}
 }
 
-func (s *Store) actorValueByID(id int64) (repo.IEActor, error) {
+func (s *StoreContainer) actorValueByID(id int64) (repo.IEActor, error) {
 	var kind, name string
 	err := s.QueryRowContext(s.ctx,
 		`SELECT kind, name FROM eactor WHERE eactor_id = ?`, id).Scan(&kind, &name)
@@ -191,7 +191,7 @@ func (s *Store) actorValueByID(id int64) (repo.IEActor, error) {
 	}
 }
 
-func (s *Store) procedureValueByID(id int64) (repo.IMedicalProcedure, error) {
+func (s *StoreContainer) procedureValueByID(id int64) (repo.IMedicalProcedure, error) {
 	var kind string
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
@@ -202,7 +202,7 @@ func (s *Store) procedureValueByID(id int64) (repo.IMedicalProcedure, error) {
 	return s.procedureValueByKindPtr(kind, ptr)
 }
 
-func (s *Store) procedureValueByKindPtr(kind string, ptr int64) (repo.IMedicalProcedure, error) {
+func (s *StoreContainer) procedureValueByKindPtr(kind string, ptr int64) (repo.IMedicalProcedure, error) {
 	switch kind {
 	case "Surgery", "DiagnosticTest", "Unknown", "Procedure":
 		var name string
@@ -286,7 +286,7 @@ func (s *Store) procedureValueByKindPtr(kind string, ptr int64) (repo.IMedicalPr
 	}
 }
 
-func (s *Store) procedureTargetValue(kind string, id sql.NullInt64, name string) (repo.IEActor, error) {
+func (s *StoreContainer) procedureTargetValue(kind string, id sql.NullInt64, name string) (repo.IEActor, error) {
 	if id.Valid && id.Int64 > 0 {
 		return s.actorValueByID(id.Int64)
 	}
@@ -299,7 +299,7 @@ func (s *Store) procedureTargetValue(kind string, id sql.NullInt64, name string)
 	return repo.NewUnknownActor(name), nil
 }
 
-func (s *Store) actionValueByKindPtr(kind string, ptr int64) (repo.IEAction, error) {
+func (s *StoreContainer) actionValueByKindPtr(kind string, ptr int64) (repo.IEAction, error) {
 	switch repo.ActionKind(kind) {
 	case repo.ActionKindCauseStatus:
 		var statusID ids.StatusID

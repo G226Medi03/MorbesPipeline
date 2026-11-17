@@ -9,7 +9,7 @@ import (
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 )
 
-func newAnswerCheckStore(t *testing.T) *Store {
+func newAnswerCheckStore(t *testing.T) *StoreContainer {
 	t.Helper()
 	ctx := context.Background()
 	db, err := testdb.Open(filepath.Join(t.TempDir(), "answer-check.db"))
@@ -54,7 +54,7 @@ func TestLegacyAnswerSatisfiedNullFallsBackToContainsAnswer(t *testing.T) {
 		VALUES (6, '', 1, NULL, NULL, 'medical_procedure_option', '1', '{"verdict":"correct"}')`); err != nil {
 		t.Fatalf("insert check: %v", err)
 	}
-	check, found, err := st.SolveRepository.AnswerCheck.Get(context.Background(), st.solveExecutor(), domain.CaseID("6"))
+	check, found, err := st.Solve.AnswerCheck.Get(context.Background(), st.solveExecutor(), domain.CaseID("6"))
 	if err != nil || !found {
 		t.Fatalf("Get: found=%v err=%v", found, err)
 	}

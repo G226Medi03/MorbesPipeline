@@ -11,7 +11,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
-func (s *Store) statusIDForValue(value repo.IEStatus) (ids.StatusID, error) {
+func (s *StoreContainer) statusIDForValue(value repo.IEStatus) (ids.StatusID, error) {
 	kind, ptr, err := s.statusPtr(value)
 	if err != nil {
 		return 0, err
@@ -19,7 +19,7 @@ func (s *Store) statusIDForValue(value repo.IEStatus) (ids.StatusID, error) {
 	return s.statusIDByKindPtr(kind, ptr)
 }
 
-func (s *Store) statusIDByKindPtr(kind string, ptr int64) (ids.StatusID, error) {
+func (s *StoreContainer) statusIDByKindPtr(kind string, ptr int64) (ids.StatusID, error) {
 	var id ids.StatusID
 	err := s.QueryRowContext(s.ctx,
 		`SELECT estatus_id FROM estatus WHERE kind = ? AND ptr = ?`, kind, ptr).Scan(&id)
@@ -29,7 +29,7 @@ func (s *Store) statusIDByKindPtr(kind string, ptr int64) (ids.StatusID, error) 
 	return id, err
 }
 
-func (s *Store) statusPtr(value repo.IEStatus) (string, int64, error) {
+func (s *StoreContainer) statusPtr(value repo.IEStatus) (string, int64, error) {
 	switch typed := value.(type) {
 	case repo.HaveDisease:
 		diseaseID, err := s.diseaseIDByName(string(typed.Disease))
@@ -78,7 +78,7 @@ func (s *Store) statusPtr(value repo.IEStatus) (string, int64, error) {
 	}
 }
 
-func (s *Store) subtypePtr(table, column string, value int64, kind string) (string, int64, error) {
+func (s *StoreContainer) subtypePtr(table, column string, value int64, kind string) (string, int64, error) {
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT id FROM `+table+` WHERE `+column+` = ?`, value).Scan(&ptr)
@@ -88,7 +88,7 @@ func (s *Store) subtypePtr(table, column string, value int64, kind string) (stri
 	return kind, ptr, err
 }
 
-func (s *Store) actionIDForValue(value repo.IEAction) (ids.ActionID, error) {
+func (s *StoreContainer) actionIDForValue(value repo.IEAction) (ids.ActionID, error) {
 	kind, ptr, err := s.actionPtr(value)
 	if err != nil {
 		return 0, err
@@ -102,7 +102,7 @@ func (s *Store) actionIDForValue(value repo.IEAction) (ids.ActionID, error) {
 	return id, err
 }
 
-func (s *Store) actionPtr(value repo.IEAction) (string, int64, error) {
+func (s *StoreContainer) actionPtr(value repo.IEAction) (string, int64, error) {
 	switch typed := value.(type) {
 	case repo.CauseStatus:
 		if typed.Status == nil {
@@ -130,7 +130,7 @@ func (s *Store) actionPtr(value repo.IEAction) (string, int64, error) {
 	}
 }
 
-func (s *Store) actorIDForValue(value repo.IEActor) (ids.ActorID, error) {
+func (s *StoreContainer) actorIDForValue(value repo.IEActor) (ids.ActorID, error) {
 	if value == nil {
 		return 0, fmt.Errorf("actor value is nil")
 	}
@@ -158,7 +158,7 @@ func (s *Store) actorIDForValue(value repo.IEActor) (ids.ActorID, error) {
 	return 0, fmt.Errorf("actor row not found: kind=%s name=%s", kind, name)
 }
 
-func (s *Store) actorIDByName(name string) (ids.ActorID, bool, error) {
+func (s *StoreContainer) actorIDByName(name string) (ids.ActorID, bool, error) {
 	var id ids.ActorID
 	err := s.QueryRowContext(s.ctx,
 		`SELECT eactor_id FROM actor_other_name WHERE name = ?`, strings.TrimSpace(name)).Scan(&id)
@@ -176,7 +176,7 @@ func (s *Store) actorIDByName(name string) (ids.ActorID, bool, error) {
 	return id, err == nil, err
 }
 
-func (s *Store) procedureIDForValue(value repo.IMedicalProcedure) (ids.ProcedureID, error) {
+func (s *StoreContainer) procedureIDForValue(value repo.IMedicalProcedure) (ids.ProcedureID, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
@@ -275,19 +275,19 @@ func procedureTargetSpec(table string, target repo.IEActor) (string, string, []a
 		[]any{string(repo.ParseActorKind(target.Kind())), string(repo.ParseActorKind(target.Kind())), strings.TrimSpace(target.ActorName()), strings.TrimSpace(target.ActorName())}, nil
 }
 
-func (s *Store) diseaseIDByName(name string) (int64, error) {
+func (s *StoreContainer) diseaseIDByName(name string) (int64, error) {
 	var id int64
 	err := s.QueryRowContext(s.ctx, `SELECT disease_id FROM edisease WHERE name = ?`, strings.TrimSpace(name)).Scan(&id)
 	return id, err
 }
 
-func (s *Store) indexIDByName(name string) (int64, error) {
+func (s *StoreContainer) indexIDByName(name string) (int64, error) {
 	var id int64
 	err := s.QueryRowContext(s.ctx, `SELECT index_id FROM eindex WHERE name = ?`, strings.TrimSpace(name)).Scan(&id)
 	return id, err
 }
 
-func (s *Store) symptomIDForValue(value repo.IESymptom) (int64, error) {
+func (s *StoreContainer) symptomIDForValue(value repo.IESymptom) (int64, error) {
 	switch typed := value.(type) {
 	case repo.EOtherSymptom:
 		return s.symptomIDByName(typed.Name)
@@ -308,7 +308,7 @@ func (s *Store) symptomIDForValue(value repo.IESymptom) (int64, error) {
 	}
 }
 
-func (s *Store) symptomIDByName(name string) (int64, error) {
+func (s *StoreContainer) symptomIDByName(name string) (int64, error) {
 	var id int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT s.symptom_id FROM esymptom s JOIN symptom_other o ON o.id = s.ptr

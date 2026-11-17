@@ -18,7 +18,7 @@ type UnresolvedTransplantTarget struct {
 	DetectedKind string
 }
 
-func (s *Store) ListUnresolvedTransplantTargets() ([]UnresolvedTransplantTarget, error) {
+func (s *StoreContainer) ListUnresolvedTransplantTargets() ([]UnresolvedTransplantTarget, error) {
 	rows, err := s.QueryContext(s.ctx, `
 		SELECT p.emedical_procedure_id, t.target_name
 		FROM emedical_procedure p
@@ -49,7 +49,7 @@ func (s *Store) ListUnresolvedTransplantTargets() ([]UnresolvedTransplantTarget,
 	return result, rows.Err()
 }
 
-func (s *Store) ResolveTransplantTarget(id ids.ProcedureID, kind string) error {
+func (s *StoreContainer) ResolveTransplantTarget(id ids.ProcedureID, kind string) error {
 	kind = normalizeTransplantTargetKind(kind)
 	if kind == "" {
 		return fmt.Errorf("지원하지 않는 transplant target kind 입니다: %s", kind)
