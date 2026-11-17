@@ -102,7 +102,7 @@ MorbesPipeline은 다음만 담당한다.
 ## LLM 캐시
 
 LLM 호출과 캐시 정책은 `MorbesLLMService`가 소유한다.
-Pipeline은 `pipeLineCore` adapter의 `CacheMode`를 사용한다.
+Pipeline은 `PipeLineCore`의 `CacheMode`를 직접 사용한다.
 
 | 모드 | 동작 |
 | --- | --- |

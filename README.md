@@ -7,14 +7,14 @@ This repository owns:
 - pipeline solve orchestration
 - pipeline domain DTOs
 - SQLite persistence and read models
-- external repository adapters
+- external repository integration
 - root public facade for consumer applications
 
 The generic pipeline model lives in `github.com/G226Medi03/PipeLineCore`.
 
 ## Node construction
 
-Use `core.NewNode` through the `internal/external/pipelinecore` adapter.
+Use `core.NewNode` from `github.com/G226Medi03/PipeLineCore`.
 Direct `core.Node` composite literals are rejected by the
 `nodeconstructor` golangci-lint module plugin.
 

@@ -44,7 +44,7 @@ root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` a
 | `internal/support/logs/` | `logs` | log-sqlite facade |
 | `internal/support/sourceutil/` | `sourceutil` | SourceId 변환 |
 | `internal/support/sliceutil/` | `sliceutil` | slice helper |
-| `internal/external/medicalentityparser/` | adapter | parser 응답을 typed status로 변환 |
+
 | `internal/testdb/` | `testdb` | 테스트 SQLite |
 | `tools/importlint/` | `main` | A→B→C dependency linter |
 

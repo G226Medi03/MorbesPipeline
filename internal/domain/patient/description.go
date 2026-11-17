@@ -5,9 +5,9 @@ package patient
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
-	medicalentityparser "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
 )
 
 // PatientDescription is the minimal patient-reported context for one answer
@@ -67,9 +67,15 @@ func ParseStatus(raw json.RawMessage) (repo.IEStatus, error) {
 	if payload.Kind == "" {
 		return nil, fmt.Errorf("patient description status.kind 가 비어 있습니다")
 	}
-	value, err := medicalentityparser.DecodeSingleStatus(string(raw))
+	statuses, err := llmparser.DecodeStatuses(string(raw))
 	if err != nil {
 		return nil, fmt.Errorf("patient description status 정규화 실패: %w", err)
 	}
-	return value, nil
+	if len(statuses) != 1 {
+		return nil, fmt.Errorf("patient description status response must contain exactly one status: got %d", len(statuses))
+	}
+	for _, value := range statuses {
+		return value, nil
+	}
+	return nil, fmt.Errorf("patient description status response is empty")
 }

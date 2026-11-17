@@ -8,7 +8,7 @@
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1 | `MedicalEntity` | `v0.15.0` | `MedicalEntityRepository/repo` facade 경유 | 직접 import 제거 |
-| 2 | `MedicalEntityParser` | `v0.4.0` | `MorbesLLMService` facade 경유 | 직접 import 제거 |
+| 2 | `MedicalEntityParser` | `v0.4.0` | `patient`, `situation`, `draft_parse` | 직접 import 허용 |
 | 3 | `SourceEntity` | `v0.3.0` | `internal/support/sourceutil`, `internal/persistence/source.go` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.2.0` | `internal/persistence/source.go` | 동기화 완료 |
 | 5 | `SQLCore` | `v0.2.0` | `internal/persistence`, `internal/persistence/*` | 동기화 완료 |
@@ -38,14 +38,14 @@
 
 ## 2. MedicalEntityParser
 
-- 사용 API (via `internal/external/medicalentityparser`):
+- 사용 API:
   - `DecodeStatuses`
 - 대응 패키지:
-  - `internal/external/medicalentityparser`
   - `internal/domain/patient`
   - `internal/domain/situation`
+  - `internal/pipeline/draft_parse.go`
 - 확인:
-  - parser direct import는 adapter 내부에서만 허용
+  - parser direct import 허용
   - typed status 결과를 patient/situation 값으로 변환
 
 ## 3. SourceEntity / SourceEntityRepository
