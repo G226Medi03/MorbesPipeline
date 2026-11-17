@@ -14,6 +14,10 @@ const (
 	CaseFailed  CaseState = "failed"
 )
 
+type CaseID string
+
+type CaseState string
+
 type Case struct {
 	ID                CaseID             `json:"id"`
 	ExamQuestionID    ids.ExamQuestionID `json:"examQuestionId"`

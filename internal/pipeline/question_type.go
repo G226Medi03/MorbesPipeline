@@ -3,7 +3,6 @@ package csolve
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
@@ -17,7 +16,7 @@ func (self *Service) run_question_type(ctx context.Context, id domain.CaseID, st
 	var call_err error
 	if self.llm == nil {
 		call_err = fmt.Errorf("extraction LLM is not configured")
-	} else if strings.TrimSpace(state.Prompts.templates[PromptQuestionType]) == "" {
+	} else if !state.Prompts.present[PromptQuestionType] {
 		call_err = fmt.Errorf("question_type prompt가 DB에 없습니다")
 	} else {
 		result, call_err = self.llm.ExtractQuestionType(

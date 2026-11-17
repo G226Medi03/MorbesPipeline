@@ -31,16 +31,13 @@ func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool
 
 func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
 	llmService := deps.LLM
-	if llmService == nil && (deps.Solver != nil || deps.ExtractLLM != nil || deps.SituationLLM != nil) {
+	if llmService == nil && (deps.Solver != nil || deps.ExtractLLM != nil) {
 		if deps.Store == nil {
 			return nil, errors.New("store is required to build the LLM service")
 		}
 		extract := deps.ExtractLLM
 		if extract == nil {
 			extract = deps.Solver
-		}
-		if extract == nil {
-			extract = deps.SituationLLM
 		}
 		created, err := morbesllm.New(
 			deps.Solver,

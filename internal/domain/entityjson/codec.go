@@ -1,8 +1,12 @@
-// Package entityjson encodes and decodes typed medical entity values.
+// Package entityjson encodes and decodes typed medical entity values that are
+// not covered by the parser DTO facade.
 package entityjson
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
 
@@ -17,9 +21,13 @@ func EncodeAction(value repo.IEAction) ([]byte, error) {
 	return encodeAction(value)
 }
 
-// DecodeAction decodes an action value.
+// DecodeAction decodes one action value.
 func DecodeAction(data []byte) (repo.IEAction, error) {
-	return decodeAction(data)
+	actions, err := llmparser.DecodeActions(string(data))
+	if err != nil {
+		return nil, err
+	}
+	return singleAction(actions)
 }
 
 // EncodeActor encodes an actor value.
@@ -52,9 +60,13 @@ func EncodeStatus(value repo.IEStatus) ([]byte, error) {
 	return encodeStatus(value)
 }
 
-// DecodeStatus decodes a status value.
+// DecodeStatus decodes one status value.
 func DecodeStatus(data []byte) (repo.IEStatus, error) {
-	return decodeStatus(data)
+	statuses, err := llmparser.DecodeStatuses(string(data))
+	if err != nil {
+		return nil, err
+	}
+	return singleStatus(statuses)
 }
 
 // EncodeSymptom encodes a symptom value.
@@ -75,4 +87,24 @@ func EncodeAspect(value repo.IPainAspect) ([]byte, error) {
 // DecodeAspect decodes a symptom aspect value.
 func DecodeAspect(data []byte) (repo.IPainAspect, error) {
 	return decodeAspect(data)
+}
+
+func singleStatus(statuses map[string]repo.IEStatus) (repo.IEStatus, error) {
+	if len(statuses) != 1 {
+		return nil, fmt.Errorf("status response must contain exactly one status: got %d", len(statuses))
+	}
+	for _, status := range statuses {
+		return status, nil
+	}
+	return nil, fmt.Errorf("status response is empty")
+}
+
+func singleAction(actions map[string]repo.IEAction) (repo.IEAction, error) {
+	if len(actions) != 1 {
+		return nil, fmt.Errorf("action response must contain exactly one action: got %d", len(actions))
+	}
+	for _, action := range actions {
+		return action, nil
+	}
+	return nil, fmt.Errorf("action response is empty")
 }

@@ -10,9 +10,8 @@ type Dependencies struct {
 	Store *store.Store
 	LLM   *morbesllm.Service
 
-	Solver       *cllmcall.Client
-	ExtractLLM   *cllmcall.Client
-	SituationLLM *cllmcall.Client
+	Solver     *cllmcall.Client
+	ExtractLLM *cllmcall.Client
 
 	QuestionStore QuestionStore
 }

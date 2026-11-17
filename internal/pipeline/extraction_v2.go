@@ -16,7 +16,7 @@ import (
 )
 
 func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActorDraft, error) {
-	if strings.TrimSpace(state.Prompts.templates[PromptActor]) == "" {
+	if !state.Prompts.present[PromptActor] {
 		return nil, nil
 	}
 	started := time.Now()
@@ -129,7 +129,7 @@ func (self *Service) run_v2_patient_description_extraction(
 	if !looks_like_patient_description(state.Case.Problem) {
 		return nil, nil
 	}
-	if strings.TrimSpace(state.Prompts.templates[PromptPatientDescription]) == "" {
+	if !state.Prompts.present[PromptPatientDescription] {
 		return nil, nil
 	}
 	status_map, err := status_map_from_drafts(statuses)
@@ -184,7 +184,7 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 	statuses []StatusDraft,
 	patient_descriptions []PatientDescriptionDraft,
 ) ([]OptionDraft, error) {
-	if strings.TrimSpace(state.Prompts.templates[PromptMedicalProcedureOption]) == "" {
+	if !state.Prompts.present[PromptMedicalProcedureOption] {
 		return nil, nil
 	}
 	status_map, err := status_map_from_drafts(statuses)
@@ -233,7 +233,7 @@ func (self *Service) run_v2_relation_extraction(
 	statuses []StatusDraft,
 	actions []ActionDraft,
 ) ([]RelationDraft, error) {
-	if strings.TrimSpace(state.Prompts.templates[PromptRelation]) == "" {
+	if !state.Prompts.present[PromptRelation] {
 		return nil, fmt.Errorf("relation prompt가 비어 있습니다")
 	}
 	status_map, err := status_map_from_drafts(statuses)
