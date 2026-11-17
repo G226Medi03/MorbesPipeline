@@ -2,12 +2,12 @@ package csolve
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	core "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
 	sourceentity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence"
 	cllmcall "github.com/G226Medi03/llm-client/call"
@@ -21,7 +21,7 @@ type Service struct {
 
 	replay_live        *cllmcall.Client
 	replay_live_stages map[string]bool
-	cache_mode         morbesllm.CacheMode
+	cache_mode         core.CacheMode
 }
 
 func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool) {
@@ -29,25 +29,37 @@ func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool
 	self.replay_live_stages = stages
 }
 
-func New_Service(ctx context.Context, deps Dependencies) *Service {
+func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
 	llmService := deps.LLM
 	if llmService == nil && (deps.Solver != nil || deps.ExtractLLM != nil || deps.SituationLLM != nil) {
-		var cache morbesllm.Cache
-		if deps.Store != nil {
-			cache = deps.Store
+		if deps.Store == nil {
+			return nil, errors.New("store is required to build the LLM service")
 		}
-		llmService = morbesllm.NewWithClients(morbesllm.Clients{
-			Solver:    deps.Solver,
-			Extract:   deps.ExtractLLM,
-			Situation: deps.SituationLLM,
-		}, cache, llmLogger{})
+		extract := deps.ExtractLLM
+		if extract == nil {
+			extract = deps.Solver
+		}
+		if extract == nil {
+			extract = deps.SituationLLM
+		}
+		created, err := morbesllm.New(
+			deps.Solver,
+			extract,
+			deps.Store,
+			deps.Store,
+			llmLogger{},
+		)
+		if err != nil {
+			return nil, err
+		}
+		llmService = created
 	}
 	return &Service{
 		ctx:            ctx,
 		store:          deps.Store,
 		llm:            llmService,
 		question_store: deps.QuestionStore,
-	}
+	}, nil
 }
 
 func (self *Service) set_stage(id domain.CaseID, stage string) error {
@@ -58,34 +70,9 @@ func (self *Service) set_stage(id domain.CaseID, stage string) error {
 	return nil
 }
 
-func (self *Service) explain(ctx context.Context, problem, answer, template string) (string, string, string, error) {
+func (self *Service) explain(ctx context.Context, problem, answer string) (*morbesllm.ExplainResult, error) {
 	if self.llm == nil {
-		return "", "", "", fmt.Errorf("solver LLM 이 없습니다")
+		return nil, fmt.Errorf("solver LLM 이 없습니다")
 	}
-	if strings.TrimSpace(template) == "" {
-		return "", "", "", fmt.Errorf("explain prompt 가 DB에 없습니다")
-	}
-	prompt := RenderPrompt(template, map[string]string{
-		"problem": problem,
-		"answer":  answer,
-	})
-
-	result, err := self.llm.ExplainResult(ctx, prompt, sourceentity.SourceId{}, self.cache_mode)
-	if err != nil {
-		if result != nil {
-			return "", prompt, result.Raw, err
-		}
-		return "", prompt, "", err
-	}
-	return result.Explanation, prompt, result.Raw, nil
-}
-
-func decode_json_object(raw string, target any) error {
-	trimmed := strings.TrimSpace(raw)
-	start := strings.Index(trimmed, "{")
-	end := strings.LastIndex(trimmed, "}")
-	if start < 0 || end <= start {
-		return fmt.Errorf("JSON 객체를 찾지 못했습니다")
-	}
-	return json.Unmarshal([]byte(trimmed[start:end+1]), target)
+	return self.llm.ExplainResult(ctx, problem, answer, sourceentity.SourceId{}, self.cache_mode)
 }

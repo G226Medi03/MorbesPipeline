@@ -83,7 +83,7 @@ canonical / cause / service ──► legacy, trait, label
 ### 1. 문제 본문과 정답/해설의 분리
 
 - 질문 유형 분류와 소견 추출은 `problem_stem`(선택지 제거) 또는 문제 본문만 본다.
-- `problem_only_instruction`이 정답/해설 사용 금지를 프롬프트에 명시한다.
+- 정답/해설 사용 금지 지시는 `MorbesLLMService`가 소유한 prompt template에 포함한다.
 - 정답은 파이프라인 실행 중 후보 선택에 사용하지 않는다. 선택 로직은
   `SelectMedicalProcedureOption`처럼 문제와 그래프 근거만 사용한다.
 

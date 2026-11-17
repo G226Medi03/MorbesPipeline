@@ -29,7 +29,10 @@ func TestPublicFacade(t *testing.T) {
 	if _, err := store.LoadGraph(); err != nil {
 		t.Fatalf("LoadGraph: %v", err)
 	}
-	service := NewService(ctx, Dependencies{Store: store})
+	service, serviceErr := NewService(ctx, Dependencies{Store: store})
+	if serviceErr != nil {
+		t.Fatalf("NewService: %v", serviceErr)
+	}
 	if service == nil {
 		t.Fatal("NewService returned nil")
 	}

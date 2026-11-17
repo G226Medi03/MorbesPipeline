@@ -264,13 +264,15 @@ if err := st.InitSchema(); err != nil {
     return err
 }
 
-svc := csolve.New_Service(ctx, csolve.Dependencies{
+svc, err := csolve.New_Service(ctx, csolve.Dependencies{
     Store:         st,
-    Canonical:     canonical.New(st),
     Solver:        solverLLM,
     ExtractLLM:    extractLLM,
     QuestionStore: questionStore,
 })
+if err != nil {
+    return err
+}
 
 if err := svc.Run(ctx, caseID); err != nil {
     return err

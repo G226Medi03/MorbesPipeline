@@ -16,33 +16,25 @@ import (
 )
 
 func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActorDraft, error) {
-	template := state.Prompts.templates[PromptActor]
-	if strings.TrimSpace(template) == "" {
+	if strings.TrimSpace(state.Prompts.templates[PromptActor]) == "" {
 		return nil, nil
 	}
-	prompt := morbesllm.BuildActorPrompt(template, state.Case.Problem, "", "")
 	started := time.Now()
-	actors, response, err := self.llm.ExtractActors(
+	result, err := self.llm.ExtractActors(
 		ctx,
-		prompt,
+		state.Case.Problem,
+		"",
+		"",
 		extraction_refered_source(state),
 		self.cache_mode,
 	)
-	raw := ""
-	if response != nil {
-		raw = response.OutputText()
-	}
-	self.record_v2_extraction_call(id, seqActor, "actor_extract", "actor", state.Prompts.versions[PromptActor], prompt, raw, response, actors, started, err)
-	return actors, err
+	prompt, raw := response_texts(result.Response)
+	version := prompt_version_or(state.Prompts.versions[PromptActor], result.PromptVersion)
+	self.record_v2_extraction_call(id, seqActor, "actor_extract", "actor", version, prompt, raw, result.Response, result.Actors, started, err)
+	return result.Actors, err
 }
 
 func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]StatusDraft, error) {
-	prompt := RenderPrompt(state.Prompts.templates[PromptStatus], map[string]string{
-		"problem":     problem_stem(state.Case.Problem),
-		"answer":      "",
-		"explanation": "",
-	})
-	prompt += problem_only_instruction(PromptStatus)
 	started := time.Now()
 	var statuses map[string]repo.IEStatus
 	var response *source.LlmResponse
@@ -50,12 +42,16 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 	if self.llm == nil {
 		err = fmt.Errorf("extraction LLM is not configured")
 	} else {
-		statuses, response, err = self.llm.ExtractStatuses(ctx, prompt, extraction_refered_source(state), self.cache_mode)
+		statuses, response, err = self.llm.ExtractStatuses(
+			ctx,
+			problem_stem(state.Case.Problem),
+			"",
+			"",
+			extraction_refered_source(state),
+			self.cache_mode,
+		)
 	}
-	raw := ""
-	if response != nil {
-		raw = response.OutputText()
-	}
+	prompt, raw := response_texts(response)
 	var drafts []StatusDraft
 	if err == nil {
 		keys := make([]string, 0, len(statuses))
@@ -82,12 +78,6 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 }
 
 func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActionDraft, error) {
-	prompt := RenderPrompt(state.Prompts.templates[PromptAction], map[string]string{
-		"problem":     problem_stem(state.Case.Problem),
-		"answer":      "",
-		"explanation": "",
-	})
-	prompt += problem_only_instruction(PromptAction)
 	started := time.Now()
 	var actions map[string]repo.IEAction
 	var response *source.LlmResponse
@@ -95,12 +85,16 @@ func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.Cas
 	if self.llm == nil {
 		err = fmt.Errorf("extraction LLM is not configured")
 	} else {
-		actions, response, err = self.llm.ExtractActions(ctx, prompt, extraction_refered_source(state), self.cache_mode)
+		actions, response, err = self.llm.ExtractActions(
+			ctx,
+			problem_stem(state.Case.Problem),
+			"",
+			"",
+			extraction_refered_source(state),
+			self.cache_mode,
+		)
 	}
-	raw := ""
-	if response != nil {
-		raw = response.OutputText()
-	}
+	prompt, raw := response_texts(response)
 	var drafts []ActionDraft
 	if err == nil {
 		keys := make([]string, 0, len(actions))
@@ -135,52 +129,51 @@ func (self *Service) run_v2_patient_description_extraction(
 	if !looks_like_patient_description(state.Case.Problem) {
 		return nil, nil
 	}
-	template := state.Prompts.templates[PromptPatientDescription]
-	if strings.TrimSpace(template) == "" {
+	if strings.TrimSpace(state.Prompts.templates[PromptPatientDescription]) == "" {
 		return nil, nil
 	}
-	prompt := RenderPrompt(template, map[string]string{
-		"problem":     problem_stem(state.Case.Problem),
-		"answer":      "",
-		"explanation": "",
-		"status_json": status_drafts_json(statuses),
-	})
-	prompt += problem_only_instruction(PromptPatientDescription)
+	status_map, err := status_map_from_drafts(statuses)
+	if err != nil {
+		return nil, err
+	}
 	started := time.Now()
-	raw, response, err := self.generate_extraction(ctx, state, prompt)
+	result, err := self.llm.ExtractPatientDescription(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		status_map,
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	var drafts []PatientDescriptionDraft
 	if err == nil {
-		var parsed struct {
-			PatientDescriptions []struct {
-				Choice      string            `json:"choice"`
-				Description []json.RawMessage `json:"description"`
-				Knowledge   []string          `json:"knowledge"`
-			} `json:"patientDescriptions"`
-		}
-		if parse_err := decode_json_object(raw, &parsed); parse_err != nil {
-			err = parse_err
-		} else {
-			for index, item := range parsed.PatientDescriptions {
-				draft := PatientDescriptionDraft{
-					Choice:    strings.TrimSpace(item.Choice),
-					Knowledge: trim_string_list(item.Knowledge),
-					SourceID:  extraction_source_id(response, state),
+		for index, item := range result.Descriptions {
+			source_id := item.SourceID
+			if source_id.ToI64() <= 0 {
+				source_id = extraction_source_id(result.Response, state)
+			}
+			draft := PatientDescriptionDraft{
+				Choice:    strings.TrimSpace(item.Choice),
+				Knowledge: trim_string_list(item.Knowledge),
+				SourceID:  source_id,
+			}
+			for status_index, raw_status := range item.Description {
+				status_draft, ok := status_draft_from_raw(raw_status, fmt.Sprintf("p%d_%d", index+1, status_index+1))
+				if !ok {
+					continue
 				}
-				for status_index, raw_status := range item.Description {
-					status_draft, ok := status_draft_from_raw(raw_status, fmt.Sprintf("p%d_%d", index+1, status_index+1))
-					if !ok {
-						continue
-					}
-					status_draft.SourceID = draft.SourceID
-					draft.Description = append(draft.Description, status_draft)
-				}
-				if len(draft.Description) > 0 || len(draft.Knowledge) > 0 {
-					drafts = append(drafts, draft)
-				}
+				status_draft.SourceID = draft.SourceID
+				draft.Description = append(draft.Description, status_draft)
+			}
+			if len(draft.Description) > 0 || len(draft.Knowledge) > 0 {
+				drafts = append(drafts, draft)
 			}
 		}
 	}
-	self.record_v2_extraction_call(id, seqPatientDescription, "patient_description_extract", "patient_description", state.Prompts.versions[PromptPatientDescription], prompt, raw, response, drafts, started, err)
+	prompt, raw := response_texts(result.Response)
+	version := prompt_version_or(state.Prompts.versions[PromptPatientDescription], result.PromptVersion)
+	self.record_v2_extraction_call(id, seqPatientDescription, "patient_description_extract", "patient_description", version, prompt, raw, result.Response, drafts, started, err)
 	return drafts, err
 }
 
@@ -191,62 +184,45 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 	statuses []StatusDraft,
 	patient_descriptions []PatientDescriptionDraft,
 ) ([]OptionDraft, error) {
-	template := state.Prompts.templates[PromptMedicalProcedureOption]
-	if strings.TrimSpace(template) == "" {
+	if strings.TrimSpace(state.Prompts.templates[PromptMedicalProcedureOption]) == "" {
 		return nil, nil
 	}
-	patient_json, _ := json.Marshal(patient_descriptions)
-	choices_json, _ := json.Marshal(problem_choices(state.Case.Problem))
-	problem_text := state.Case.Problem
-	if len(choices_json) > 2 {
-		problem_text += "\n\n[선택지 JSON]\n" + string(choices_json)
+	status_map, err := status_map_from_drafts(statuses)
+	if err != nil {
+		return nil, err
 	}
-	prompt := RenderPrompt(template, map[string]string{
-		"problem":                  problem_text,
-		"answer":                   "",
-		"explanation":              "",
-		"status_json":              status_drafts_json(statuses),
-		"patient_description_json": string(patient_json),
-	})
-	prompt += problem_only_instruction(PromptMedicalProcedureOption)
 	started := time.Now()
-	raw, response, err := self.generate_extraction(ctx, state, prompt)
+	result, err := self.llm.ExtractMedicalProcedureOption(
+		ctx,
+		state.Case.Problem,
+		"",
+		"",
+		status_map,
+		patient_descriptions_for_service(patient_descriptions),
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	var drafts []OptionDraft
 	if err == nil {
-		var parsed struct {
-			MedicalProcedureOptions []struct {
-				ID               string          `json:"id"`
-				Category         string          `json:"category"`
-				Traits           []string        `json:"traits"`
-				MedicalProcedure json.RawMessage `json:"medical_procedure"`
-				Indications      []string        `json:"indications"`
-				ExpectedEffects  []string        `json:"expected_effects"`
-			} `json:"medical_procedure_options"`
-		}
-		if parse_err := decode_json_object(raw, &parsed); parse_err != nil {
-			err = parse_err
-		} else {
-			for _, item := range parsed.MedicalProcedureOptions {
-				if len(item.MedicalProcedure) == 0 || string(item.MedicalProcedure) == "null" {
-					continue
-				}
-				key := strings.TrimSpace(item.ID)
-				if key == "" {
-					key = fmt.Sprintf("m%d", len(drafts)+1)
-				}
-				drafts = append(drafts, OptionDraft{
-					Key:              key,
-					Category:         strings.TrimSpace(item.Category),
-					Traits:           item.Traits,
-					MedicalProcedure: item.MedicalProcedure,
-					Indications:      trim_string_list(item.Indications),
-					ExpectedEffects:  trim_string_list(item.ExpectedEffects),
-					SourceID:         extraction_source_id(response, state),
-				})
+		for _, item := range result.Options {
+			source_id := item.SourceID
+			if source_id.ToI64() <= 0 {
+				source_id = extraction_source_id(result.Response, state)
 			}
+			drafts = append(drafts, OptionDraft{
+				Key:              strings.TrimSpace(item.Key),
+				Category:         strings.TrimSpace(item.Category),
+				Traits:           item.Traits,
+				MedicalProcedure: item.MedicalProcedure,
+				Indications:      trim_string_list(item.Indications),
+				ExpectedEffects:  trim_string_list(item.ExpectedEffects),
+				SourceID:         source_id,
+			})
 		}
 	}
-	self.record_v2_extraction_call(id, seqMedicalProcedureOption, "medical_procedure_option_extract", "medical_procedure_option", state.Prompts.versions[PromptMedicalProcedureOption], prompt, raw, response, drafts, started, err)
+	prompt, raw := response_texts(result.Response)
+	version := prompt_version_or(state.Prompts.versions[PromptMedicalProcedureOption], result.PromptVersion)
+	self.record_v2_extraction_call(id, seqMedicalProcedureOption, "medical_procedure_option_extract", "medical_procedure_option", version, prompt, raw, result.Response, drafts, started, err)
 	return drafts, err
 }
 
@@ -257,51 +233,111 @@ func (self *Service) run_v2_relation_extraction(
 	statuses []StatusDraft,
 	actions []ActionDraft,
 ) ([]RelationDraft, error) {
-	template := state.Prompts.templates[PromptRelation]
-	if strings.TrimSpace(template) == "" {
+	if strings.TrimSpace(state.Prompts.templates[PromptRelation]) == "" {
 		return nil, fmt.Errorf("relation prompt가 비어 있습니다")
 	}
-	prompt, err := build_relation_prompt_from_drafts(
-		template,
-		problem_stem(state.Case.Problem),
-		statuses,
-		actions,
-	)
+	status_map, err := status_map_from_drafts(statuses)
 	if err != nil {
 		return nil, err
 	}
-	prompt += problem_only_instruction(PromptRelation)
+	action_map, err := action_map_from_drafts(actions)
+	if err != nil {
+		return nil, err
+	}
 	started := time.Now()
-	relations, relation_source, ask, err := self.llm.ExtractRelations(
-		ctx, prompt, state.ExplanationSourceID, self.cache_mode,
+	result, err := self.llm.ExtractRelations(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		status_map,
+		action_map,
+		state.ExplanationSourceID,
+		self.cache_mode,
 	)
 	var drafts []RelationDraft
 	if err == nil {
-		for _, steps := range relations {
+		for _, steps := range result.Relations {
 			for index := 1; index+1 < len(steps); index += 2 {
 				drafts = append(drafts, RelationDraft{
 					CauseStatusKey:  steps[index-1],
 					ActionKey:       steps[index],
 					ResultStatusKey: steps[index+1],
-					SourceID:        relation_source.SourceID,
+					SourceID:        result.Ref.SourceID,
 				})
 			}
 		}
 	}
-	self.record_v2_relation_call(id, state, prompt, ask, relations, started, err)
+	prompt, _ := response_texts(result.Response)
+	version := prompt_version_or(state.Prompts.versions[PromptRelation], result.PromptVersion)
+	self.record_v2_relation_call(id, prompt, result.Response, result.Relations, version, started, err)
 	return drafts, err
 }
 
-func (self *Service) generate_extraction(ctx context.Context, state *pipelineState, prompt string) (string, *source.LlmResponse, error) {
-	if self.llm == nil {
-		return "", nil, fmt.Errorf("extraction LLM is not configured")
+func response_texts(response *source.LlmResponse) (string, string) {
+	if response == nil {
+		return "", ""
 	}
-	refered_source_id := extraction_refered_source(state)
-	response, err := self.llm.AskRole(ctx, morbesllm.RoleExtract, prompt, refered_source_id, self.cache_mode)
-	if err != nil {
-		return "", nil, err
+	return response.Prompt, response.OutputText()
+}
+
+func prompt_version_or(fallback, version int) int {
+	if version > 0 {
+		return version
 	}
-	return response.OutputText(), response, nil
+	return fallback
+}
+
+func status_map_from_drafts(statuses []StatusDraft) (map[string]repo.IEStatus, error) {
+	result := make(map[string]repo.IEStatus, len(statuses))
+	for _, draft := range statuses {
+		status, err := parseStatusDraft(draft)
+		if err != nil {
+			return nil, err
+		}
+		result[draft.Key] = status
+	}
+	return result, nil
+}
+
+func action_map_from_drafts(actions []ActionDraft) (map[string]repo.IEAction, error) {
+	result := make(map[string]repo.IEAction, len(actions))
+	for _, draft := range actions {
+		action, err := parseActionDraft(draft)
+		if err != nil {
+			return nil, err
+		}
+		result[draft.Key] = action
+	}
+	return result, nil
+}
+
+func patient_descriptions_for_service(drafts []PatientDescriptionDraft) []morbesllm.PatientDescription {
+	result := make([]morbesllm.PatientDescription, 0, len(drafts))
+	for _, draft := range drafts {
+		item := morbesllm.PatientDescription{
+			Choice:    draft.Choice,
+			Knowledge: draft.Knowledge,
+			SourceID:  draft.SourceID,
+		}
+		for _, status := range draft.Description {
+			payload := map[string]any{
+				"key":   status.Key,
+				"kind":  status.Kind,
+				"value": status.Value,
+			}
+			if status.SourceID.ToI64() > 0 {
+				payload["sourceId"] = status.SourceID
+			}
+			encoded, err := json.Marshal(payload)
+			if err != nil {
+				continue
+			}
+			item.Description = append(item.Description, encoded)
+		}
+		result = append(result, item)
+	}
+	return result
 }
 
 func (self *Service) record_v2_extraction_call(
@@ -320,9 +356,6 @@ func (self *Service) record_v2_extraction_call(
 	model := ""
 	if response != nil {
 		model = response.Model
-	}
-	if model == "" && self.llm != nil {
-		model = self.llm.Model(morbesllm.RoleExtract)
 	}
 	call := LLMCallInput{
 		CaseID:        case_id,
@@ -347,20 +380,24 @@ func (self *Service) record_v2_extraction_call(
 
 func (self *Service) record_v2_relation_call(
 	case_id domain.CaseID,
-	state *pipelineState,
 	prompt string,
 	response *source.LlmResponse,
 	relations [][]string,
+	prompt_version int,
 	started time.Time,
 	call_err error,
 ) {
+	model := ""
+	if response != nil {
+		model = response.Model
+	}
 	call := LLMCallInput{
 		CaseID:        case_id,
 		Seq:           seqRelation,
 		Stage:         "relation_extract",
 		Role:          "relation",
-		Model:         self.llm.Model(morbesllm.RoleExtract),
-		PromptVersion: state.Prompts.versions[PromptRelation],
+		Model:         model,
+		PromptVersion: prompt_version,
 		Prompt:        prompt,
 		ParsedOutput:  encode_json(relations),
 		State:         state_text(call_err),

@@ -39,3 +39,32 @@ func TestStatusDraftsJSONUsesIDField(t *testing.T) {
 		t.Fatalf("status json = %s", raw)
 	}
 }
+
+func TestPatientDescriptionsForService(t *testing.T) {
+	got := patient_descriptions_for_service([]PatientDescriptionDraft{{
+		Choice:    "②",
+		Knowledge: []string{"복약"},
+		Description: []StatusDraft{{
+			Key:   "s1",
+			Kind:  "have_symptom",
+			Value: json.RawMessage(`{"name":"두통"}`),
+		}},
+	}})
+	if len(got) != 1 {
+		t.Fatalf("len = %d", len(got))
+	}
+	raw, err := json.Marshal(got[0])
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	for _, want := range []string{
+		`"choice":"②"`,
+		`"kind":"have_symptom"`,
+		`"name":"두통"`,
+		`"knowledge":["복약"]`,
+	} {
+		if !strings.Contains(string(raw), want) {
+			t.Fatalf("json = %s, want %s", raw, want)
+		}
+	}
+}

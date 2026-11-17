@@ -12,6 +12,7 @@ type (
 	NodeKind     = ext.NodeKind
 	NodeState    = ext.NodeState
 	CacheMode    = ext.CacheMode
+	ReplayCall   = ext.ReplayCall
 	Event        = ext.Event
 )
 

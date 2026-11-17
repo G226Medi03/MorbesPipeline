@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	core "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
 	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
 )
@@ -22,9 +22,9 @@ func (self *Service) Run(ctx context.Context, id domain.CaseID) error {
 func (self *Service) RunWithCache(ctx context.Context, id domain.CaseID, useCache bool) error {
 	run := *self
 	run.ctx = ctx
-	run.cache_mode = morbesllm.CacheUse
+	run.cache_mode = core.CacheUse
 	if !useCache {
-		run.cache_mode = morbesllm.CacheRefresh
+		run.cache_mode = core.CacheRefresh
 	}
 	return run.run_v2_from(ctx, id, "")
 }
@@ -64,21 +64,30 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 	if err != nil {
 		return err
 	}
-	explain_model := ""
-	if self.llm != nil {
-		explain_model = self.llm.Model(morbesllm.RoleSolver)
-	}
 	explain_started := time.Now()
-	logs.Info("explain 시작", logs.AttrOf("case", id), logs.AttrOf("model", explain_model))
-	explanation, prompt, raw, err := self.explain(
-		ctx, state.Case.Problem, state.Case.Answer, state.Prompts.templates[PromptExplain])
+	logs.Info("explain 시작", logs.AttrOf("case", id))
+	result, err := self.explain(ctx, state.Case.Problem, state.Case.Answer)
+	explain_model := ""
+	prompt := ""
+	raw := ""
+	explanation := ""
+	prompt_version := state.Prompts.versions[PromptExplain]
+	if result != nil {
+		explanation = result.Explanation
+		raw = result.Raw
+		prompt_version = result.PromptVersion
+		if result.Response != nil {
+			explain_model = result.Response.Model
+			prompt = result.Response.Prompt
+		}
+	}
 	self.record_call(LLMCallInput{
 		CaseID:        id,
 		Seq:           seqExplain,
 		Stage:         "solver_explain",
 		Role:          "solver",
 		Model:         explain_model,
-		PromptVersion: state.Prompts.versions[PromptExplain],
+		PromptVersion: prompt_version,
 		Prompt:        prompt,
 		RawOutput:     raw,
 		ParsedOutput:  encode_json(map[string]string{"explanation": explanation}),
