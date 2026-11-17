@@ -2,6 +2,8 @@ package csolve
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
 )
@@ -24,24 +26,30 @@ const (
 )
 
 type promptSet struct {
-	templates map[string]string
-	versions  map[string]int
+	present  map[string]bool
+	versions map[string]int
 }
 
 func (self *Service) load_prompts() (promptSet, error) {
 	result := promptSet{
-		templates: make(map[string]string, len(PromptStages())),
-		versions:  make(map[string]int, len(PromptStages())),
+		present:  make(map[string]bool, len(PromptStages())),
+		versions: make(map[string]int, len(PromptStages())),
 	}
 	for _, stage := range PromptStages() {
-		template, version, err := self.store.GetPrompt(stage)
+		template, version, found, err := self.store.Prompt(stage)
 		if err != nil {
 			if stage == PromptActor || stage == PromptOtherNames || stage == PromptPatientDescription || stage == PromptQuestionType {
 				continue
 			}
 			return promptSet{}, err
 		}
-		result.templates[stage] = template
+		if !found {
+			if stage == PromptActor || stage == PromptOtherNames || stage == PromptPatientDescription || stage == PromptQuestionType {
+				continue
+			}
+			return promptSet{}, fmt.Errorf("prompt %q is not configured", stage)
+		}
+		result.present[stage] = strings.TrimSpace(template) != ""
 		result.versions[stage] = version
 	}
 	return result, nil

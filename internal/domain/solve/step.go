@@ -17,3 +17,12 @@ type Step struct {
 	FinishedAt *time.Time      `json:"finishedAt,omitempty"`
 	Meta       SolveStepMeta   `json:"meta,omitempty"`
 }
+
+type StepState string
+
+type SolveStepMeta struct {
+	CaseID        CaseID        `json:"caseId"`
+	PromptVersion int           `json:"promptVersion"`
+	OutputJSON    string        `json:"outputJson"`
+	CallID        ids.LLMCallID `json:"callId"`
+}
