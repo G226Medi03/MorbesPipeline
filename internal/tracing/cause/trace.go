@@ -6,8 +6,8 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func ObservedLabels(statuses []repo.IEStatus) []string {

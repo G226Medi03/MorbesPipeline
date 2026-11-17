@@ -2,7 +2,7 @@
 package sourceutil
 
 import (
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // SourceID restores a SourceId from its persisted int64 value.

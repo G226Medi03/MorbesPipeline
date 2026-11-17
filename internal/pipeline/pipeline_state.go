@@ -5,8 +5,8 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	csituation "github.com/G226Medi03/MorbesPipeline/internal/domain/situation"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type pipelineState struct {

@@ -8,7 +8,7 @@ import (
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 	"sort"
 	"strings"
 	"sync"

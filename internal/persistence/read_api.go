@@ -9,8 +9,8 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	medicalprocedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // NamedRecord is a name-based entity row with its numeric ID and sources.

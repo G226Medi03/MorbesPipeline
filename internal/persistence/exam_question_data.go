@@ -3,11 +3,11 @@ package store
 import (
 	"context"
 
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	storesource "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentityrepository"
 	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/persistence/benchmark"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
+	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 // ExamQuestionDataCounts summarizes data linked to one exam question.

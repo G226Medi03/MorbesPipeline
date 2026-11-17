@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type Filter struct {

@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/sourceutil"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	"github.com/G226Medi03/SourceEntity"
 	"path/filepath"
 	"testing"
 )

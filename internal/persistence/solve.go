@@ -3,8 +3,8 @@ package store
 import (
 	"fmt"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	"github.com/G226Medi03/SourceEntity"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/persistence/solve"

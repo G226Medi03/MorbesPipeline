@@ -11,7 +11,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func (self *Service) run_v2_from(ctx context.Context, id domain.CaseID, from_node string) error {

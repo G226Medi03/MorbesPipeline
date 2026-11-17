@@ -5,10 +5,10 @@ import (
 	"sort"
 	"strings"
 
-	sourcedomain "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	storesource "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentityrepository"
 	"github.com/G226Medi03/MorbesPipeline/internal/persistence/benchmark"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	sourcedomain "github.com/G226Medi03/SourceEntity"
+	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 type ProblemResultFilter struct {

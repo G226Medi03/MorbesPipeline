@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 // ErrPromptNotFound reports a missing prompt stage.

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // UnresolvedTransplantTarget is a transplant procedure whose target actor kind

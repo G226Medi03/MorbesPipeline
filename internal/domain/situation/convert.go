@@ -30,15 +30,9 @@ func status_from_raw(raw json.RawMessage) (repo.IEStatus, error) {
 	if payload.Kind == "" {
 		return nil, fmt.Errorf("status.kind 가 비어 있습니다")
 	}
-	statuses, err := medicalentityparser.DecodeStatuses(string(raw))
+	value, err := medicalentityparser.DecodeSingleStatus(string(raw))
 	if err != nil {
 		return nil, err
 	}
-	if len(statuses) != 1 {
-		return nil, fmt.Errorf("status response must contain exactly one status: got %d", len(statuses))
-	}
-	for _, value := range statuses {
-		return value, nil
-	}
-	return nil, fmt.Errorf("status response is empty")
+	return value, nil
 }

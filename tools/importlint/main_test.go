@@ -36,13 +36,13 @@ func TestCheckPackageRejectsForbiddenTestImport(t *testing.T) {
 
 func TestCheckPackageAllowsAdapterImport(t *testing.T) {
 	adapter := adapterConfig{
-		Name:     "pipelinecore",
-		External: "github.com/G226Medi03/PipeLineCore",
-		Adapter:  "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore",
+		Name:     "medicalentityparser",
+		External: "github.com/G226Medi03/MedicalEntityParser",
+		Adapter:  "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser",
 	}
 	pkg := packageInfo{
 		ImportPath: adapter.Adapter,
-		Imports:    []string{"github.com/G226Medi03/PipeLineCore"},
+		Imports:    []string{"github.com/G226Medi03/MedicalEntityParser/llmparser"},
 	}
 	violations := checkPackage(
 		repoConfig{Path: ".", Enforce: true},
@@ -57,13 +57,13 @@ func TestCheckPackageAllowsAdapterImport(t *testing.T) {
 
 func TestCheckPackageRejectsAdapterBypass(t *testing.T) {
 	adapter := adapterConfig{
-		Name:     "pipelinecore",
-		External: "github.com/G226Medi03/PipeLineCore",
-		Adapter:  "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore",
+		Name:     "medicalentityparser",
+		External: "github.com/G226Medi03/MedicalEntityParser",
+		Adapter:  "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser",
 	}
 	pkg := packageInfo{
 		ImportPath: "github.com/G226Medi03/MorbesPipeline/internal/pipeline",
-		Imports:    []string{"github.com/G226Medi03/PipeLineCore"},
+		Imports:    []string{"github.com/G226Medi03/MedicalEntityParser/llmparser"},
 	}
 	violations := checkPackage(
 		repoConfig{Path: ".", Enforce: true},

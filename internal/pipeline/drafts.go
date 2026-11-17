@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // CaseExtraction is the single structured output of the solve v2 extraction

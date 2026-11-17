@@ -2,7 +2,6 @@ package csolve
 
 import (
 	"encoding/json"
-	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
@@ -21,17 +20,11 @@ func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	statuses, err := medicalentityparser.DecodeStatuses(string(encoded))
+	value, err := medicalentityparser.DecodeSingleStatus(string(encoded))
 	if err != nil {
 		return nil, err
 	}
-	if len(statuses) != 1 {
-		return nil, fmt.Errorf("status response must contain exactly one status: got %d", len(statuses))
-	}
-	for _, value := range statuses {
-		return value, nil
-	}
-	return nil, fmt.Errorf("status response is empty")
+	return value, nil
 }
 
 func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {

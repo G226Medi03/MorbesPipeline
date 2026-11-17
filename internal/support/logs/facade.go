@@ -1,4 +1,4 @@
-// Package logs is the application logging facade on top of github.com/G226Medi03/MorbesPipeline/internal/external/logsqlite.
+// Package logs is the application logging facade on top of github.com/G226Medi03/log-sqlite.
 package logs
 
 import (
@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	clog "github.com/G226Medi03/MorbesPipeline/internal/external/logsqlite"
+	clog "github.com/G226Medi03/log-sqlite"
 )
 
 type (

@@ -7,10 +7,10 @@ import (
 
 	medicalprocedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/sliceutil"
 	cgraph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func (s *Store) LoadGraph() (*cgraph.Container, error) {

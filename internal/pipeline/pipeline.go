@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	core "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
+	core "github.com/G226Medi03/PipeLineCore"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func (self *Service) Run(ctx context.Context, id domain.CaseID) error {

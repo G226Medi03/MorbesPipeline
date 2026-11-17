@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	core "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
+	core "github.com/G226Medi03/PipeLineCore"
 )
 
 type ReplayMode = domain.ReplayMode

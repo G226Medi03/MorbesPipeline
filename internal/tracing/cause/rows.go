@@ -2,8 +2,8 @@ package ccause
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	source_entity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	source_entity "github.com/G226Medi03/SourceEntity"
 )
 
 type actionRow struct {

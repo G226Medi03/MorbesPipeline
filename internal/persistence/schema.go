@@ -1,7 +1,7 @@
 package store
 
 import (
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 func (s *Store) InitSchema() error {

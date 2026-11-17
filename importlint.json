@@ -14,31 +14,6 @@
       "name": "medicalentityparser",
       "external": "github.com/G226Medi03/MedicalEntityParser",
       "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/medicalentityparser"
-    },
-    {
-      "name": "pipelinecore",
-      "external": "github.com/G226Medi03/PipeLineCore",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/pipelinecore"
-    },
-    {
-      "name": "sourceentity",
-      "external": "github.com/G226Medi03/SourceEntity",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-    },
-    {
-      "name": "sourceentityrepository",
-      "external": "github.com/G226Medi03/SourceEntityRepository",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentityrepository"
-    },
-    {
-      "name": "sqlcore",
-      "external": "github.com/G226Medi03/SQLCore",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore"
-    },
-    {
-      "name": "logsqlite",
-      "external": "github.com/G226Medi03/log-sqlite",
-      "adapter": "github.com/G226Medi03/MorbesPipeline/internal/external/logsqlite"
     }
   ]
 }

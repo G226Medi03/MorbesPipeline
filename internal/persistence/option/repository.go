@@ -10,9 +10,9 @@ import (
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
 	mp "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	source "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
-	sqlutil "github.com/G226Medi03/MorbesPipeline/internal/external/sqlcore/sqlite"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
+	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type Repository struct {

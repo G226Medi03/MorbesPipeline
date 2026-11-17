@@ -9,9 +9,9 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
-	source_entity "github.com/G226Medi03/MorbesPipeline/internal/external/sourceentity"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	cgraph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
+	source_entity "github.com/G226Medi03/SourceEntity"
 )
 
 type Service struct {
