@@ -59,7 +59,7 @@ MorbesLLMService ← internal/pipeline ← root
 - `internal/domain`은 `persistence`/`pipeline`/`tracing`을 import하지 않는다.
 - `internal/persistence`는 `pipeline`을 import하지 않는다.
 - `internal/tracing`은 `persistence`를 import하지 않는다.
-- LLM 호출, 캐시, relation, actor 추출, replay는 `MorbesLLMService`가 소유한다.
+- LLM 호출, 프롬프트, 캐시, explain, actor/status/action/relation/patient/option 추출, replay는 `MorbesLLMService`가 소유한다.
 - `llm-client/call`은 `MorbesLLMService`의 client 타입을 위해 `internal/pipeline`에서 직접 사용한다.
 - 루트 `morbes`만 전체를 조립한다.
 
