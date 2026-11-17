@@ -81,7 +81,6 @@ type (
 	ActionRecord               = persistence.ActionRecord
 	StatusRecord               = persistence.StatusRecord
 	ProcedureRecord            = persistence.ProcedureRecord
-	EntityNeighbors            = persistence.EntityNeighbors
 	StatusNameRef              = persistence.StatusNameRef
 	UnresolvedTransplantTarget = persistence.UnresolvedTransplantTarget
 	ExamQuestionDataCounts     = persistence.ExamQuestionDataCounts
@@ -133,8 +132,6 @@ const (
 var (
 	InferQuestionPolicy   = solve.InferQuestionPolicy
 	NormalizeQuestionType = solve.NormalizeQuestionType
-
-	ErrUnknownEntityType = persistence.ErrUnknownEntityType
 
 	New        = persistence.New
 	NewWithDBs = persistence.NewWithDBs
