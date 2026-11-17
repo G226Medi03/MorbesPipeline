@@ -5,7 +5,7 @@ import (
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
+	clog "github.com/G226Medi03/log-sqlite"
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
@@ -101,7 +101,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	for _, draft := range state.Extraction.Actors {
 		actor, err := self.resolve_actor(draft)
 		if err != nil {
-			logs.Warn("case extraction actor skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		if actor == nil {
@@ -109,7 +109,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		}
 		sources := draft_sources(draft.SourceID)
 		if _, err := entityStore.InsertActor(actor, nil, sourceIDs(sources)); err != nil {
-			logs.Warn("case extraction actor skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		if strings.Contains(strings.TrimSpace(draft.Name), "투여") {
@@ -177,12 +177,12 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		}
 		value, err := parseActionDraft(ActionDraft{Key: draft.Key, Variant: variant, Value: draft.Value})
 		if err != nil {
-			logs.Warn("case extraction action skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		sources := draft_sources(draft.SourceID)
 		if _, err := entityStore.InsertAction(value, nil, sourceIDs(sources)); err != nil {
-			logs.Warn("case extraction action skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		resolved.Actions[draft.Key] = value
@@ -209,13 +209,13 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		option_sources := draft_sources(draft.SourceID)
 		procedure, err := entityjson.DecodeOrParseProcedure(draft.MedicalProcedure)
 		if err != nil {
-			logs.Warn("case extraction procedure skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		optionTraits := trait.NormalizeTraits(draft.Traits)
 		procedureID, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources)
 		if err != nil {
-			logs.Warn("case extraction procedure skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		saved, err := self.store.SaveMedicalProcedureOptionByValues(
@@ -228,7 +228,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			option_sources,
 		)
 		if err != nil {
-			logs.Warn("case extraction option skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("key", draft.Key), logs.AttrOf("error", err))
+			clog.Warn("case extraction option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		resolved.MedicalProcedureOptions = append(resolved.MedicalProcedureOptions, saved)
@@ -236,7 +236,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 
 	for _, actor := range infusion_actors {
 		if err := self.ensure_infusion_option(actor.name, actor.sources); err != nil {
-			logs.Warn("case extraction infusion option skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("name", actor.name), logs.AttrOf("error", err))
+			clog.Warn("case extraction infusion option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("name", actor.name), clog.AttrOf("error", err))
 		}
 	}
 
@@ -250,12 +250,12 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		}
 		if status_ok && action_ok {
 			if err := entityStore.LinkStatusAction(status, action, relation_source_id); err != nil {
-				logs.Warn("case extraction status-action link skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("error", err))
+				clog.Warn("case extraction status-action link skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("error", err))
 			}
 		}
 		if action_ok && result_ok {
 			if err := self.store.LinkActionResultStatusValues(action, result, relation_source_id); err != nil {
-				logs.Warn("case extraction action-result link skip", logs.AttrOf("case", state.Case.ID), logs.AttrOf("error", err))
+				clog.Warn("case extraction action-result link skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("error", err))
 			}
 		}
 	}

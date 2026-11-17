@@ -36,21 +36,14 @@ func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.Case
 
 func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]StatusDraft, error) {
 	started := time.Now()
-	var statuses map[string]repo.IEStatus
-	var response *source.LlmResponse
-	var err error
-	if self.llm == nil {
-		err = fmt.Errorf("extraction LLM is not configured")
-	} else {
-		statuses, response, err = self.llm.ExtractStatuses(
-			ctx,
-			problem_stem(state.Case.Problem),
-			"",
-			"",
-			extraction_refered_source(state),
-			self.cache_mode,
-		)
-	}
+	statuses, response, err := self.llm.ExtractStatuses(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	prompt, raw := response_texts(response)
 	var drafts []StatusDraft
 	if err == nil {
@@ -79,21 +72,14 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 
 func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActionDraft, error) {
 	started := time.Now()
-	var actions map[string]repo.IEAction
-	var response *source.LlmResponse
-	var err error
-	if self.llm == nil {
-		err = fmt.Errorf("extraction LLM is not configured")
-	} else {
-		actions, response, err = self.llm.ExtractActions(
-			ctx,
-			problem_stem(state.Case.Problem),
-			"",
-			"",
-			extraction_refered_source(state),
-			self.cache_mode,
-		)
-	}
+	actions, response, err := self.llm.ExtractActions(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	prompt, raw := response_texts(response)
 	var drafts []ActionDraft
 	if err == nil {

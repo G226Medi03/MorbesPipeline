@@ -3,7 +3,7 @@ package csolve
 import (
 	"context"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
+	clog "github.com/G226Medi03/log-sqlite"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/PipeLineCore"
@@ -78,7 +78,7 @@ func (self *Service) extractParallelNode(ctx context.Context, state *core.State)
 		return actionErr
 	}
 	if actorErr != nil {
-		logs.Warn("actor extraction skip", logs.AttrOf("case", id), logs.AttrOf("error", actorErr))
+		clog.Warn("actor extraction skip", clog.AttrOf("case", id), clog.AttrOf("error", actorErr))
 		actors = nil
 	}
 	state.Set(extractActorsKey, actors)
@@ -95,7 +95,7 @@ func (self *Service) extractPatientNode(ctx context.Context, state *core.State) 
 	statuses, _ := state.Get(extractStatusesKey)
 	descriptions, err := self.run_v2_patient_description_extraction(ctx, id, solve, statuses.([]StatusDraft))
 	if err != nil {
-		logs.Warn("patient description extraction skip", logs.AttrOf("case", id), logs.AttrOf("error", err))
+		clog.Warn("patient description extraction skip", clog.AttrOf("case", id), clog.AttrOf("error", err))
 		descriptions = nil
 	}
 	state.Set(extractPatientsKey, descriptions)

@@ -18,5 +18,4 @@ type QuestionInput struct {
 // QuestionStore is the exam question port used by the solve pipeline.
 type QuestionStore interface {
 	GetQuestion(ctx context.Context, id ids.ExamQuestionID) (QuestionInput, bool, error)
-	CreateQuestion(ctx context.Context, problem, answer, explanation string) (ids.ExamQuestionID, error)
 }

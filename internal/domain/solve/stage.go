@@ -51,3 +51,11 @@ func IsStage(value string) bool {
 	_, ok := stage_sequence[Stage(value)]
 	return ok
 }
+
+// ReplayMode selects which stages a replay runs.
+type ReplayMode string
+
+const (
+	ReplayModeLLM  ReplayMode = "llm"
+	ReplayModeCode ReplayMode = "code"
+)

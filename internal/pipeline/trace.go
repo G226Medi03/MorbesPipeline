@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
+	clog "github.com/G226Medi03/log-sqlite"
 )
 
 const (
@@ -63,17 +63,17 @@ func (self *Service) record_call(call LLMCallInput) {
 	// replace the previous trace record instead of accumulating one panel per run.
 	if call.Stage == "cause_trace" {
 		if err := self.store.DeleteLLMCallsByStage(call.CaseID, call.Stage); err != nil {
-			logs.Warn("solve llm call 이전 trace 삭제 실패",
-				logs.AttrOf("case", call.CaseID),
-				logs.AttrOf("stage", call.Stage),
-				logs.AttrOf("error", err))
+			clog.Warn("solve llm call 이전 trace 삭제 실패",
+				clog.AttrOf("case", call.CaseID),
+				clog.AttrOf("stage", call.Stage),
+				clog.AttrOf("error", err))
 		}
 	}
 	if _, err := self.store.AppendLLMCall(call); err != nil {
-		logs.Warn("solve llm call 저장 실패",
-			logs.AttrOf("case", call.CaseID),
-			logs.AttrOf("stage", call.Stage),
-			logs.AttrOf("error", err))
+		clog.Warn("solve llm call 저장 실패",
+			clog.AttrOf("case", call.CaseID),
+			clog.AttrOf("stage", call.Stage),
+			clog.AttrOf("error", err))
 	}
 }
 

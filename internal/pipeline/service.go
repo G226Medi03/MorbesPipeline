@@ -3,7 +3,6 @@ package csolve
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -12,6 +11,16 @@ import (
 	sourceentity "github.com/G226Medi03/SourceEntity"
 	cllmcall "github.com/G226Medi03/llm-client/call"
 )
+
+type Dependencies struct {
+	Store *store.Store
+	LLM   *morbesllm.Service
+
+	Solver     *cllmcall.Client
+	ExtractLLM *cllmcall.Client
+
+	QuestionStore QuestionStore
+}
 
 type Service struct {
 	ctx            context.Context
@@ -30,10 +39,16 @@ func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool
 }
 
 func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
+	if deps.Store == nil {
+		return nil, errors.New("store is required")
+	}
+	if deps.QuestionStore == nil {
+		return nil, errors.New("question store is required")
+	}
 	llmService := deps.LLM
-	if llmService == nil && (deps.Solver != nil || deps.ExtractLLM != nil) {
-		if deps.Store == nil {
-			return nil, errors.New("store is required to build the LLM service")
+	if llmService == nil {
+		if deps.Solver == nil && deps.ExtractLLM == nil {
+			return nil, errors.New("LLM service or client is required")
 		}
 		extract := deps.ExtractLLM
 		if extract == nil {
@@ -68,8 +83,5 @@ func (self *Service) set_stage(id domain.CaseID, stage string) error {
 }
 
 func (self *Service) explain(ctx context.Context, problem, answer string) (*morbesllm.ExplainResult, error) {
-	if self.llm == nil {
-		return nil, fmt.Errorf("solver LLM 이 없습니다")
-	}
 	return self.llm.ExplainResult(ctx, problem, answer, sourceentity.SourceId{}, self.cache_mode)
 }

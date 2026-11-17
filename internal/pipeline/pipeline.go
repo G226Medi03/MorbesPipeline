@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logs"
 	core "github.com/G226Medi03/PipeLineCore"
 	source "github.com/G226Medi03/SourceEntity"
+	clog "github.com/G226Medi03/log-sqlite"
 )
 
 func (self *Service) Run(ctx context.Context, id domain.CaseID) error {
@@ -65,7 +65,7 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 		return err
 	}
 	explain_started := time.Now()
-	logs.Info("explain 시작", logs.AttrOf("case", id))
+	clog.Info("explain 시작", clog.AttrOf("case", id))
 	result, err := self.explain(ctx, state.Case.Problem, state.Case.Answer)
 	explain_model := ""
 	prompt := ""
@@ -95,11 +95,11 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 		Error:         error_text(err),
 	})
 	if err != nil {
-		logs.Error("explain 실패", logs.AttrOf("case", id), logs.AttrOf("duration_ms", time.Since(explain_started).Milliseconds()), logs.AttrOf("error", err))
+		clog.Error("explain 실패", clog.AttrOf("case", id), clog.AttrOf("duration_ms", time.Since(explain_started).Milliseconds()), clog.AttrOf("error", err))
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	logs.Info("explain 완료", logs.AttrOf("case", id), logs.AttrOf("duration_ms", time.Since(explain_started).Milliseconds()))
+	clog.Info("explain 완료", clog.AttrOf("case", id), clog.AttrOf("duration_ms", time.Since(explain_started).Milliseconds()))
 	state.Explanation = explanation
 	response, err := self.store.GetOrInsertLlmResponse(explain_model, "solve:"+string(id)+":explanation", source.SourceId{}, explanation)
 	if err != nil {
