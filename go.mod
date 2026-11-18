@@ -9,7 +9,7 @@ require (
 	github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1
 	github.com/G226Medi03/SQLCore v0.2.0
 	github.com/G226Medi03/SourceEntity v0.4.1
-	github.com/G226Medi03/SourceEntityRepository v0.3.0
+	github.com/G226Medi03/SourceEntityRepository v0.3.1
 	github.com/G226Medi03/llm-client v0.5.0
 	github.com/G226Medi03/log-sqlite v0.1.1
 	modernc.org/sqlite v1.62.0
@@ -28,15 +28,3 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
-
-replace github.com/G226Medi03/MedicalEntity => ../MedicalEntity
-
-replace github.com/G226Medi03/MedicalEntityParser => ../MedicalEntityParser
-
-replace github.com/G226Medi03/MedicalEntityRepository => ../MedicalEntityRepository
-
-replace github.com/G226Medi03/MorbesLLMService => ../MorbesLLmService
-
-replace github.com/G226Medi03/SourceEntity => ../SourceEntity
-
-replace github.com/G226Medi03/SourceEntityRepository => ../SourceEntityRepository
