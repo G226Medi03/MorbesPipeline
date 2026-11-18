@@ -85,17 +85,17 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 	type infusion_actor struct {
 		name    string
-		sources []source.SourceRef
+		sources []source.Source
 	}
 	infusion_actors := make([]infusion_actor, 0)
-	draft_sources := func(draft_source_id source.SourceId) []source.SourceRef {
+	draft_sources := func(draft_source_id source.SourceId) []source.Source {
 		if draft_source_id.ToI64() <= 0 {
 			draft_source_id = source_id
 		}
 		if draft_source_id.ToI64() <= 0 {
 			return nil
 		}
-		return []source.SourceRef{{SourceID: draft_source_id}}
+		return []source.Source{{SourceID: draft_source_id}}
 	}
 
 	for _, draft := range state.Extraction.Actors {
@@ -306,7 +306,7 @@ func (self *Service) resolve_actor(draft ActorDraft) (repo.IEActor, error) {
 	return repo.NewUnknownActor(name), nil
 }
 
-func (self *Service) ensure_infusion_option(name string, sources []source.SourceRef) error {
+func (self *Service) ensure_infusion_option(name string, sources []source.Source) error {
 	name = strings.TrimSpace(name)
 	if name == "" || len(sources) == 0 {
 		return nil
@@ -356,7 +356,7 @@ func (self *Service) load_resolve(id domain.CaseID, state *pipelineState) error 
 	return nil
 }
 
-func sourceIDs(refs []source.SourceRef) []source.SourceId {
+func sourceIDs(refs []source.Source) []source.SourceId {
 	result := make([]source.SourceId, 0, len(refs))
 	for _, ref := range refs {
 		result = append(result, ref.SourceID)

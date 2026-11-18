@@ -15,7 +15,7 @@ type ActorRecord struct {
 	Key        string
 	Value      repo.IEActor
 	OtherNames []string
-	Sources    []source.SourceRef
+	Sources    []source.Source
 	Actions    []ActorActionLink
 }
 
@@ -29,7 +29,7 @@ type ActorActionLink struct {
 type ActionRecord struct {
 	Key            string
 	Value          repo.IEAction
-	Sources        []source.SourceRef
+	Sources        []source.Source
 	ResultStatuses []ActionResultStatusLink
 }
 
@@ -43,7 +43,7 @@ type ActionResultStatusLink struct {
 type StatusRecord struct {
 	Key     string
 	Value   repo.IEStatus
-	Sources []source.SourceRef
+	Sources []source.Source
 	Actions []StatusActionLink
 }
 
@@ -59,10 +59,10 @@ type ProcedureRecord struct {
 	Value      repo.IMedicalProcedure
 	OtherNames []string
 	Traits     []repo.Trait
-	Sources    []source.SourceRef
+	Sources    []source.Source
 }
 
-func (s *StoreContainer) sourceRefsFor(table, column string, id int64) ([]source.SourceRef, error) {
+func (s *StoreContainer) sourceRefsFor(table, column string, id int64) ([]source.Source, error) {
 	rows, err := s.QueryContext(s.ctx,
 		`SELECT source_id FROM `+table+` WHERE `+column+` = ? ORDER BY id`, id)
 	if err != nil {

@@ -21,7 +21,7 @@ func actorValueByKind(kind, name string) (repo.IEActor, error) {
 	}
 }
 
-func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.SourceRef) (ids.ProcedureID, error) {
+func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (ids.ProcedureID, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
@@ -56,7 +56,7 @@ func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
 	contextTraits []trait.Trait,
 	indications []repo.IEStatus,
 	effects []repo.IEStatus,
-	sources []source.SourceRef,
+	sources []source.Source,
 ) (medicalprocedureoption.MedicalProcedureOption, error) {
 	indicationIDs, err := s.statusIDsForValues(indications)
 	if err != nil {

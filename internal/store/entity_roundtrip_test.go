@@ -20,7 +20,7 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 	if err := st.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	sources := []source.SourceRef{{SourceID: source.NewSourceId(1)}}
+	sources := []source.Source{{SourceID: source.NewSourceId(1)}}
 	container, err := st.LoadGraph()
 	if err != nil {
 		t.Fatalf("LoadGraph: %v", err)

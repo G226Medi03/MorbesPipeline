@@ -27,7 +27,7 @@ type MedicalProcedureOption struct {
 	ContextTraits           []trait.Trait
 	IndicationStatusIDs     []ids.StatusID
 	ExpectedEffectStatusIDs []ids.StatusID
-	Sources                 []source.SourceRef
+	Sources                 []source.Source
 
 	Procedure  repo.IMedicalProcedure `json:"-"`
 	Indication []repo.IEStatus        `json:"-"`
@@ -48,7 +48,7 @@ func NewMedicalProcedureOption(
 	contextTraits []trait.Trait,
 	indicationIDs []ids.StatusID,
 	expectedEffectIDs []ids.StatusID,
-	sources []source.SourceRef,
+	sources []source.Source,
 	procedure repo.IMedicalProcedure,
 	indication []repo.IEStatus,
 ) MedicalProcedureOption {

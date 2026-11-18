@@ -21,9 +21,9 @@ func TestTraceSourceFollowsLlmReferedChainToOriginal(t *testing.T) {
 		t.Fatalf("InitSchema: %v", err)
 	}
 	for _, query := range []string{
-		`INSERT INTO sources (source_id, path, source_type, id_ptr) VALUES (1, 'original.pdf', 'PdfFile', 0)`,
-		`INSERT INTO sources (source_id, path, source_type, id_ptr) VALUES (2, '', 'LlmResponse', 10)`,
-		`INSERT INTO sources (source_id, path, source_type, id_ptr) VALUES (3, '', 'LlmResponse', 11)`,
+		`INSERT INTO sources (source_id, source_type, id_ptr) VALUES (1, 'PdfFile', 0)`,
+		`INSERT INTO sources (source_id, source_type, id_ptr) VALUES (2, 'LlmResponse', 10)`,
+		`INSERT INTO sources (source_id, source_type, id_ptr) VALUES (3, 'LlmResponse', 11)`,
 		`INSERT INTO llm_responses (resp_id, model, prompt, refered_source_id, output) VALUES (10, 'test', 'p1', 1, 'o1')`,
 		`INSERT INTO llm_responses (resp_id, model, prompt, refered_source_id, output) VALUES (11, 'test', 'p2', 2, 'o2')`,
 	} {
@@ -35,14 +35,16 @@ func TestTraceSourceFollowsLlmReferedChainToOriginal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TraceSource: %v", err)
 	}
-	if len(trace.Chain) != 3 {
-		t.Fatalf("chain = %#v", trace.Chain)
+	if len(trace) != 3 {
+		t.Fatalf("chain = %#v", trace)
 	}
-	if trace.Origin == nil || trace.Origin.SourceID.ToI64() != 1 || trace.Origin.Path != "original.pdf" {
-		t.Fatalf("origin = %#v", trace.Origin)
+	origin, ok := trace.Origin()
+	if !ok || origin.SourceID.ToI64() != 1 || origin.SourceKind != source.SourceKindPdfFile {
+		t.Fatalf("origin = %#v", origin)
 	}
-	if trace.Immediate.SourceID.ToI64() != 3 || trace.Immediate.SourceType != source.SourceTypeLlmResponse {
-		t.Fatalf("immediate = %#v", trace.Immediate)
+	immediate, ok := trace.Immediate()
+	if !ok || immediate.SourceID.ToI64() != 3 || immediate.SourceKind != source.SourceKindLlmResponse {
+		t.Fatalf("immediate = %#v", immediate)
 	}
 }
 
@@ -57,7 +59,7 @@ func TestTraceSourceStopsAtUnresolvedLlmSource(t *testing.T) {
 	if err := st.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO sources (source_id, path, source_type, id_ptr) VALUES (1, '', 'LlmResponse', 10)`); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO sources (source_id, source_type, id_ptr) VALUES (1, 'LlmResponse', 10)`); err != nil {
 		t.Fatalf("insert source: %v", err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO llm_responses (resp_id, model, prompt, refered_source_id, output) VALUES (10, 'test', 'p', 0, 'o')`); err != nil {
@@ -67,10 +69,10 @@ func TestTraceSourceStopsAtUnresolvedLlmSource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TraceSource: %v", err)
 	}
-	if trace.Origin != nil {
-		t.Fatalf("origin = %#v, want nil", trace.Origin)
+	if _, ok := trace.Origin(); ok {
+		t.Fatalf("origin = %#v, want none", trace)
 	}
-	if len(trace.Chain) != 1 {
-		t.Fatalf("chain = %#v", trace.Chain)
+	if len(trace) != 1 {
+		t.Fatalf("chain = %#v", trace)
 	}
 }

@@ -226,7 +226,7 @@ func (r Repository) listStatusIDs(table string, id mp.MedicalProcedureOptionID) 
 	return result, rows.Err()
 }
 
-func (r Repository) replaceSources(id mp.MedicalProcedureOptionID, sources []source.SourceRef) error {
+func (r Repository) replaceSources(id mp.MedicalProcedureOptionID, sources []source.Source) error {
 	if _, err := r.db.ExecContext(r.ctx,
 		`DELETE FROM medical_procedure_option_sources WHERE medical_procedure_option_id = ?`, id.ToI64()); err != nil {
 		return err
@@ -244,7 +244,7 @@ func (r Repository) replaceSources(id mp.MedicalProcedureOptionID, sources []sou
 	return nil
 }
 
-func (r Repository) listSources(id mp.MedicalProcedureOptionID) ([]source.SourceRef, error) {
+func (r Repository) listSources(id mp.MedicalProcedureOptionID) ([]source.Source, error) {
 	rows, err := r.db.QueryContext(r.ctx,
 		`SELECT source_id FROM medical_procedure_option_sources WHERE medical_procedure_option_id = ? ORDER BY source_id`,
 		id.ToI64())
@@ -252,13 +252,13 @@ func (r Repository) listSources(id mp.MedicalProcedureOptionID) ([]source.Source
 		return nil, err
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	var result []source.SourceRef
+	var result []source.Source
 	for rows.Next() {
 		var sourceID source.SourceId
 		if err := rows.Scan(&sourceID); err != nil {
 			return nil, err
 		}
-		result = append(result, source.SourceRef{SourceID: sourceID})
+		result = append(result, source.Source{SourceID: sourceID})
 	}
 	return result, rows.Err()
 }
