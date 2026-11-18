@@ -11,6 +11,7 @@ import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	storegraph "github.com/G226Medi03/MorbesPipeline/internal/store/graph"
 	"github.com/G226Medi03/MorbesPipeline/internal/store/option"
+	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
@@ -33,10 +34,11 @@ type StoreContainer struct {
 
 	Response *responsestore.Store
 
-	Option medicalprocedureoption.Repository
-	Source storesource.Repository
-	Solve  storesolve.Repository
-	Graph  storegraph.Repository
+	Option      medicalprocedureoption.Repository
+	Source      storesource.Repository
+	Solve       storesolve.Repository
+	Graph       storegraph.Repository
+	Postprocess storepostprocess.Repository
 }
 
 // Store is kept as an alias for the existing public API.
@@ -73,6 +75,7 @@ func (s *StoreContainer) bind() {
 	s.Response = nil
 	s.Option = medicalprocedureoption.NewRepository(s.ctx, s)
 	s.Graph = storegraph.NewRepository(s.ctx, s)
+	s.Postprocess = storepostprocess.NewRepository(s.ctx, s)
 }
 
 func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {
