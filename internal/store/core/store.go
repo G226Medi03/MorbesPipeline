@@ -11,9 +11,8 @@ import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
-	storesource "github.com/G226Medi03/MorbesPipeline/internal/store/source"
-	storeadapter "github.com/G226Medi03/MorbesPipeline/internal/store/sourceadapter"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
+	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 type StoreContainer struct {
@@ -32,7 +31,7 @@ type StoreContainer struct {
 	Medical  *repo.Store
 	Response *responsestore.Store
 
-	Source      storesource.Store
+	Source      storesource.Repository
 	Solve       storesolve.Repository
 	Postprocess storepostprocess.Repository
 }
@@ -56,7 +55,7 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 		mu:       &sync.Mutex{},
 		sourceDB: sourceDB,
 		solveDB:  solveDB,
-		Source:   storesource.NewStore(storeadapter.NewTable()),
+		Source:   storesource.Repository{},
 	}
 	value.bind()
 	return value

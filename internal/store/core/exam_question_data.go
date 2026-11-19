@@ -7,7 +7,6 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	source "github.com/G226Medi03/SourceEntity"
-	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 // ExamQuestionDataCounts summarizes data linked to one exam question.
@@ -69,5 +68,5 @@ func (s *StoreContainer) DeleteExamQuestionData(ctx context.Context, examQuestio
 	if len(responseIDs) == 0 {
 		return nil
 	}
-	return (storesource.LlmResponseTable{}).DeleteByIDs(ctx, s.sourceExecutor(), responseIDs)
+	return s.Source.DeleteLlmResponses(ctx, s.sourceExecutor(), responseIDs)
 }

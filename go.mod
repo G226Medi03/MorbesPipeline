@@ -4,12 +4,12 @@ go 1.26.0
 
 require (
 	github.com/G226Medi03/MedicalEntityParser v0.6.1
-	github.com/G226Medi03/MedicalEntityRepository v0.12.1
-	github.com/G226Medi03/MorbesLLMService v0.14.0
+	github.com/G226Medi03/MedicalEntityRepository v0.13.0
+	github.com/G226Medi03/MorbesLLMService v0.14.1
 	github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1
 	github.com/G226Medi03/SQLCore v0.2.0
 	github.com/G226Medi03/SourceEntity v0.4.1
-	github.com/G226Medi03/SourceEntityRepository v0.3.1
+	github.com/G226Medi03/SourceEntityRepository v0.4.0
 	github.com/G226Medi03/llm-client v0.5.0
 	github.com/G226Medi03/log-sqlite v0.1.1
 	modernc.org/sqlite v1.62.0

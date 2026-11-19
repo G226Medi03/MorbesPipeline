@@ -2,8 +2,8 @@ package store
 
 import (
 	"database/sql"
-		"fmt"
-		"strings"
+	"fmt"
+	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
