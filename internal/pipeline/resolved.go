@@ -12,12 +12,12 @@ import (
 )
 
 type ResolvedCaseExtraction struct {
-	Actors                  []ActorDraft                                    `json:"actors,omitempty"`
-	Statuses                map[string]repo.IEStatus                        `json:"statuses,omitempty"`
-	Actions                 map[string]repo.IEAction                        `json:"actions,omitempty"`
-	Relations               []RelationDraft                                 `json:"relations,omitempty"`
+	Actors                  []ActorDraft                  `json:"actors,omitempty"`
+	Statuses                map[string]repo.IEStatus      `json:"statuses,omitempty"`
+	Actions                 map[string]repo.IEAction      `json:"actions,omitempty"`
+	Relations               []RelationDraft               `json:"relations,omitempty"`
 	MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-	PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
+	PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
 }
 
 func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
@@ -38,23 +38,23 @@ func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 		actions[key] = encoded
 	}
 	return json.Marshal(struct {
-		Actors                  []ActorDraft                                    `json:"actors,omitempty"`
-		Statuses                map[string]json.RawMessage                      `json:"statuses,omitempty"`
-		Actions                 map[string]json.RawMessage                      `json:"actions,omitempty"`
-		Relations               []RelationDraft                                 `json:"relations,omitempty"`
+		Actors                  []ActorDraft                  `json:"actors,omitempty"`
+		Statuses                map[string]json.RawMessage    `json:"statuses,omitempty"`
+		Actions                 map[string]json.RawMessage    `json:"actions,omitempty"`
+		Relations               []RelationDraft               `json:"relations,omitempty"`
 		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-		PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
+		PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
 	}{value.Actors, statuses, actions, value.Relations, value.MedicalProcedureOptions, value.PatientDescriptions})
 }
 
 func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	aux := struct {
-		Actors                  []ActorDraft                                    `json:"actors,omitempty"`
-		Statuses                map[string]json.RawMessage                      `json:"statuses,omitempty"`
-		Actions                 map[string]json.RawMessage                      `json:"actions,omitempty"`
-		Relations               []RelationDraft                                 `json:"relations,omitempty"`
+		Actors                  []ActorDraft                  `json:"actors,omitempty"`
+		Statuses                map[string]json.RawMessage    `json:"statuses,omitempty"`
+		Actions                 map[string]json.RawMessage    `json:"actions,omitempty"`
+		Relations               []RelationDraft               `json:"relations,omitempty"`
 		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-		PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
+		PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
 	}{}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err

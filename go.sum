@@ -1,11 +1,11 @@
 github.com/G226Medi03/MedicalEntity v0.17.0 h1:engOEbey2YVftkjNZLETNIf8waiAjHoAHogsNTIB1OQ=
 github.com/G226Medi03/MedicalEntity v0.17.0/go.mod h1:9jaHIPFCGEqghJxyXv1f3996m4CUhLQpIspobG0XORU=
-github.com/G226Medi03/MedicalEntityParser v0.5.0 h1:/lwqGSMkS+f9aDtJ/6a5gO0dcAO0Y44IO1FAdTQqIls=
-github.com/G226Medi03/MedicalEntityParser v0.5.0/go.mod h1:L3tKnojVxlxW9PCqd7lwxODEZ15HHHNcId3/I1yv61Q=
+github.com/G226Medi03/MedicalEntityParser v0.6.1 h1:4MuYkSEevFjixCg8X0RyMwDaOCp8/vErdeRxxuz8P7k=
+github.com/G226Medi03/MedicalEntityParser v0.6.1/go.mod h1:L3tKnojVxlxW9PCqd7lwxODEZ15HHHNcId3/I1yv61Q=
 github.com/G226Medi03/MedicalEntityRepository v0.12.0 h1:YxDJEhMkfW8WaFdTtmisTUurqw5jDUzzepPESQsTmrk=
 github.com/G226Medi03/MedicalEntityRepository v0.12.0/go.mod h1:U4ROQIp9yDoFYSqgTLzSOv8g0wgoPFZkD3sLST2Qj2Q=
-github.com/G226Medi03/MorbesLLMService v0.13.0 h1:5zRTz8TMf4EQXwrbrlK+ffEdfj6xy8ybMbeebhylD/A=
-github.com/G226Medi03/MorbesLLMService v0.13.0/go.mod h1:XhtreRx3K01/vEFQjhu/lBqtkrKFR6N38ZS81WNgdwY=
+github.com/G226Medi03/MorbesLLMService v0.14.0 h1:EVhFmi8Kzmo/XY8eR8T46PNQETGEle3+Ek044aZy2rQ=
+github.com/G226Medi03/MorbesLLMService v0.14.0/go.mod h1:/fdxwvdHQP/3f5OCPPhmbZHf6k3gctM2K5tgd1XM1JA=
 github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1 h1:uUJ6yJRAMic/bUfRQmRinKrjHXAkuC2GRrl71p9yqbM=
 github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1/go.mod h1:Yb54rUstYvfKPVEHncsp+UaGbyYusekxGqAVHLmYvCc=
 github.com/G226Medi03/SQLCore v0.2.0 h1:Om4N7UzJJh1tNVAt2s9NzmVXjQB2w1WJkMo8WJMqIB0=

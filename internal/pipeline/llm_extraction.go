@@ -3,8 +3,8 @@ package csolve
 import (
 	"context"
 
-	domain "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
+	domain "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
