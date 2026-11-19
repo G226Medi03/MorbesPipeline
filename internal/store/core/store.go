@@ -12,6 +12,7 @@ import (
 	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	storesource "github.com/G226Medi03/MorbesPipeline/internal/store/source"
+	storeadapter "github.com/G226Medi03/MorbesPipeline/internal/store/sourceadapter"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -55,7 +56,7 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 		mu:       &sync.Mutex{},
 		sourceDB: sourceDB,
 		solveDB:  solveDB,
-		Source:   storesource.NewStore(),
+		Source:   storesource.NewStore(storeadapter.NewTable()),
 	}
 	value.bind()
 	return value

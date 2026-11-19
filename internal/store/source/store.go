@@ -11,8 +11,8 @@ type Store struct {
 	Repository Repository
 }
 
-func NewStore() Store {
-	return Store{Repository: NewRepository(NewTable())}
+func NewStore(table Table) Store {
+	return Store{Repository: NewRepository(table)}
 }
 
 func (s Store) Get(ctx context.Context, db sqlutil.Executor, sourceID sourcedomain.SourceId) (sourcedomain.Source, bool, error) {
