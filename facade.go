@@ -82,8 +82,6 @@ type (
 	ActionRecord               = persistence.ActionRecord
 	StatusRecord               = persistence.StatusRecord
 	ProcedureRecord            = persistence.ProcedureRecord
-	StatusNameRef              = persistence.StatusNameRef
-	UnresolvedTransplantTarget = persistence.UnresolvedTransplantTarget
 	ExamQuestionDataCounts     = persistence.ExamQuestionDataCounts
 	ExamQuestionCaseStats      = storesolve.ExamQuestionCaseStats
 )
