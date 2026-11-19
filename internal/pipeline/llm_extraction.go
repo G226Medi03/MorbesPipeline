@@ -5,6 +5,7 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	domain "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	pllm "github.com/G226Medi03/MorbesPipeline/internal/pipeline/llm"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -26,24 +27,9 @@ func (self *Service) runLLMExtraction(ctx context.Context, id domain.CaseID, sta
 		PatientDescriptionEligible: looks_like_patient_description(state.Case.Problem),
 		CacheMode:                  self.cache_mode,
 	}
-	result, err := self.llmExtraction.Run(ctx, request)
+	result, questionType, err := pllm.Run(ctx, self.llmExtraction, request)
 	if err != nil {
 		return err
-	}
-	questionType := domain.NormalizeQuestionType(result.RawQuestionType)
-	policy := domain.InferQuestionPolicy(request.ProblemStem)
-	switch {
-	case policy.Type == domain.QuestionTypeDeviceAction:
-		questionType = policy.Type
-	case questionType == domain.QuestionTypeStatus && policy.Type == domain.QuestionTypeProcedure:
-		questionType = policy.Type
-	case policy.Type == domain.QuestionTypeMechanism && questionType != domain.QuestionTypeMechanism:
-		questionType = policy.Type
-	case questionType == "" && policy.Type != "":
-		questionType = policy.Type
-	}
-	if questionType == "" {
-		questionType = domain.QuestionTypeProcedure
 	}
 	state.QuestionType = questionType
 	state.Extraction = result.Extraction
