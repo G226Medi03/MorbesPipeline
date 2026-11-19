@@ -11,28 +11,27 @@ import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storesource "github.com/G226Medi03/MorbesPipeline/internal/store/source"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
-	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 type StoreContainer struct {
 	ctx context.Context
 	mu  *sync.Mutex
-	
-	db  *sql.DB
-	tx  *sql.Tx
+
+	db *sql.DB
+	tx *sql.Tx
 
 	sourceDB *sql.DB
 	sourceTx *sql.Tx
 
-	solveDB  *sql.DB
-	solveTx  *sql.Tx
+	solveDB *sql.DB
+	solveTx *sql.Tx
 
-	Medical    *repo.Store
-	Response    *responsestore.Store
-	
+	Medical  *repo.Store
+	Response *responsestore.Store
 
-	Source      storesource.Repository
+	Source      storesource.Store
 	Solve       storesolve.Repository
 	Postprocess storepostprocess.Repository
 }
@@ -51,11 +50,12 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 		solveDB = medicalDB
 	}
 	value := &StoreContainer{
-		ctx:       ctx,
-		db:        medicalDB,
-		mu:        &sync.Mutex{},
-		sourceDB:  sourceDB,
-		solveDB:   solveDB,
+		ctx:      ctx,
+		db:       medicalDB,
+		mu:       &sync.Mutex{},
+		sourceDB: sourceDB,
+		solveDB:  solveDB,
+		Source:   storesource.NewStore(),
 	}
 	value.bind()
 	return value

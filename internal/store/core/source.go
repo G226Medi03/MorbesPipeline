@@ -3,38 +3,33 @@ package store
 import (
 	"context"
 
-	storesource "github.com/G226Medi03/MorbesPipeline/internal/store/source"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *StoreContainer) sourceRepository() storesource.Repository {
-	return storesource.New(s.ctx, s.sourceExecutor(), s.Source)
-}
-
 func (s *StoreContainer) GetSource(sourceID sourcedomain.SourceId) (sourcedomain.Source, bool, error) {
-	return s.sourceRepository().Get(sourceID)
+	return s.Source.Get(s.ctx, s.sourceExecutor(), sourceID)
 }
 
 func (s *StoreContainer) EnsureSource(kind sourcedomain.SourceKind, idPtr int64) (sourcedomain.SourceId, error) {
 	unlock := s.lockWrite()
 	defer unlock()
-	return s.sourceRepository().Ensure(kind, idPtr)
+	return s.Source.Ensure(s.ctx, s.sourceExecutor(), kind, idPtr)
 }
 
 func (s *StoreContainer) GetLlmResponseRow(respID sourcedomain.RespId) (sourcedomain.LlmResponseRow, bool, error) {
-	return s.sourceRepository().GetLlmResponse(respID)
+	return s.Source.GetLlmResponse(s.ctx, s.sourceExecutor(), respID)
 }
 
 func (s *StoreContainer) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.Source {
-	return s.sourceRepository().Ref(sourceID)
+	return s.Source.Ref(ctx, s.sourceExecutor(), sourceID)
 }
 
 func (s *StoreContainer) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceTrace, error) {
-	return s.sourceRepository().Trace(sourceID)
+	return s.Source.Trace(s.ctx, s.sourceExecutor(), sourceID)
 }
 
 func (s *StoreContainer) refs(ctx context.Context, ids []sourcedomain.SourceId) []sourcedomain.Source {
-	return s.sourceRepository().Refs(ids)
+	return s.Source.Refs(ctx, s.sourceExecutor(), ids)
 }
 
 func firstSourceID(sources []sourcedomain.Source) sourcedomain.SourceId {
