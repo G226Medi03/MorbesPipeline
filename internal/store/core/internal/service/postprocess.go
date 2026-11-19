@@ -1,4 +1,4 @@
-package postprocess
+package service
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func (s *PostprocessService) RecordPostprocess(
 	targetType storerepo.PostprocessEntityType,
 	targetID int64,
 ) (source.SourceId, error) {
-	postprocessID, err := s.store.PostprocessRepository().Append(s.store.Context(), s.store.MainExecutor(), storerepo.PostprocessRecord{
+	postprocessID, err := s.store.PostprocessRepo().Append(s.store.Context(), s.store.MainExecutor(), storerepo.PostprocessRecord{
 		PostprocessorName: name,
 		Operation:         operation,
 		EntityType:        entityType,
@@ -29,12 +29,12 @@ func (s *PostprocessService) RecordPostprocess(
 	if err != nil {
 		return source.SourceId{}, err
 	}
-	return s.store.EnsureSource(source.SourceKindMorbesPostprocess, postprocessID)
+	return s.store.SourceRepo().Ensure(s.store.Context(), s.store.SourceExecutor(), source.SourceKindMorbesPostprocess, postprocessID)
 }
 
 // AuditPostprocessStatus records one status observation.
 func (s *PostprocessService) AuditPostprocessStatus(name string, operation storerepo.PostprocessOperation, value repo.IEStatus) error {
-	id, err := s.store.StatusIDForValue(value)
+	id, err := s.entity.StatusIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (s *PostprocessService) AuditPostprocessStatus(name string, operation store
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	id, err := s.store.StatusIDForValue(value)
+	id, err := s.entity.StatusIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value re
 
 // AuditPostprocessAction records one action observation.
 func (s *PostprocessService) AuditPostprocessAction(name string, operation storerepo.PostprocessOperation, value repo.IEAction) error {
-	id, err := s.store.ActionIDForValue(value)
+	id, err := s.entity.ActionIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (s *PostprocessService) AuditPostprocessAction(name string, operation store
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	id, err := s.store.ActionIDForValue(value)
+	id, err := s.entity.ActionIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -87,11 +87,11 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 	status repo.IEStatus,
 	action repo.IEAction,
 ) error {
-	statusID, err := s.store.StatusIDForValue(status)
+	statusID, err := s.entity.StatusIDForValue(status)
 	if err != nil {
 		return err
 	}
-	actionID, err := s.store.ActionIDForValue(action)
+	actionID, err := s.entity.ActionIDForValue(action)
 	if err != nil {
 		return err
 	}
@@ -113,11 +113,11 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 	action repo.IEAction,
 	status repo.IEStatus,
 ) error {
-	actionID, err := s.store.ActionIDForValue(action)
+	actionID, err := s.entity.ActionIDForValue(action)
 	if err != nil {
 		return err
 	}
-	statusID, err := s.store.StatusIDForValue(status)
+	statusID, err := s.entity.StatusIDForValue(status)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (s *PostprocessService) AddPostprocessSource(
 	if !ok {
 		return fmt.Errorf("unsupported postprocess entity type: %s", entityType)
 	}
-	return s.store.SourceRepository().AddSourceIDs(
+	return s.store.SourceRepo().AddSourceIDs(
 		s.store.Context(),
 		s.store.SourceExecutor(),
 		table,

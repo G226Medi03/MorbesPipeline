@@ -1,4 +1,4 @@
-package source
+package service
 
 import (
 	"context"
@@ -7,29 +7,29 @@ import (
 )
 
 func (s *SourceService) GetSource(sourceID sourcedomain.SourceId) (sourcedomain.Source, bool, error) {
-	return s.store.SourceRepository().Get(s.store.Context(), s.store.SourceExecutor(), sourceID)
+	return s.store.SourceRepo().Get(s.store.Context(), s.store.SourceExecutor(), sourceID)
 }
 
 func (s *SourceService) EnsureSource(kind sourcedomain.SourceKind, idPtr int64) (sourcedomain.SourceId, error) {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.SourceRepository().Ensure(s.store.Context(), s.store.SourceExecutor(), kind, idPtr)
+	return s.store.SourceRepo().Ensure(s.store.Context(), s.store.SourceExecutor(), kind, idPtr)
 }
 
 func (s *SourceService) GetLlmResponseRow(respID sourcedomain.RespId) (sourcedomain.LlmResponseRow, bool, error) {
-	return s.store.SourceRepository().GetLlmResponse(s.store.Context(), s.store.SourceExecutor(), respID)
+	return s.store.SourceRepo().GetLlmResponse(s.store.Context(), s.store.SourceExecutor(), respID)
 }
 
 func (s *SourceService) ref(ctx context.Context, sourceID sourcedomain.SourceId) sourcedomain.Source {
-	return s.store.SourceRepository().Ref(ctx, s.store.SourceExecutor(), sourceID)
+	return s.store.SourceRepo().Ref(ctx, s.store.SourceExecutor(), sourceID)
 }
 
 func (s *SourceService) TraceSource(sourceID sourcedomain.SourceId) (sourcedomain.SourceTrace, error) {
-	return s.store.SourceRepository().Trace(s.store.Context(), s.store.SourceExecutor(), sourceID)
+	return s.store.SourceRepo().Trace(s.store.Context(), s.store.SourceExecutor(), sourceID)
 }
 
 func (s *SourceService) refs(ctx context.Context, ids []sourcedomain.SourceId) []sourcedomain.Source {
-	return s.store.SourceRepository().Refs(ctx, s.store.SourceExecutor(), ids)
+	return s.store.SourceRepo().Refs(ctx, s.store.SourceExecutor(), ids)
 }
 
 func firstSourceID(sources []sourcedomain.Source) sourcedomain.SourceId {

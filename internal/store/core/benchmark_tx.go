@@ -13,7 +13,7 @@ type (
 )
 
 func (s *StoreContainer) ensure_llm_problem_results() error {
-	return s.Benchmark.Init(s.ctx, s.solveExecutor())
+	return s.Benchmark.Init(s.Context(), s.SolveExecutor())
 }
 
 // ProblemResults returns a consistent result page and model list.

@@ -103,7 +103,7 @@
   - link 타입은 facade에서 export하지 않음
   - `repo.ErrNotFound` 사용
   - `ActionsResultingInStatus`, `StatusesCausingAction`, `ActorsCausingAction` 기반 cause tracing
-  - numerical ID는 `internal/store/core/internal/entity/entity_id.go`에서만 SQL로 조회
+  - numerical ID는 `internal/store/repository/entity_id.go`에서만 SQL로 조회
 
 ## 6. PipeLineCore
 

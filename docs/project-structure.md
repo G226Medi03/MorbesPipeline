@@ -86,15 +86,11 @@ selection
 internal/store/
   core/            # StoreContainer, transaction, schema facade
     internal/
-      entity/      # entity ID/link/read/save
-      solve/       # solve case/step/call/prompt
-      source/      # source/response trace
-      benchmark/   # problem result/exam question data
-      postprocess/ # postprocess audit
+      store/       # Store: ctx/db + repositories
+      service/     # Entity/Solve/Source/Benchmark/Postprocess services
       schema/      # schema ensure helpers
-      deps/        # core internal dependency interface
-  repository/      # merged entity helper, solve/benchmark/postprocess tables,
-                   # read models, migration
+  repository/      # Table + Repository layer
+                   # entity/solve/benchmark/postprocess/read/migration
 ```
 
 역할:
@@ -102,11 +98,12 @@ internal/store/
 ```text
 core
   StoreContainer, New/NewWithDBs, InitSchema
-  transaction executor, entity/solve/source 조립
-  core/internal: entity/solve/source/benchmark/postprocess/schema
+  core/internal/store: ctx/db + repositories
+  core/internal/service: application services
 
 repository
-  entity helper
+  Table + Repository
+  entity ID/link/read/save
   solve_cases, solve_steps, solve_llm_calls, answer checks
   llm_problem_results
   morbes_postprocesses audit

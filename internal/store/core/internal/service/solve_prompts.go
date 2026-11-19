@@ -1,4 +1,4 @@
-package solve
+package service
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 )
 
 func (s *SolveService) GetPrompt(stage string) (string, int, error) {
-	return s.store.SolveRepository().Prompt.Get(s.store.Context(), s.store.SolveExecutor(), stage)
+	return s.store.SolveRepo().Prompt.Get(s.store.Context(), s.store.SolveExecutor(), stage)
 }
 
 // Prompt implements the MorbesLLMService prompt store contract.
@@ -25,5 +25,5 @@ func (s *SolveService) Prompt(stage string) (string, int, bool, error) {
 func (s *SolveService) SavePrompt(stage, template string) (int, error) {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.SolveRepository().Prompt.Save(s.store.Context(), s.store.SolveExecutor(), stage, template)
+	return s.store.SolveRepo().Prompt.Save(s.store.Context(), s.store.SolveExecutor(), stage, template)
 }

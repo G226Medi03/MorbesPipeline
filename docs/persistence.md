@@ -6,13 +6,9 @@
 internal/store/
   core/
     internal/
-      entity/
-      solve/
-      source/
-      benchmark/
-      postprocess/
+      store/
+      service/
       schema/
-      deps/
   repository/
 ```
 
@@ -37,11 +33,12 @@ internal/store/core/store.go
 core
   InitSchema
   transaction
-  core/internal: entity ID/link/read, solve, source, benchmark, postprocess, schema
-  entity read는 MedicalEntityRepository facade 위임
+  core/internal/store: ctx/db + repositories
+  core/internal/service: application services
 
 repository
-  entity helper
+  Table + Repository
+  entity ID/link/read/save
   benchmark/solve/postprocess table과 repository
   ProblemResultRow, ExamQuestionDataCounts
   legacy schema migration

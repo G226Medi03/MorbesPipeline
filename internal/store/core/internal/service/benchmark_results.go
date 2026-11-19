@@ -1,4 +1,4 @@
-package benchmark
+package service
 
 import (
 	"context"
@@ -15,15 +15,15 @@ type (
 )
 
 func (s *BenchmarkService) ensure_llm_problem_results() error {
-	return s.store.BenchmarkRepository().Init(s.store.Context(), s.store.SolveExecutor())
+	return s.store.BenchmarkRepo().Init(s.store.Context(), s.store.SolveExecutor())
 }
 
 func (s *BenchmarkService) GetProblemResultByID(ctx context.Context, id int64) (ProblemResultRow, bool, error) {
-	row, found, err := s.store.BenchmarkRepository().GetByID(ctx, s.store.SolveExecutor(), id)
+	row, found, err := s.store.BenchmarkRepo().GetByID(ctx, s.store.SolveExecutor(), id)
 	if err != nil || !found {
 		return ProblemResultRow{}, found, err
 	}
-	responses, err := s.store.SourceRepository().GetLlmResponses(
+	responses, err := s.store.SourceRepo().GetLlmResponses(
 		ctx, s.store.SourceExecutor(), []sourcedomain.RespId{sourcedomain.RespId(row.LLMResponseID)},
 	)
 	if err != nil {
@@ -44,7 +44,7 @@ func (s *BenchmarkService) ListProblemResults(ctx context.Context, filter Proble
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return []ProblemResultRow{}, nil
 	}
-	rows, err := s.store.BenchmarkRepository().List(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
+	rows, err := s.store.BenchmarkRepo().List(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 		Order:       filter.Order,
@@ -77,14 +77,14 @@ func (s *BenchmarkService) CountProblemResults(ctx context.Context, filter Probl
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return 0, nil
 	}
-	return s.store.BenchmarkRepository().Count(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
+	return s.store.BenchmarkRepo().Count(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 	})
 }
 
 func (s *BenchmarkService) ListProblemResultModels(ctx context.Context) ([]string, error) {
-	responseIDs, err := s.store.BenchmarkRepository().ListResponseIDs(ctx, s.store.SolveExecutor())
+	responseIDs, err := s.store.BenchmarkRepo().ListResponseIDs(ctx, s.store.SolveExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *BenchmarkService) problem_result_response_ids(ctx context.Context, filt
 	var modelIDs []sourcedomain.RespId
 	if model != "" {
 		var err error
-		modelIDs, err = s.store.SourceRepository().LlmResponseIDsByModel(ctx, s.store.SourceExecutor(), model)
+		modelIDs, err = s.store.SourceRepo().LlmResponseIDsByModel(ctx, s.store.SourceExecutor(), model)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func (s *BenchmarkService) problem_result_response_ids(ctx context.Context, filt
 	var errorIDs []sourcedomain.RespId
 	if filter.Error != nil {
 		var err error
-		errorIDs, err = s.store.SourceRepository().LlmResponseIDsByError(ctx, s.store.SourceExecutor(), *filter.Error)
+		errorIDs, err = s.store.SourceRepo().LlmResponseIDsByError(ctx, s.store.SourceExecutor(), *filter.Error)
 		if err != nil {
 			return nil, err
 		}
@@ -168,7 +168,7 @@ func (s *BenchmarkService) problem_result_responses(ctx context.Context, rows []
 		seen[row.LLMResponseID] = struct{}{}
 		ids = append(ids, sourcedomain.RespId(row.LLMResponseID))
 	}
-	return s.store.SourceRepository().GetLlmResponses(ctx, s.store.SourceExecutor(), ids)
+	return s.store.SourceRepo().GetLlmResponses(ctx, s.store.SourceExecutor(), ids)
 }
 
 func (s *BenchmarkService) problem_result_response_ids_map(ctx context.Context, ids []sourcedomain.RespId) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
@@ -176,7 +176,7 @@ func (s *BenchmarkService) problem_result_response_ids_map(ctx context.Context, 
 	for _, id := range ids {
 		respIDs = append(respIDs, sourcedomain.RespId(id))
 	}
-	return s.store.SourceRepository().GetLlmResponses(ctx, s.store.SourceExecutor(), respIDs)
+	return s.store.SourceRepo().GetLlmResponses(ctx, s.store.SourceExecutor(), respIDs)
 }
 
 func composeProblemResult(row storerepo.BenchmarkRow, response sourcedomain.LlmResponseRow) ProblemResultRow {

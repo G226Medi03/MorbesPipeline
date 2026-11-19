@@ -7,36 +7,36 @@ import (
 )
 
 func (s *StoreContainer) InitSchema() error {
-	if err := storerepo.ApplyMigration(s.ctx, s); err != nil {
+	if err := storerepo.ApplyMigration(s.Context(), s); err != nil {
 		return err
 	}
-	if _, err := s.entities(); err != nil {
+	if _, err := s.Entities(); err != nil {
 		return err
 	}
-	if err := s.Postprocess.Init(s.ctx, s); err != nil {
+	if err := s.Postprocess.Init(s.Context(), s); err != nil {
 		return err
 	}
-	if err := s.Source.Init(s.ctx, s.sourceExecutor()); err != nil {
+	if err := s.Source.Init(s.Context(), s.SourceExecutor()); err != nil {
 		return err
 	}
-	responseStore, err := responsestore.NewStore(s.ctx, s.sourceExecutor())
+	responseStore, err := responsestore.NewStore(s.Context(), s.SourceExecutor())
 	if err != nil {
 		return err
 	}
 	s.Response = responseStore
-	if err := s.Solve.Init(s.ctx, s.solveExecutor()); err != nil {
+	if err := s.Solve.Init(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
 	if err := s.ensure_llm_problem_results(); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureStatusOtherName(s.ctx, s); err != nil {
+	if err := coreschema.EnsureStatusOtherName(s.Context(), s); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureEntitySources(s.ctx, s); err != nil {
+	if err := coreschema.EnsureEntitySources(s.Context(), s); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureSolveIDColumns(s.ctx, s.solveExecutor()); err != nil {
+	if err := coreschema.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
 	return nil
