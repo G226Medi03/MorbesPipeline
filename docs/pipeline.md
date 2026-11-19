@@ -5,11 +5,20 @@
 ```text
 internal/pipeline/
   orchestration/
+    service.go
+    aliases.go
     pipeline.go
     pipeline_nodes.go
     pipeline_v2.go
-    pipeline_state.go
+    llm_extraction.go
     replay.go
+    resolved.go
+    state/
+    prompt/
+    stage/
+    coverage/
+    trace/
+    adapters/postprocess/
   checkpoint/
   input/
   llm/

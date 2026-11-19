@@ -8,8 +8,6 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/checkpoint"
 )
 
-type ResolvedCaseExtraction = checkpoint.ResolvedCaseExtraction
-
 func (self *Service) LoadResolvedCaseExtraction(id solve.CaseID) (ResolvedCaseExtraction, bool, error) {
 	step, found, err := self.store.GetStep(id, NodeResolve)
 	if err != nil {

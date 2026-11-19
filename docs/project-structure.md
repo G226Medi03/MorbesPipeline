@@ -40,7 +40,13 @@ LLM output
 
 ```text
 internal/pipeline/
-  orchestration/   # solve case 실행, node 구성, 상태, replay
+  orchestration/   # solve 실행, node 구성, replay
+    state/         # pipeline state, step output
+    prompt/        # prompt constants/helpers
+    stage/         # stage/node constants
+    coverage/      # coverage helper
+    trace/         # LLM call trace
+    adapters/postprocess/ # deterministic postprocess adapter
   checkpoint/      # resolve/step checkpoint DTO
   input/           # 문제 stem/choice parsing
   llm/             # LLM extraction adapter + logger

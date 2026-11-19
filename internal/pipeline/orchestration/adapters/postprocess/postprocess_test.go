@@ -1,4 +1,4 @@
-package csolve
+package postprocess
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	store "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/state"
+	store "github.com/G226Medi03/MorbesPipeline/internal/store"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -34,14 +35,14 @@ func TestPostprocessCreatesTransplantRejection(t *testing.T) {
 	if _, err := entityStore.InsertStatus(status, []source.SourceId{sourceID}); err != nil {
 		t.Fatalf("InsertStatus: %v", err)
 	}
-	state := &pipelineState{
+	testState := &state.State{
 		Statuses: map[string]repo.IEStatus{"s1": status},
 		Actions:  map[string]repo.IEAction{},
-		Extraction: CaseExtraction{
-			Statuses: []StatusDraft{{Key: "s1", Value: llmparser.StatusToDTO(status), SourceID: sourceID}},
+		Extraction: state.CaseExtraction{
+			Statuses: []state.StatusDraft{{Key: "s1", Value: llmparser.StatusToDTO(status), SourceID: sourceID}},
 		},
 	}
-	if err := Postprocess(ctx, st, state); err != nil {
+	if err := Run(ctx, st, testState); err != nil {
 		t.Fatalf("Postprocess: %v", err)
 	}
 	effect := repo.HaveSymptom{Symptom: repo.EOtherSymptom{Name: RejectionStatusName}}

@@ -1,18 +1,21 @@
-package csolve
+package state
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	csituation "github.com/G226Medi03/MorbesPipeline/internal/domain/situation"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/prompt"
 	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-type pipelineState struct {
+type Case = solve.Case
+
+type State struct {
 	Case                Case
-	Prompts             promptSet
-	QuestionType        domain.QuestionType
+	Prompts             prompt.Set
+	QuestionType        solve.QuestionType
 	Explanation         string
 	Extraction          CaseExtraction
 	Resolved            ResolvedCaseExtraction

@@ -1,25 +1,18 @@
 package csolve
 
-import "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+import "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/stage"
 
 const (
-	NodeExplain        = string(domain.StageExplain)
-	NodeCaseExtraction = string(domain.StageCaseExtraction)
-	NodeResolve        = string(domain.StageResolve)
-	NodeCause          = string(domain.StageCause)
+	NodeExplain        = stage.NodeExplain
+	NodeCaseExtraction = stage.NodeCaseExtraction
+	NodeResolve        = stage.NodeResolve
+	NodeCause          = stage.NodeCause
 )
 
-type Step = domain.Step
+type Step = stage.Step
 
-func StepSeq(node string) int { return domain.Sequence(domain.Stage(node)) }
+func StepSeq(node string) int { return stage.StepSeq(node) }
 
-func PipelineStages() []string {
-	stages := domain.Stages()
-	result := make([]string, 0, len(stages))
-	for _, stage := range stages {
-		result = append(result, string(stage))
-	}
-	return result
-}
+func PipelineStages() []string { return stage.PipelineStages() }
 
-func StageSequence(stage string) int { return domain.Sequence(domain.Stage(stage)) }
+func StageSequence(stageValue string) int { return stage.StageSequence(stageValue) }

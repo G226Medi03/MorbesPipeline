@@ -3,6 +3,7 @@ package csolve
 import (
 	domain "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/selection"
 )
 
 // Public aliases owned by the domain package.
@@ -18,3 +19,11 @@ type (
 	MedicalProcedureOptionOutcome    = domain.MedicalProcedureOptionOutcome
 	MedicalProcedureOptionIndication = domain.MedicalProcedureOptionIndication
 )
+
+func ScoreMedicalProcedureOption(option MedicalProcedureOptionGraphItem) int {
+	return selection.ScoreMedicalProcedureOption(option)
+}
+
+func SelectMedicalProcedureOption(options []MedicalProcedureOptionGraphItem, problem string) (MedicalProcedureOptionGraphItem, bool) {
+	return selection.SelectMedicalProcedureOption(options, problem)
+}

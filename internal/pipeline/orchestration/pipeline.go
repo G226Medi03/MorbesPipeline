@@ -60,7 +60,7 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 	if err := self.set_stage(id, "solver_explain"); err != nil {
 		return err
 	}
-	step_id, err := self.store.StartStep(id, NodeExplain, state.Prompts.versions[PromptExplain])
+	step_id, err := self.store.StartStep(id, NodeExplain, state.Prompts.Versions[PromptExplain])
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 	prompt := ""
 	raw := ""
 	explanation := ""
-	prompt_version := state.Prompts.versions[PromptExplain]
+	prompt_version := state.Prompts.Versions[PromptExplain]
 	if result != nil {
 		explanation = result.Explanation
 		raw = result.Raw
