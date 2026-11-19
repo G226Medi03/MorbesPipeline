@@ -2,31 +2,20 @@ package csolve
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
 )
 
 const (
-	NodeExplain        = string(domain.StageExplain)
-	NodeCaseExtraction = string(domain.StageCaseExtraction)
-	NodeResolve        = string(domain.StageResolve)
-	NodeCause          = string(domain.StageCause)
+	NodeExplain        = orchestration.NodeExplain
+	NodeCaseExtraction = orchestration.NodeCaseExtraction
+	NodeResolve        = orchestration.NodeResolve
+	NodeCause          = orchestration.NodeCause
 )
 
 type Step = domain.Step
 
-func StepSeq(node string) int {
-	return domain.Sequence(domain.Stage(node))
-}
+func StepSeq(node string) int { return orchestration.StepSeq(node) }
 
-// PipelineStages returns the canonical pipeline order used by the UI.
-func PipelineStages() []string {
-	stages := domain.Stages()
-	result := make([]string, 0, len(stages))
-	for _, stage := range stages {
-		result = append(result, string(stage))
-	}
-	return result
-}
+func PipelineStages() []string { return orchestration.PipelineStages() }
 
-func StageSequence(stage string) int {
-	return domain.Sequence(domain.Stage(stage))
-}
+func StageSequence(stage string) int { return orchestration.StageSequence(stage) }
