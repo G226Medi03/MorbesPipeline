@@ -64,7 +64,7 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 func (s *StoreContainer) bind() {
 	s.Medical = nil
 	s.Response = nil
-	s.Postprocess = storepostprocess.NewRepository(s.ctx, s)
+	s.Postprocess = storepostprocess.NewRepository()
 }
 
 func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {

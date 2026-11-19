@@ -18,12 +18,12 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck // deferred close
 
-	repository := postprocess.NewRepository(ctx, db)
-	if err := repository.Init(); err != nil {
+	repository := postprocess.NewRepository()
+	if err := repository.Init(ctx, db); err != nil {
 		t.Fatalf("init: %v", err)
 	}
 	finished := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
-	id, err := repository.Append(postprocess.Record{
+	id, err := repository.Append(ctx, db, postprocess.Record{
 		PostprocessorName: "transplant_rejection",
 		Operation:         postprocess.OperationCreated,
 		EntityType:        postprocess.EntityStatus,
@@ -36,7 +36,7 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	if id <= 0 {
 		t.Fatalf("id = %d", id)
 	}
-	records, err := repository.ListByEntity(postprocess.EntityStatus, 10)
+	records, err := repository.ListByEntity(ctx, db, postprocess.EntityStatus, 10)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}

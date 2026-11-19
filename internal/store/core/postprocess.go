@@ -19,7 +19,7 @@ func (s *StoreContainer) RecordPostprocess(
 	targetType postprocess.EntityType,
 	targetID int64,
 ) (source.SourceId, error) {
-	postprocessID, err := s.Postprocess.Append(postprocess.Record{
+	postprocessID, err := s.Postprocess.Append(s.ctx, s, postprocess.Record{
 		PostprocessorName: name,
 		Operation:         operation,
 		EntityType:        entityType,

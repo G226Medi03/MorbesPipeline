@@ -50,7 +50,8 @@ benchmark
   llm_problem_results
 
 postprocess
-  morbes_postprocesses
+  table: morbes_postprocesses schema/CRUD
+  repository: validation and record mapping
 
 migration
   legacy schema rename

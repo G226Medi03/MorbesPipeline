@@ -89,7 +89,7 @@ internal/store/
   read/            # read model types
   solve/           # solve table repository
   benchmark/       # benchmark table repository
-  postprocess/     # postprocess audit repository
+  postprocess/     # postprocess audit table/repository
   migration/       # legacy schema migration
 ```
 
@@ -115,7 +115,8 @@ benchmark
   llm_problem_results
 
 postprocess
-  morbes_postprocesses audit
+  table: morbes_postprocesses schema/CRUD
+  repository: validation and record mapping
 
 migration
   legacy table/column rename

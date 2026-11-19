@@ -13,7 +13,7 @@ func (s *StoreContainer) InitSchema() error {
 	if _, err := s.entities(); err != nil {
 		return err
 	}
-	if err := s.Postprocess.Init(); err != nil {
+	if err := s.Postprocess.Init(s.ctx, s); err != nil {
 		return err
 	}
 	if err := s.Source.Init(s.ctx, s.sourceExecutor()); err != nil {
