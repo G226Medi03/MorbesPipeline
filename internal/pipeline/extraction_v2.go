@@ -2,17 +2,16 @@ package csolve
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	source "github.com/G226Medi03/SourceEntity"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
+	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActorDraft, error) {
@@ -53,15 +52,9 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 		}
 		sort.Strings(keys)
 		for _, key := range keys {
-			status := statuses[key]
-			value, marshal_err := entityjson.EncodeStatus(status)
-			if marshal_err != nil {
-				continue
-			}
 			drafts = append(drafts, StatusDraft{
 				Key:      key,
-				Kind:     status.Kind(),
-				Value:    value,
+				Value:    statuses[key],
 				SourceID: extraction_source_id(response, state),
 			})
 		}
@@ -89,15 +82,9 @@ func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.Cas
 		}
 		sort.Strings(keys)
 		for _, key := range keys {
-			action := actions[key]
-			encoded, marshal_err := entityjson.EncodeAction(action)
-			if marshal_err != nil {
-				continue
-			}
 			drafts = append(drafts, ActionDraft{
 				Key:      key,
-				Variant:  action.Kind(),
-				Value:    encoded,
+				Value:    actions[key],
 				SourceID: extraction_source_id(response, state),
 			})
 		}
@@ -118,10 +105,7 @@ func (self *Service) run_v2_patient_description_extraction(
 	if !state.Prompts.present[PromptPatientDescription] {
 		return nil, nil
 	}
-	status_map, err := status_map_from_drafts(statuses)
-	if err != nil {
-		return nil, err
-	}
+	status_map := status_map_from_drafts(statuses)
 	started := time.Now()
 	result, err := self.llm.ExtractPatientDescription(
 		ctx,
@@ -145,16 +129,11 @@ func (self *Service) run_v2_patient_description_extraction(
 				SourceID:  source_id,
 			}
 			for status_index, status_value := range item.Description {
-				encoded, encode_err := entityjson.EncodeStatus(status_value)
-				if encode_err != nil {
-					continue
-				}
-				status_draft, ok := status_draft_from_raw(encoded, fmt.Sprintf("p%d_%d", index+1, status_index+1))
-				if !ok {
-					continue
-				}
-				status_draft.SourceID = draft.SourceID
-				draft.Description = append(draft.Description, status_draft)
+				draft.Description = append(draft.Description, StatusDraft{
+					Key:      fmt.Sprintf("p%d_%d", index+1, status_index+1),
+					Value:    status_value,
+					SourceID: draft.SourceID,
+				})
 			}
 			if len(draft.Description) > 0 || len(draft.Knowledge) > 0 {
 				drafts = append(drafts, draft)
@@ -177,10 +156,7 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 	if !state.Prompts.present[PromptMedicalProcedureOption] {
 		return nil, nil
 	}
-	status_map, err := status_map_from_drafts(statuses)
-	if err != nil {
-		return nil, err
-	}
+	status_map := status_map_from_drafts(statuses)
 	started := time.Now()
 	result, err := self.llm.ExtractMedicalProcedureOption(
 		ctx,
@@ -199,15 +175,11 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 			if source_id.ToI64() <= 0 {
 				source_id = extraction_source_id(result.Response, state)
 			}
-			encoded, encode_err := entityjson.EncodeProcedure(item.MedicalProcedure)
-			if encode_err != nil {
-				continue
-			}
 			drafts = append(drafts, OptionDraft{
 				Key:              strings.TrimSpace(item.Key),
 				Category:         strings.TrimSpace(item.Category),
 				Traits:           item.Traits,
-				MedicalProcedure: encoded,
+				MedicalProcedure: item.MedicalProcedure,
 				Indications:      trim_string_list(item.Indications),
 				ExpectedEffects:  trim_string_list(item.ExpectedEffects),
 				SourceID:         source_id,
@@ -230,14 +202,8 @@ func (self *Service) run_v2_relation_extraction(
 	if !state.Prompts.present[PromptRelation] {
 		return nil, fmt.Errorf("relation prompt가 비어 있습니다")
 	}
-	status_map, err := status_map_from_drafts(statuses)
-	if err != nil {
-		return nil, err
-	}
-	action_map, err := action_map_from_drafts(actions)
-	if err != nil {
-		return nil, err
-	}
+	status_map := status_map_from_drafts(statuses)
+	action_map := action_map_from_drafts(actions)
 	started := time.Now()
 	result, err := self.llm.ExtractRelations(
 		ctx,
@@ -282,28 +248,20 @@ func prompt_version_or(fallback, version int) int {
 	return fallback
 }
 
-func status_map_from_drafts(statuses []StatusDraft) (map[string]repo.IEStatus, error) {
+func status_map_from_drafts(statuses []StatusDraft) map[string]repo.IEStatus {
 	result := make(map[string]repo.IEStatus, len(statuses))
 	for _, draft := range statuses {
-		status, err := parseStatusDraft(draft)
-		if err != nil {
-			return nil, err
-		}
-		result[draft.Key] = status
+		result[draft.Key] = draft.Value
 	}
-	return result, nil
+	return result
 }
 
-func action_map_from_drafts(actions []ActionDraft) (map[string]repo.IEAction, error) {
+func action_map_from_drafts(actions []ActionDraft) map[string]repo.IEAction {
 	result := make(map[string]repo.IEAction, len(actions))
 	for _, draft := range actions {
-		action, err := parseActionDraft(draft)
-		if err != nil {
-			return nil, err
-		}
-		result[draft.Key] = action
+		result[draft.Key] = draft.Value
 	}
-	return result, nil
+	return result
 }
 
 func patient_descriptions_for_service(drafts []PatientDescriptionDraft) []morbesllm.PatientDescription {
@@ -315,11 +273,7 @@ func patient_descriptions_for_service(drafts []PatientDescriptionDraft) []morbes
 			SourceID:  draft.SourceID,
 		}
 		for _, status_draft := range draft.Description {
-			status, err := parseStatusDraft(status_draft)
-			if err != nil {
-				continue
-			}
-			item.Description = append(item.Description, status)
+			item.Description = append(item.Description, status_draft.Value)
 		}
 		result = append(result, item)
 	}
@@ -410,49 +364,6 @@ func extraction_source_id(response *source.LlmResponse, state *pipelineState) so
 		return response.SourceID
 	}
 	return extraction_refered_source(state)
-}
-
-func status_drafts_json(statuses []StatusDraft) string {
-	items := make([]map[string]any, 0, len(statuses))
-	for _, draft := range statuses {
-		items = append(items, map[string]any{
-			"id":    draft.Key,
-			"kind":  draft.Kind,
-			"value": draft.Value,
-		})
-	}
-	encoded, err := json.Marshal(items)
-	if err != nil {
-		return "[]"
-	}
-	return string(encoded)
-}
-
-func status_draft_from_raw(raw json.RawMessage, fallback_key string) (StatusDraft, bool) {
-	var payload map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return StatusDraft{}, false
-	}
-	kind := ""
-	if value, ok := payload["kind"]; ok {
-		_ = json.Unmarshal(value, &kind)
-	}
-	kind = strings.TrimSpace(kind)
-	if kind == "" {
-		return StatusDraft{}, false
-	}
-	delete(payload, "kind")
-	if value, ok := payload["value"]; ok && len(payload) == 1 {
-		var nested map[string]json.RawMessage
-		if err := json.Unmarshal(value, &nested); err == nil {
-			payload = nested
-		}
-	}
-	value, err := json.Marshal(payload)
-	if err != nil {
-		return StatusDraft{}, false
-	}
-	return StatusDraft{Key: fallback_key, Kind: kind, Value: value}, true
 }
 
 func run_parallel(functions ...func()) {
