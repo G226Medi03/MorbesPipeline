@@ -5,14 +5,11 @@
 ```text
 internal/store/
   facade/
-    store.go
-    schema.go
-    benchmark_tx.go
-    aliases.go
-    postprocess_aliases.go
+    facade.go
   internal/
     store/
       store.go
+      schema.go
     service/
     repository/
       benchmark/
@@ -26,7 +23,7 @@ internal/store/
 ## StoreContainer
 
 ```text
-internal/store/facade/store.go
+internal/store/facade/facade.go
   Store *store.Store
   Entity/Solve/Source/Benchmark/Postprocess service
 
