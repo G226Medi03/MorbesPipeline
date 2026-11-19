@@ -82,21 +82,16 @@ type (
 	Action    = repo.Action
 	Status    = repo.Status
 	Procedure = repo.Procedure
+
+	Graph                      = persistence.Graph
+	StatusNameRef              = persistence.StatusNameRef
+	UnresolvedTransplantTarget = persistence.UnresolvedTransplantTarget
+
 	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
 	ExamQuestionCaseStats  = storesolve.ExamQuestionCaseStats
 )
 
 type (
-	StatusID           = int64
-	ActionID           = int64
-	ActorID            = int64
-	ProcedureID        = int64
-	DeviceID           = int64
-	ExamQuestionID     = int64
-	LLMProblemResultID = int64
-	LLMCallID          = int64
-	StatusEntityID     = int64
-
 	Attr    = clog.Attr
 	Logger  = clog.Logger
 	Options = clog.Config
