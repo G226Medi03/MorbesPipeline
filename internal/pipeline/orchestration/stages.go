@@ -1,8 +1,6 @@
 package csolve
 
-import (
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-)
+import "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 
 const (
 	NodeExplain        = string(domain.StageExplain)
@@ -13,11 +11,8 @@ const (
 
 type Step = domain.Step
 
-func StepSeq(node string) int {
-	return domain.Sequence(domain.Stage(node))
-}
+func StepSeq(node string) int { return domain.Sequence(domain.Stage(node)) }
 
-// PipelineStages returns the canonical pipeline order used by the UI.
 func PipelineStages() []string {
 	stages := domain.Stages()
 	result := make([]string, 0, len(stages))
@@ -27,6 +22,4 @@ func PipelineStages() []string {
 	return result
 }
 
-func StageSequence(stage string) int {
-	return domain.Sequence(domain.Stage(stage))
-}
+func StageSequence(stage string) int { return domain.Sequence(domain.Stage(stage)) }

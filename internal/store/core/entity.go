@@ -6,19 +6,9 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
+	storeentity "github.com/G226Medi03/MorbesPipeline/internal/store/entity"
 	source "github.com/G226Medi03/SourceEntity"
 )
-
-func actorValueByKind(kind, name string) (repo.IEActor, error) {
-	switch repo.ParseActorKind(kind) {
-	case repo.ActorKindDevice:
-		return repo.NewDevice(name), nil
-	case repo.ActorKindProcedure:
-		return repo.NewActorProcedure(name), nil
-	default:
-		return repo.NewUnknownActor(name), nil
-	}
-}
 
 func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
 	if value == nil {
@@ -30,7 +20,7 @@ func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []tr
 	if err != nil {
 		return 0, err
 	}
-	if _, err := entityStore.InsertProcedure(value, nil, medicalEntityTraits(traits), sourceIDs(sources)); err != nil {
+	if _, err := entityStore.InsertProcedure(value, nil, storeentity.MedicalEntityTraits(traits), sourceIDs(sources)); err != nil {
 		return 0, err
 	}
 	return s.procedureIDForValue(value)
@@ -90,14 +80,6 @@ func traitStrings(values []trait.Trait) []string {
 
 // LinkActionResultStatusValues links typed action/status values using their
 // persisted row identifiers.
-func medicalEntityTraits(values []trait.Trait) []repo.Trait {
-	result := make([]repo.Trait, len(values))
-	for index, value := range values {
-		result[index] = repo.Trait(value)
-	}
-	return result
-}
-
 func (s *StoreContainer) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
 	actionID, err := s.actionIDForValue(action)
 	if err != nil {

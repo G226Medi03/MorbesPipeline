@@ -7,7 +7,7 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
-	"github.com/G226Medi03/MorbesPipeline/internal/store"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/core"
 	audit "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )

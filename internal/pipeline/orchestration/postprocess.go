@@ -5,7 +5,7 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/postprocess"
-	"github.com/G226Medi03/MorbesPipeline/internal/store"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/core"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
