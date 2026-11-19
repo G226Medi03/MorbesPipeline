@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/store"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/core/store"
 	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	"github.com/G226Medi03/SourceEntity"
 )

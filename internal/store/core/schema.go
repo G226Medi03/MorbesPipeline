@@ -2,7 +2,6 @@ package store
 
 import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	coreschema "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/schema"
 	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 )
 
@@ -30,13 +29,13 @@ func (s *StoreContainer) InitSchema() error {
 	if err := s.ensure_llm_problem_results(); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureStatusOtherName(s.Context(), s); err != nil {
+	if err := storerepo.EnsureStatusOtherName(s.Context(), s); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureEntitySources(s.Context(), s); err != nil {
+	if err := storerepo.EnsureEntitySources(s.Context(), s); err != nil {
 		return err
 	}
-	if err := coreschema.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
+	if err := storerepo.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
 	return nil

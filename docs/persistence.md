@@ -5,10 +5,10 @@
 ```text
 internal/store/
   core/
-    internal/
-      store/
-      service/
-      schema/
+    store.go
+    schema.go
+    benchmark_tx.go
+    store/
   repository/
 ```
 
@@ -16,6 +16,10 @@ internal/store/
 
 ```text
 internal/store/core/store.go
+  Store *store.Store
+  Entity/Solve/Source/Benchmark/Postprocess service
+
+internal/store/core/store/store.go
   ctx
   medical db/tx
   source db/tx
@@ -30,11 +34,16 @@ internal/store/core/store.go
 ## 주요 구성
 
 ```text
+internal/service
+  Entity/Solve/Source/Benchmark/Postprocess services
+
 core
   InitSchema
-  transaction
-  core/internal/store: ctx/db + repositories
-  core/internal/service: application services
+  transaction wrappers
+  StoreContainer facade
+
+store
+  ctx/db + repositories
 
 repository
   Table + Repository
