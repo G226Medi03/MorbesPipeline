@@ -17,27 +17,25 @@ import (
 
 type StoreContainer struct {
 	ctx context.Context
+	mu  *sync.Mutex
+	
 	db  *sql.DB
 	tx  *sql.Tx
-	mu  *sync.Mutex
 
 	sourceDB *sql.DB
 	sourceTx *sql.Tx
+
 	solveDB  *sql.DB
 	solveTx  *sql.Tx
 
 	Medical    *repo.Store
-	medicalErr error
-	medicalMu  *sync.Mutex
-
 	Response    *responsestore.Store
+	
+
 	Source      storesource.Repository
 	Solve       storesolve.Repository
 	Postprocess storepostprocess.Repository
 }
-
-// Store is kept as an alias for the existing public API.
-type Store = StoreContainer
 
 // New keeps the single-file behavior used by tests and command-line tools.
 // The server opens the medical/source/solve files separately with NewWithDBs.
@@ -56,7 +54,6 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 		ctx:       ctx,
 		db:        medicalDB,
 		mu:        &sync.Mutex{},
-		medicalMu: &sync.Mutex{},
 		sourceDB:  sourceDB,
 		solveDB:   solveDB,
 	}
@@ -66,7 +63,6 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 
 func (s *StoreContainer) bind() {
 	s.Medical = nil
-	s.medicalErr = nil
 	s.Response = nil
 	s.Postprocess = storepostprocess.NewRepository(s.ctx, s)
 }
@@ -79,17 +75,11 @@ func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {
 }
 
 func (s *StoreContainer) entities() (*repo.Store, error) {
-	s.medicalMu.Lock()
-	defer s.medicalMu.Unlock()
 	if s.Medical != nil {
 		return s.Medical, nil
 	}
-	if s.medicalErr != nil {
-		return nil, s.medicalErr
-	}
 	medical, err := repo.NewStore(s.ctx, s)
 	if err != nil {
-		s.medicalErr = err
 		return nil, err
 	}
 	s.Medical = medical
