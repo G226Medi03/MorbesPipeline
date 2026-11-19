@@ -2,58 +2,71 @@ package csolve
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	"github.com/G226Medi03/MorbesPipeline/internal/store"
 	"github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
-	cgraph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 const RejectionStatusName = "급성면역반응"
 
-// Postprocess loads the graph, applies graph rules, and returns the updated
-// in-memory graph.
-func Postprocess(ctx context.Context, st *store.Store) (*cgraph.Container, error) {
-	c, err := st.LoadGraph()
-	if err != nil {
-		return nil, err
+// Postprocess applies the deterministic postprocess rules to the statuses and
+// actions owned by the current case.
+func Postprocess(ctx context.Context, st *store.Store, state *pipelineState) error {
+	if state == nil {
+		return nil
 	}
-	rules := []func(context.Context, *store.Store, *cgraph.Container) error{
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	entityStore, err := st.Entities()
+	if err != nil {
+		return err
+	}
+	statuses := currentStatuses(state)
+	actions := currentActions(state)
+	rules := []func(*store.Store, *repo.Store, *pipelineState, map[string]repo.IEStatus, map[string]repo.IEAction) error{
 		transplantRejectionRule,
 		increasedIndexActionRule,
 		causeStatusResultRule,
 	}
 	for _, rule := range rules {
-		if err := rule(ctx, st, c); err != nil {
-			return nil, err
+		if err := rule(st, entityStore, state, statuses, actions); err != nil {
+			return err
 		}
 	}
-	return c, nil
+	return nil
 }
 
-func transplantRejectionRule(ctx context.Context, st *store.Store, c *cgraph.Container) error {
-	transplantStatusIDs := make([]ids.StatusID, 0)
-	for statusID, statusValue := range c.Statuses {
-		received, ok := statusValue.(repo.ReceivedMedicalProcedure)
+func transplantRejectionRule(
+	st *store.Store,
+	entityStore *repo.Store,
+	state *pipelineState,
+	statuses map[string]repo.IEStatus,
+	_ map[string]repo.IEAction,
+) error {
+	transplantKeys := make([]string, 0)
+	for key, status := range statuses {
+		received, ok := status.(repo.ReceivedMedicalProcedure)
 		if !ok {
 			continue
 		}
 		if _, ok := received.MedicalProcedure.(repo.Transplant); !ok {
 			continue
 		}
-		transplantStatusIDs = append(transplantStatusIDs, statusID)
+		transplantKeys = append(transplantKeys, key)
 	}
-	if len(transplantStatusIDs) == 0 {
+	if len(transplantKeys) == 0 {
 		return nil
 	}
 
 	sourceID := source.SourceId{}
-	for _, statusID := range transplantStatusIDs {
-		if value := firstPostprocessSourceID(c.StatusSourceIDs[statusID]); value.ToI64() > 0 {
+	for _, key := range transplantKeys {
+		if value := sourceForStatus(state, key); value.ToI64() > 0 {
 			sourceID = value
 			break
 		}
@@ -65,36 +78,40 @@ func transplantRejectionRule(ctx context.Context, st *store.Store, c *cgraph.Con
 	effect := repo.HaveSymptom{
 		Symptom: repo.EOtherSymptom{Name: RejectionStatusName},
 	}
-	for _, statusID := range transplantStatusIDs {
-		if err := auditObserved(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityStatus, statusID.ToI64()); err != nil {
+	for _, key := range transplantKeys {
+		if err := st.AuditPostprocessStatus(postprocess.PostprocessorTransplantRejection, postprocess.OperationObserved, statuses[key]); err != nil {
 			return err
 		}
 	}
-	effectID, err := st.EnsureStatusIn(c, effect, sourceID)
-	if err != nil {
+	if _, err := ensureStatus(st, entityStore, postprocess.PostprocessorTransplantRejection, effect, sourceID); err != nil {
 		return err
 	}
-	if err := auditCreated(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityStatus, effectID.ToI64()); err != nil {
+	action := repo.CauseStatus{Status: effect}
+	if _, err := ensureAction(st, entityStore, postprocess.PostprocessorTransplantRejection, action, sourceID); err != nil {
 		return err
 	}
-	actionID, err := st.EnsureActionIn(c, repo.CauseStatus{Status: effect}, sourceID)
-	if err != nil {
-		return err
-	}
-	if err := auditCreated(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityAction, actionID.ToI64()); err != nil {
-		return err
-	}
-	for _, statusID := range transplantStatusIDs {
-		if err := st.LinkStatusActionIn(c, statusID, actionID); err != nil {
+	for _, key := range transplantKeys {
+		status := statuses[key]
+		if err := st.LinkStatusActionValues(status, action, sourceID); err != nil {
 			return err
 		}
-		if err := auditLink(st, postprocess.PostprocessorTransplantRejection, postprocess.OperationLinkAdded, postprocess.EntityStatus, statusID.ToI64(), postprocess.EntityAction, actionID.ToI64()); err != nil {
+		if err := st.AuditPostprocessStatusAction(
+			postprocess.PostprocessorTransplantRejection,
+			postprocess.OperationLinkAdded,
+			status,
+			action,
+		); err != nil {
 			return err
 		}
-		if err := st.LinkActionResultStatusIn(c, actionID, effectID); err != nil {
+		if err := st.LinkActionResultStatusValues(action, effect, sourceID); err != nil {
 			return err
 		}
-		if err := auditLink(st, postprocess.PostprocessorTransplantRejection, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, effectID.ToI64()); err != nil {
+		if err := st.AuditPostprocessActionResultStatus(
+			postprocess.PostprocessorTransplantRejection,
+			postprocess.OperationLinkAdded,
+			action,
+			effect,
+		); err != nil {
 			return err
 		}
 	}
@@ -104,205 +121,292 @@ func transplantRejectionRule(ctx context.Context, st *store.Store, c *cgraph.Con
 // increasedIndexActionRule ensures every increased_index status is produced by
 // exactly one canonical increase_index action. Any other action -> status edge
 // is removed, and predecessor statuses are rewired through the canonical action.
-func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Container) error {
-	for statusID, statusValue := range c.Statuses {
-		if statusValue.Kind() != "increased_index" {
+func increasedIndexActionRule(
+	st *store.Store,
+	entityStore *repo.Store,
+	state *pipelineState,
+	statuses map[string]repo.IEStatus,
+	_ map[string]repo.IEAction,
+) error {
+	for key, status := range statuses {
+		if status.Kind() != "increased_index" {
 			continue
 		}
-		if err := auditObserved(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.EntityStatus, statusID.ToI64()); err != nil {
+		if err := st.AuditPostprocessStatus(postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationObserved, status); err != nil {
 			return err
 		}
-		actionValue := repo.CauseStatus{Status: statusValue}
-		expectedKey := entitykey.Action(actionValue)
-		var actionID ids.ActionID
-		var err error
-		for candidateID, candidateValue := range c.Actions {
-			if entitykey.Action(candidateValue) == expectedKey {
-				actionID = candidateID
-				break
-			}
-		}
-		if actionID == 0 {
-			sourceID := firstPostprocessSourceID(c.StatusSourceIDs[statusID])
-			if sourceID.ToI64() <= 0 {
-				return fmt.Errorf("increased_index status source is missing: status=%d", statusID)
-			}
-			actionID, err = st.EnsureActionIn(c, actionValue, sourceID)
-			if err != nil {
-				return err
-			}
-			if err := auditCreated(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.EntityAction, actionID.ToI64()); err != nil {
-				return err
-			}
+		action := repo.CauseStatus{Status: status}
+		actionKey := entitykey.Action(action)
+		sourceID := sourceForStatus(state, key)
+		if _, err := ensureAction(st, entityStore, postprocess.PostprocessorIncreasedIndexAction, action, sourceID); err != nil {
+			return err
 		}
 
 		// An increased_index status may only use the canonical increase_index
 		// action as its outgoing action.
-		for _, otherActionID := range append([]ids.ActionID(nil), c.StatusActions[statusID]...) {
-			if otherActionID == actionID {
+		outgoing, err := entityStore.StatusActions(status)
+		if err != nil {
+			return err
+		}
+		for _, link := range outgoing {
+			other := link.Action.Name()
+			if entitykey.Action(other) == actionKey {
 				continue
 			}
-			if err := st.DeleteStatusAction(statusID, otherActionID); err != nil {
+			if err := st.DeleteStatusActionValues(status, other); err != nil {
 				return err
 			}
-			if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityStatus, statusID.ToI64(), postprocess.EntityAction, otherActionID.ToI64()); err != nil {
+			if err := st.AuditPostprocessStatusAction(
+				postprocess.PostprocessorIncreasedIndexAction,
+				postprocess.OperationLinkRemoved,
+				status,
+				other,
+			); err != nil {
 				return err
 			}
-			c.RemoveStatusAction(statusID, otherActionID)
 		}
 
 		// Remove every other action that still points at this index status and
 		// preserve the predecessor links by moving them to the canonical action.
-		for otherActionID, resultStatusIDs := range c.ActionResultStatuses {
-			if otherActionID == actionID || !containsStatusID(resultStatusIDs, statusID) {
-				continue
-			}
-			for predecessorStatusID, actionIDs := range c.StatusActions {
-				if !containsActionID(actionIDs, otherActionID) {
-					continue
-				}
-				if err := st.LinkStatusActionIn(c, predecessorStatusID, actionID); err != nil {
-					return err
-				}
-				if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkAdded, postprocess.EntityStatus, predecessorStatusID.ToI64(), postprocess.EntityAction, actionID.ToI64()); err != nil {
-					return err
-				}
-				if predecessorStatusID != statusID {
-					if err := st.DeleteStatusAction(predecessorStatusID, otherActionID); err != nil {
-						return err
-					}
-					if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityStatus, predecessorStatusID.ToI64(), postprocess.EntityAction, otherActionID.ToI64()); err != nil {
-						return err
-					}
-					c.RemoveStatusAction(predecessorStatusID, otherActionID)
-				}
-			}
-			if err := st.DeleteActionResultStatus(otherActionID, statusID); err != nil {
-				return err
-			}
-			if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityAction, otherActionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
-				return err
-			}
-			c.RemoveActionResultStatus(otherActionID, statusID)
-		}
-		if err := st.LinkActionResultStatusIn(c, actionID, statusID); err != nil {
+		incoming, err := entityStore.ActionsResultingInStatus(status)
+		if err != nil {
 			return err
 		}
-		if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
+		for _, link := range incoming {
+			other := link.Action
+			if entitykey.Action(other) == actionKey {
+				continue
+			}
+			predecessors, err := entityStore.StatusesCausingAction(other)
+			if err != nil {
+				return err
+			}
+			for _, predecessor := range predecessors {
+				pred := predecessor.Status
+				linkSource := predecessor.SourceID
+				if linkSource.ToI64() <= 0 {
+					linkSource = sourceID
+				}
+				if err := st.LinkStatusActionValues(pred, action, linkSource); err != nil {
+					return err
+				}
+				if err := st.AuditPostprocessStatusAction(
+					postprocess.PostprocessorIncreasedIndexAction,
+					postprocess.OperationLinkAdded,
+					pred,
+					action,
+				); err != nil {
+					return err
+				}
+				if entitykey.Status(pred) != entitykey.Status(status) {
+					if err := st.DeleteStatusActionValues(pred, other); err != nil {
+						return err
+					}
+					if err := st.AuditPostprocessStatusAction(
+						postprocess.PostprocessorIncreasedIndexAction,
+						postprocess.OperationLinkRemoved,
+						pred,
+						other,
+					); err != nil {
+						return err
+					}
+				}
+			}
+			if err := st.DeleteActionResultStatusValues(other, status); err != nil {
+				return err
+			}
+			if err := st.AuditPostprocessActionResultStatus(
+				postprocess.PostprocessorIncreasedIndexAction,
+				postprocess.OperationLinkRemoved,
+				other,
+				status,
+			); err != nil {
+				return err
+			}
+		}
+		if sourceID.ToI64() <= 0 {
+			return fmt.Errorf("increased_index status source is missing: %s", key)
+		}
+		if err := st.LinkActionResultStatusValues(action, status, sourceID); err != nil {
+			return err
+		}
+		if err := st.AuditPostprocessActionResultStatus(
+			postprocess.PostprocessorIncreasedIndexAction,
+			postprocess.OperationLinkAdded,
+			action,
+			status,
+		); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func auditObserved(st *store.Store, name string, entityType postprocess.EntityType, entityID int64) error {
-	_, err := st.RecordPostprocess(name, postprocess.OperationObserved, entityType, entityID, "", 0)
-	return err
-}
-
-func auditCreated(st *store.Store, name string, entityType postprocess.EntityType, entityID int64) error {
-	sourceID, err := st.RecordPostprocess(name, postprocess.OperationCreated, entityType, entityID, "", 0)
-	if err != nil {
-		return err
-	}
-	return st.AddPostprocessSource(entityType, entityID, sourceID)
-}
-
-func auditLink(
-	st *store.Store,
-	name string,
-	operation postprocess.Operation,
-	fromType postprocess.EntityType,
-	fromID int64,
-	toType postprocess.EntityType,
-	toID int64,
-) error {
-	_, err := st.RecordPostprocess(name, operation, fromType, fromID, toType, toID)
-	return err
-}
-
-func firstPostprocessSourceID(groups ...[]source.SourceId) source.SourceId {
-	for _, ids := range groups {
-		for _, id := range ids {
-			if id.ToI64() > 0 {
-				return id
-			}
-		}
-	}
-	var zero source.SourceId
-	return zero
-}
-
-func containsStatusID(values []ids.StatusID, target ids.StatusID) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
-}
-
-func containsActionID(values []ids.ActionID, target ids.ActionID) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
 }
 
 // causeStatusResultRule ensures every cause_status action exposes its embedded
 // status as a result status.
-func findStatusIDByValue(c *cgraph.Container, value repo.IEStatus) ids.StatusID {
-	expected := entitykey.Status(value)
-	for statusID, candidate := range c.Statuses {
-		if candidate.Kind() != value.Kind() {
+func causeStatusResultRule(
+	st *store.Store,
+	entityStore *repo.Store,
+	state *pipelineState,
+	statuses map[string]repo.IEStatus,
+	actions map[string]repo.IEAction,
+) error {
+	for key, action := range actions {
+		cause, ok := action.(repo.CauseStatus)
+		if !ok || cause.Status == nil {
 			continue
 		}
-		if entitykey.Status(candidate) == expected {
-			return statusID
-		}
-	}
-	return 0
-}
-
-func causeStatusResultRule(ctx context.Context, st *store.Store, c *cgraph.Container) error {
-	for actionID, actionValue := range c.Actions {
-		var statusID ids.StatusID
-		switch cause := actionValue.(type) {
-		case repo.CauseStatus:
-			if cause.Status == nil {
-				continue
-			}
-			statusID = findStatusIDByValue(c, cause.Status)
-			if statusID == 0 {
-				continue
-			}
-		default:
+		statusKey, status, ok := findStatus(statuses, cause.Status)
+		if !ok {
 			continue
 		}
-		if _, found := c.Statuses[statusID]; !found {
-			continue
-		}
-		// A cause_status action may only expose its embedded status as a result.
-		for _, resultStatusID := range append([]ids.StatusID(nil), c.ActionResultStatuses[actionID]...) {
-			if resultStatusID == statusID {
-				continue
-			}
-			if err := st.DeleteActionResultStatus(actionID, resultStatusID); err != nil {
-				return err
-			}
-			if err := auditLink(st, postprocess.PostprocessorCauseStatusResult, postprocess.OperationLinkRemoved, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, resultStatusID.ToI64()); err != nil {
-				return err
-			}
-			c.RemoveActionResultStatus(actionID, resultStatusID)
-		}
-		if err := st.LinkActionResultStatusIn(c, actionID, statusID); err != nil {
+		results, err := entityStore.ActionResultStatuses(action)
+		if err != nil {
 			return err
 		}
-		if err := auditLink(st, postprocess.PostprocessorCauseStatusResult, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
+		for _, link := range results {
+			if entitykey.Status(link.Status) == entitykey.Status(status) {
+				continue
+			}
+			if err := st.DeleteActionResultStatusValues(action, link.Status); err != nil {
+				return err
+			}
+			if err := st.AuditPostprocessActionResultStatus(
+				postprocess.PostprocessorCauseStatusResult,
+				postprocess.OperationLinkRemoved,
+				action,
+				link.Status,
+			); err != nil {
+				return err
+			}
+		}
+		sourceID := sourceForAction(state, key)
+		if sourceID.ToI64() <= 0 {
+			sourceID = sourceForStatus(state, statusKey)
+		}
+		if sourceID.ToI64() <= 0 {
+			return fmt.Errorf("cause_status action source is missing: %s", key)
+		}
+		if err := st.LinkActionResultStatusValues(action, status, sourceID); err != nil {
+			return err
+		}
+		if err := st.AuditPostprocessActionResultStatus(
+			postprocess.PostprocessorCauseStatusResult,
+			postprocess.OperationLinkAdded,
+			action,
+			status,
+		); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func currentStatuses(state *pipelineState) map[string]repo.IEStatus {
+	if len(state.Statuses) > 0 {
+		return state.Statuses
+	}
+	return state.Resolved.Statuses
+}
+
+func currentActions(state *pipelineState) map[string]repo.IEAction {
+	if len(state.Actions) > 0 {
+		return state.Actions
+	}
+	return state.Resolved.Actions
+}
+
+func sourceForStatus(state *pipelineState, key string) source.SourceId {
+	for _, draft := range state.Extraction.Statuses {
+		if draft.Key == key && draft.SourceID.ToI64() > 0 {
+			return draft.SourceID
+		}
+	}
+	for _, draft := range state.Extraction.Statuses {
+		if draft.SourceID.ToI64() > 0 {
+			return draft.SourceID
+		}
+	}
+	if state.RelationSource.SourceID.ToI64() > 0 {
+		return state.RelationSource.SourceID
+	}
+	return state.ExplanationSourceID
+}
+
+func sourceForAction(state *pipelineState, key string) source.SourceId {
+	for _, draft := range state.Extraction.Actions {
+		if draft.Key == key && draft.SourceID.ToI64() > 0 {
+			return draft.SourceID
+		}
+	}
+	for _, draft := range state.Extraction.Actions {
+		if draft.SourceID.ToI64() > 0 {
+			return draft.SourceID
+		}
+	}
+	if state.RelationSource.SourceID.ToI64() > 0 {
+		return state.RelationSource.SourceID
+	}
+	return state.ExplanationSourceID
+}
+
+func findStatus(statuses map[string]repo.IEStatus, target repo.IEStatus) (string, repo.IEStatus, bool) {
+	expected := entitykey.Status(target)
+	for key, status := range statuses {
+		if status.Kind() != target.Kind() {
+			continue
+		}
+		if entitykey.Status(status) == expected {
+			return key, status, true
+		}
+	}
+	return "", nil, false
+}
+
+func ensureStatus(
+	st *store.Store,
+	entityStore *repo.Store,
+	postprocessorName string,
+	value repo.IEStatus,
+	sourceID source.SourceId,
+) (bool, error) {
+	if sourceID.ToI64() <= 0 {
+		return false, fmt.Errorf("status source is required: kind=%s", value.Kind())
+	}
+	if _, err := entityStore.GetStatus(value); err == nil {
+		return false, nil
+	} else if !errors.Is(err, repo.ErrNotFound) {
+		return false, err
+	}
+	if _, err := entityStore.InsertStatus(value, []source.SourceId{sourceID}); err != nil {
+		return false, err
+	}
+	if err := st.AuditPostprocessStatusCreated(postprocessorName, value); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func ensureAction(
+	st *store.Store,
+	entityStore *repo.Store,
+	postprocessorName string,
+	value repo.IEAction,
+	sourceID source.SourceId,
+) (bool, error) {
+	if sourceID.ToI64() <= 0 {
+		return false, fmt.Errorf("action source is required: kind=%s", value.Kind())
+	}
+	if _, err := entityStore.GetAction(value); err == nil {
+		return false, nil
+	} else if !errors.Is(err, repo.ErrNotFound) {
+		return false, err
+	}
+	if _, err := entityStore.InsertAction(value, nil, []source.SourceId{sourceID}); err != nil {
+		return false, err
+	}
+	if err := st.AuditPostprocessActionCreated(postprocessorName, value); err != nil {
+		return false, err
+	}
+	return true, nil
 }
