@@ -9,6 +9,7 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
 | 문서 | 내용 |
 | --- | --- |
 | [packages.md](packages.md) | 현재 패키지 구조와 책임 |
+| [pr-guide.md](pr-guide.md) | 브랜치 생성, 검증, PR 생성 절차 |
 | [importlint.md](importlint.md) | 금지 dependency와 direct import 규칙 |
 | [plans/2026-11-14-json-encode-removal.md](plans/2026-11-14-json-encode-removal.md) | encode/JSON 제거 계획 |
 | [sync/README.md](sync/README.md) | 참조 GitHub repo별 동기화 현황 |

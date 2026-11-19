@@ -34,4 +34,11 @@ scripts/install-git-hooks.ps1
 
 The hook runs the same lint script, so a failing lint blocks the push.
 
+## Pull requests
+
+Create a branch, run the checks, then open a PR against `main`.
+
+See [docs/pr-guide.md](docs/pr-guide.md) for the full branch, verification,
+push, and troubleshooting procedure.
+
 See [docs/README.md](docs/README.md) for the code structure and pipeline documentation.
