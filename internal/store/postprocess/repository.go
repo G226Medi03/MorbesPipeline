@@ -21,6 +21,12 @@ const (
 	OperationLinkRemoved Operation = "link_removed"
 )
 
+const (
+	PostprocessorTransplantRejection  = "transplant_rejection"
+	PostprocessorIncreasedIndexAction = "increased_index_action"
+	PostprocessorCauseStatusResult    = "cause_status_result"
+)
+
 // EntityType identifies the kind of entity referenced by an operation.
 type EntityType string
 

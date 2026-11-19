@@ -7,6 +7,7 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	"github.com/G226Medi03/MorbesPipeline/internal/store"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	cgraph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 	source "github.com/G226Medi03/SourceEntity"
@@ -64,19 +65,36 @@ func transplantRejectionRule(ctx context.Context, st *store.Store, c *cgraph.Con
 	effect := repo.HaveSymptom{
 		Symptom: repo.EOtherSymptom{Name: RejectionStatusName},
 	}
+	for _, statusID := range transplantStatusIDs {
+		if err := auditObserved(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityStatus, statusID.ToI64()); err != nil {
+			return err
+		}
+	}
 	effectID, err := st.EnsureStatusIn(c, effect, sourceID)
 	if err != nil {
+		return err
+	}
+	if err := auditCreated(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityStatus, effectID.ToI64()); err != nil {
 		return err
 	}
 	actionID, err := st.EnsureActionIn(c, repo.CauseStatus{Status: effect}, sourceID)
 	if err != nil {
 		return err
 	}
+	if err := auditCreated(st, postprocess.PostprocessorTransplantRejection, postprocess.EntityAction, actionID.ToI64()); err != nil {
+		return err
+	}
 	for _, statusID := range transplantStatusIDs {
 		if err := st.LinkStatusActionIn(c, statusID, actionID); err != nil {
 			return err
 		}
+		if err := auditLink(st, postprocess.PostprocessorTransplantRejection, postprocess.OperationLinkAdded, postprocess.EntityStatus, statusID.ToI64(), postprocess.EntityAction, actionID.ToI64()); err != nil {
+			return err
+		}
 		if err := st.LinkActionResultStatusIn(c, actionID, effectID); err != nil {
+			return err
+		}
+		if err := auditLink(st, postprocess.PostprocessorTransplantRejection, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, effectID.ToI64()); err != nil {
 			return err
 		}
 	}
@@ -90,6 +108,9 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 	for statusID, statusValue := range c.Statuses {
 		if statusValue.Kind() != "increased_index" {
 			continue
+		}
+		if err := auditObserved(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.EntityStatus, statusID.ToI64()); err != nil {
+			return err
 		}
 		actionValue := repo.CauseStatus{Status: statusValue}
 		expectedKey := entitykey.Action(actionValue)
@@ -110,6 +131,9 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 			if err != nil {
 				return err
 			}
+			if err := auditCreated(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.EntityAction, actionID.ToI64()); err != nil {
+				return err
+			}
 		}
 
 		// An increased_index status may only use the canonical increase_index
@@ -119,6 +143,9 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 				continue
 			}
 			if err := st.DeleteStatusAction(statusID, otherActionID); err != nil {
+				return err
+			}
+			if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityStatus, statusID.ToI64(), postprocess.EntityAction, otherActionID.ToI64()); err != nil {
 				return err
 			}
 			c.RemoveStatusAction(statusID, otherActionID)
@@ -137,8 +164,14 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 				if err := st.LinkStatusActionIn(c, predecessorStatusID, actionID); err != nil {
 					return err
 				}
+				if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkAdded, postprocess.EntityStatus, predecessorStatusID.ToI64(), postprocess.EntityAction, actionID.ToI64()); err != nil {
+					return err
+				}
 				if predecessorStatusID != statusID {
 					if err := st.DeleteStatusAction(predecessorStatusID, otherActionID); err != nil {
+						return err
+					}
+					if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityStatus, predecessorStatusID.ToI64(), postprocess.EntityAction, otherActionID.ToI64()); err != nil {
 						return err
 					}
 					c.RemoveStatusAction(predecessorStatusID, otherActionID)
@@ -147,13 +180,45 @@ func increasedIndexActionRule(ctx context.Context, st *store.Store, c *cgraph.Co
 			if err := st.DeleteActionResultStatus(otherActionID, statusID); err != nil {
 				return err
 			}
+			if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkRemoved, postprocess.EntityAction, otherActionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
+				return err
+			}
 			c.RemoveActionResultStatus(otherActionID, statusID)
 		}
 		if err := st.LinkActionResultStatusIn(c, actionID, statusID); err != nil {
 			return err
 		}
+		if err := auditLink(st, postprocess.PostprocessorIncreasedIndexAction, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func auditObserved(st *store.Store, name string, entityType postprocess.EntityType, entityID int64) error {
+	_, err := st.RecordPostprocess(name, postprocess.OperationObserved, entityType, entityID, "", 0)
+	return err
+}
+
+func auditCreated(st *store.Store, name string, entityType postprocess.EntityType, entityID int64) error {
+	sourceID, err := st.RecordPostprocess(name, postprocess.OperationCreated, entityType, entityID, "", 0)
+	if err != nil {
+		return err
+	}
+	return st.AddPostprocessSource(entityType, entityID, sourceID)
+}
+
+func auditLink(
+	st *store.Store,
+	name string,
+	operation postprocess.Operation,
+	fromType postprocess.EntityType,
+	fromID int64,
+	toType postprocess.EntityType,
+	toID int64,
+) error {
+	_, err := st.RecordPostprocess(name, operation, fromType, fromID, toType, toID)
+	return err
 }
 
 func firstPostprocessSourceID(groups ...[]source.SourceId) source.SourceId {
@@ -227,9 +292,15 @@ func causeStatusResultRule(ctx context.Context, st *store.Store, c *cgraph.Conta
 			if err := st.DeleteActionResultStatus(actionID, resultStatusID); err != nil {
 				return err
 			}
+			if err := auditLink(st, postprocess.PostprocessorCauseStatusResult, postprocess.OperationLinkRemoved, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, resultStatusID.ToI64()); err != nil {
+				return err
+			}
 			c.RemoveActionResultStatus(actionID, resultStatusID)
 		}
 		if err := st.LinkActionResultStatusIn(c, actionID, statusID); err != nil {
+			return err
+		}
+		if err := auditLink(st, postprocess.PostprocessorCauseStatusResult, postprocess.OperationLinkAdded, postprocess.EntityAction, actionID.ToI64(), postprocess.EntityStatus, statusID.ToI64()); err != nil {
 			return err
 		}
 	}
