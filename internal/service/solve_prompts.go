@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
 )
 
 func (s *SolveService) GetPrompt(stage string) (string, int, error) {
@@ -14,7 +14,7 @@ func (s *SolveService) GetPrompt(stage string) (string, int, error) {
 func (s *SolveService) Prompt(stage string) (string, int, bool, error) {
 	template, version, err := s.GetPrompt(stage)
 	if err != nil {
-		if errors.Is(err, storerepo.ErrPromptNotFound) {
+		if errors.Is(err, srepo.ErrPromptNotFound) {
 			return "", 0, false, nil
 		}
 		return "", 0, false, err

@@ -1,4 +1,4 @@
-package repository
+package benchmark
 
 import (
 	source "github.com/G226Medi03/SourceEntity"

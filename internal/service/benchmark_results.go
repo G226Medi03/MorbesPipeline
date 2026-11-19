@@ -5,13 +5,13 @@ import (
 	"sort"
 	"strings"
 
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
 type (
-	ProblemResultFilter = storerepo.ProblemResultFilter
-	ProblemResultRow    = storerepo.ProblemResultRow
+	ProblemResultFilter = benchmarkrepo.ProblemResultFilter
+	ProblemResultRow    = benchmarkrepo.ProblemResultRow
 )
 
 func (s *BenchmarkService) ensure_llm_problem_results() error {
@@ -44,7 +44,7 @@ func (s *BenchmarkService) ListProblemResults(ctx context.Context, filter Proble
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return []ProblemResultRow{}, nil
 	}
-	rows, err := s.store.BenchmarkRepo().List(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
+	rows, err := s.store.BenchmarkRepo().List(ctx, s.store.SolveExecutor(), benchmarkrepo.Filter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 		Order:       filter.Order,
@@ -77,7 +77,7 @@ func (s *BenchmarkService) CountProblemResults(ctx context.Context, filter Probl
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return 0, nil
 	}
-	return s.store.BenchmarkRepo().Count(ctx, s.store.SolveExecutor(), storerepo.BenchmarkFilter{
+	return s.store.BenchmarkRepo().Count(ctx, s.store.SolveExecutor(), benchmarkrepo.Filter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 	})
@@ -158,7 +158,7 @@ func has_problem_result_response_filter(filter ProblemResultFilter) bool {
 	return strings.TrimSpace(filter.Model) != "" || filter.Error != nil
 }
 
-func (s *BenchmarkService) problem_result_responses(ctx context.Context, rows []storerepo.BenchmarkRow) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
+func (s *BenchmarkService) problem_result_responses(ctx context.Context, rows []benchmarkrepo.Row) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
 	ids := make([]sourcedomain.RespId, 0, len(rows))
 	seen := make(map[sourcedomain.RespId]struct{}, len(rows))
 	for _, row := range rows {
@@ -179,7 +179,7 @@ func (s *BenchmarkService) problem_result_response_ids_map(ctx context.Context, 
 	return s.store.SourceRepo().GetLlmResponses(ctx, s.store.SourceExecutor(), respIDs)
 }
 
-func composeProblemResult(row storerepo.BenchmarkRow, response sourcedomain.LlmResponseRow) ProblemResultRow {
+func composeProblemResult(row benchmarkrepo.Row, response sourcedomain.LlmResponseRow) ProblemResultRow {
 	createdAt := row.CreatedAt
 	if !response.CreatedAt.IsZero() {
 		createdAt = response.CreatedAt.Format("2006-01-02 15:04:05")

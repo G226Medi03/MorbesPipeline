@@ -1,12 +1,12 @@
-// Package store is the public SQLite persistence facade.
-package store
+// Package facade is the public SQLite persistence facade.
+package facade
 
 import (
 	"context"
 	"database/sql"
 
 	coreservice "github.com/G226Medi03/MorbesPipeline/internal/service"
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/core/store"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
 )
 
 // StoreContainer is the public store facade.

@@ -7,8 +7,8 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/core"
-	audit "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	store "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
+	audit "github.com/G226Medi03/MorbesPipeline/internal/store/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -76,7 +76,7 @@ func transplantRejectionRule(
 		Symptom: repo.EOtherSymptom{Name: RejectionStatusName},
 	}
 	for _, key := range transplantKeys {
-		if err := st.AuditPostprocessStatus(audit.PostprocessorTransplantRejection, audit.PostprocessOperationObserved, statuses[key]); err != nil {
+		if err := st.AuditPostprocessStatus(audit.PostprocessorTransplantRejection, audit.OperationObserved, statuses[key]); err != nil {
 			return err
 		}
 	}
@@ -94,7 +94,7 @@ func transplantRejectionRule(
 		}
 		if err := st.AuditPostprocessStatusAction(
 			audit.PostprocessorTransplantRejection,
-			audit.PostprocessOperationLinkAdded,
+			audit.OperationLinkAdded,
 			status,
 			action,
 		); err != nil {
@@ -105,7 +105,7 @@ func transplantRejectionRule(
 		}
 		if err := st.AuditPostprocessActionResultStatus(
 			audit.PostprocessorTransplantRejection,
-			audit.PostprocessOperationLinkAdded,
+			audit.OperationLinkAdded,
 			action,
 			effect,
 		); err != nil {
@@ -129,7 +129,7 @@ func increasedIndexActionRule(
 		if status.Kind() != "increased_index" {
 			continue
 		}
-		if err := st.AuditPostprocessStatus(audit.PostprocessorIncreasedIndexAction, audit.PostprocessOperationObserved, status); err != nil {
+		if err := st.AuditPostprocessStatus(audit.PostprocessorIncreasedIndexAction, audit.OperationObserved, status); err != nil {
 			return err
 		}
 		action := repo.CauseStatus{Status: status}
@@ -155,7 +155,7 @@ func increasedIndexActionRule(
 			}
 			if err := st.AuditPostprocessStatusAction(
 				audit.PostprocessorIncreasedIndexAction,
-				audit.PostprocessOperationLinkRemoved,
+				audit.OperationLinkRemoved,
 				status,
 				other,
 			); err != nil {
@@ -189,7 +189,7 @@ func increasedIndexActionRule(
 				}
 				if err := st.AuditPostprocessStatusAction(
 					audit.PostprocessorIncreasedIndexAction,
-					audit.PostprocessOperationLinkAdded,
+					audit.OperationLinkAdded,
 					pred,
 					action,
 				); err != nil {
@@ -201,7 +201,7 @@ func increasedIndexActionRule(
 					}
 					if err := st.AuditPostprocessStatusAction(
 						audit.PostprocessorIncreasedIndexAction,
-						audit.PostprocessOperationLinkRemoved,
+						audit.OperationLinkRemoved,
 						pred,
 						other,
 					); err != nil {
@@ -214,7 +214,7 @@ func increasedIndexActionRule(
 			}
 			if err := st.AuditPostprocessActionResultStatus(
 				audit.PostprocessorIncreasedIndexAction,
-				audit.PostprocessOperationLinkRemoved,
+				audit.OperationLinkRemoved,
 				other,
 				status,
 			); err != nil {
@@ -229,7 +229,7 @@ func increasedIndexActionRule(
 		}
 		if err := st.AuditPostprocessActionResultStatus(
 			audit.PostprocessorIncreasedIndexAction,
-			audit.PostprocessOperationLinkAdded,
+			audit.OperationLinkAdded,
 			action,
 			status,
 		); err != nil {
@@ -270,7 +270,7 @@ func causeStatusResultRule(
 			}
 			if err := st.AuditPostprocessActionResultStatus(
 				audit.PostprocessorCauseStatusResult,
-				audit.PostprocessOperationLinkRemoved,
+				audit.OperationLinkRemoved,
 				action,
 				link.Status,
 			); err != nil {
@@ -289,7 +289,7 @@ func causeStatusResultRule(
 		}
 		if err := st.AuditPostprocessActionResultStatus(
 			audit.PostprocessorCauseStatusResult,
-			audit.PostprocessOperationLinkAdded,
+			audit.OperationLinkAdded,
 			action,
 			status,
 		); err != nil {

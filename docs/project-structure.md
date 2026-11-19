@@ -84,10 +84,15 @@ selection
 
 ```text
 internal/store/
-  core/            # public StoreContainer facade, schema, transaction wrappers
-    store/         # Store: ctx/db + repositories
-  repository/      # Table + Repository layer
-                   # entity/solve/benchmark/postprocess/read/migration
+  store.go         # Store: ctx/db + repositories
+  facade/          # StoreContainer, transaction wrappers, InitSchema
+  repository/      # repository별 하위 패키지
+    benchmark/
+    entity/
+    solve/
+    postprocess/
+    schema/
+    migration/
 ```
 
 역할:
@@ -96,15 +101,28 @@ internal/store/
 internal/service
   Entity/Solve/Source/Benchmark/Postprocess application services
 
-store/core
+store
+  Store: ctx/db + repositories + transaction
+
+store/facade
   StoreContainer, New/NewWithDBs, InitSchema
-  store.Store: ctx/db + repositories
-  repository: Table + Repository
+
+repository/benchmark
+  llm_problem_results, ProblemResult, ExamQuestionDataCounts
+
+repository/entity
   entity ID/link/read/save
+
+repository/solve
   solve_cases, solve_steps, solve_llm_calls, answer checks
-  llm_problem_results
+
+repository/postprocess
   morbes_postprocesses audit
-  ProblemResultRow, ExamQuestionDataCounts
+
+repository/schema
+  schema ensure helpers
+
+repository/migration
   legacy schema migration
 ```
 

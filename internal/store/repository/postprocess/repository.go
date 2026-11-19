@@ -1,4 +1,4 @@
-package repository
+package postprocess
 
 import (
 	"context"
@@ -9,20 +9,20 @@ import (
 )
 
 // Repository wraps the postprocess table with validation and defaults.
-type PostprocessRepository struct {
-	table postprocessTable
+type Repository struct {
+	table table
 }
 
-func NewPostprocessRepository() PostprocessRepository {
-	return PostprocessRepository{}
+func NewRepository() Repository {
+	return Repository{}
 }
 
-func (r PostprocessRepository) Init(ctx context.Context, db sqlutil.Executor) error {
+func (r Repository) Init(ctx context.Context, db sqlutil.Executor) error {
 	return r.table.init(ctx, db)
 }
 
 // Append inserts one audit record and returns the generated postprocess ID.
-func (r PostprocessRepository) Append(ctx context.Context, db sqlutil.Executor, record PostprocessRecord) (int64, error) {
+func (r Repository) Append(ctx context.Context, db sqlutil.Executor, record Record) (int64, error) {
 	if record.PostprocessorName == "" {
 		return 0, fmt.Errorf("postprocessor name is required")
 	}
@@ -39,11 +39,11 @@ func (r PostprocessRepository) Append(ctx context.Context, db sqlutil.Executor, 
 }
 
 // ListByEntity returns the audit records for one entity.
-func (r PostprocessRepository) ListByEntity(
+func (r Repository) ListByEntity(
 	ctx context.Context,
 	db sqlutil.Executor,
-	entityType PostprocessEntityType,
+	entityType EntityType,
 	entityID int64,
-) ([]PostprocessRecord, error) {
+) ([]Record, error) {
 	return r.table.listByEntity(ctx, db, entityType, entityID)
 }

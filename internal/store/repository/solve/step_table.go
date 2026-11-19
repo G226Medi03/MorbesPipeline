@@ -1,4 +1,4 @@
-package repository
+package solve
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
-type SolveStepTable struct{}
+type StepTable struct{}
 
-func (SolveStepTable) init(ctx context.Context, db sqlutil.Executor) error {
+func (StepTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_steps (
 		step_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		case_id INTEGER NOT NULL,
@@ -38,14 +38,14 @@ func (SolveStepTable) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (SolveStepTable) Reset(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
+func (StepTable) Reset(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_steps WHERE case_id = ?`, string(caseID)); err != nil {
 		return fmt.Errorf("%s: %w", "solve_steps legacy cleanup failed", err)
 	}
 	return nil
 }
 
-func (SolveStepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
+func (StepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
 	if len(caseIDs) == 0 {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (SolveStepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, 
 	return nil
 }
 
-func (SolveStepTable) Start(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string, promptVersion int) (int64, error) {
+func (StepTable) Start(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string, promptVersion int) (int64, error) {
 	seq := domain.Sequence(domain.Stage(node))
 	if seq == 0 {
 		return 0, fmt.Errorf("unknown solve node: %s", node)
@@ -91,7 +91,7 @@ func (SolveStepTable) Start(ctx context.Context, db sqlutil.Executor, caseID dom
 	return id, nil
 }
 
-func (SolveStepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, state, outputJSON, message string, callID int64) error {
+func (StepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, state, outputJSON, message string, callID int64) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE solve_steps
 		SET state = ?, output_json = ?, error = ?, call_id = ?, finished_at = CURRENT_TIMESTAMP
@@ -102,7 +102,7 @@ func (SolveStepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64,
 	return nil
 }
 
-func (SolveStepTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) ([]domain.Step, error) {
+func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) ([]domain.Step, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT step_id, case_id, node, seq, state, attempt, prompt_version,
 		       output_json, error, call_id, started_at, finished_at
@@ -137,7 +137,7 @@ func (SolveStepTable) List(ctx context.Context, db sqlutil.Executor, caseID doma
 	return result, rows.Err()
 }
 
-func (SolveStepTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string) (domain.Step, bool, error) {
+func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string) (domain.Step, bool, error) {
 	var (
 		step          domain.Step
 		rawStepID     int64
@@ -168,14 +168,14 @@ func (SolveStepTable) Get(ctx context.Context, db sqlutil.Executor, caseID domai
 	return step, true, nil
 }
 
-func (SolveStepTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, seq int) error {
+func (StepTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, seq int) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_steps WHERE case_id = ? AND seq >= ?`, string(caseID), seq); err != nil {
 		return fmt.Errorf("%s: %w", "solve replay step reset failed", err)
 	}
 	return nil
 }
 
-func (SolveStepTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error {
+func (StepTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_steps
 		SET state = 'failed',
@@ -187,7 +187,7 @@ func (SolveStepTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) 
 	return nil
 }
 
-func (SolveStepTable) MarkStaleFrom(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromSeq int) error {
+func (StepTable) MarkStaleFrom(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromSeq int) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_steps SET state = 'stale', finished_at = NULL
 		WHERE case_id = ? AND seq >= ? AND node <> ?`,
@@ -197,7 +197,7 @@ func (SolveStepTable) MarkStaleFrom(ctx context.Context, db sqlutil.Executor, ca
 	return nil
 }
 
-func (SolveStepTable) MarkDownstreamStale(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromNode string) error {
+func (StepTable) MarkDownstreamStale(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromNode string) error {
 	if !domain.IsStage(fromNode) {
 		return fmt.Errorf("unknown solve node: %s", fromNode)
 	}

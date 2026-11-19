@@ -1,12 +1,13 @@
-package store
+package facade
 
 import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/migration"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/schema"
 )
 
 func (s *StoreContainer) InitSchema() error {
-	if err := storerepo.ApplyMigration(s.Context(), s); err != nil {
+	if err := migration.ApplyMigration(s.Context(), s); err != nil {
 		return err
 	}
 	if _, err := s.Entities(); err != nil {
@@ -29,13 +30,13 @@ func (s *StoreContainer) InitSchema() error {
 	if err := s.ensure_llm_problem_results(); err != nil {
 		return err
 	}
-	if err := storerepo.EnsureStatusOtherName(s.Context(), s); err != nil {
+	if err := schema.EnsureStatusOtherName(s.Context(), s); err != nil {
 		return err
 	}
-	if err := storerepo.EnsureEntitySources(s.Context(), s); err != nil {
+	if err := schema.EnsureEntitySources(s.Context(), s); err != nil {
 		return err
 	}
-	if err := storerepo.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
+	if err := schema.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
 	return nil

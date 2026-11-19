@@ -1,4 +1,4 @@
-package repository
+package solve
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-type SolveCaseTable struct{}
+type CaseTable struct{}
 
-func (SolveCaseTable) init(ctx context.Context, db sqlutil.Executor) error {
+func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_cases (
 		case_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		exam_question_id INTEGER NOT NULL,
@@ -76,7 +76,7 @@ func ensure_question_type_column(ctx context.Context, db sqlutil.Executor) error
 	return nil
 }
 
-func (SolveCaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, sourceID source.SourceId) (domain.CaseID, error) {
+func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, sourceID source.SourceId) (domain.CaseID, error) {
 	if sourceID.ToI64() <= 0 {
 		return "", fmt.Errorf("solve case source가 필요합니다")
 	}
@@ -93,7 +93,7 @@ func (SolveCaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Exec
 	return domain.CaseID(strconv.FormatInt(id, 10)), nil
 }
 
-func (SolveCaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
+func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO solve_cases (
 			exam_question_id, source_id, state, stage,
@@ -110,7 +110,7 @@ func (SolveCaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, Exa
 	return domain.CaseID(strconv.FormatInt(id, 10)), nil
 }
 
-func (SolveCaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]domain.Case, error) {
+func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]domain.Case, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -136,7 +136,7 @@ func (SolveCaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) 
 	return result, rows.Err()
 }
 
-func (SolveCaseTable) Get(ctx context.Context, db sqlutil.Executor, id domain.CaseID) (domain.Case, bool, error) {
+func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id domain.CaseID) (domain.Case, bool, error) {
 	row := db.QueryRowContext(ctx, `
 		SELECT case_id, exam_question_id, situation_json, answer_json,
 		       state, stage, question_type, error, source_id, situation_source_id,
@@ -169,7 +169,7 @@ func scan_case(scan func(...any) error) (domain.Case, error) {
 	return item, nil
 }
 
-func (SolveCaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id domain.CaseID, mode, fromNode string) error {
+func (CaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id domain.CaseID, mode, fromNode string) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_cases
 		SET state = 'pending', stage = 'queued', error = '',
@@ -183,7 +183,7 @@ func (SolveCaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, i
 	return nil
 }
 
-func (SolveCaseTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error {
+func (CaseTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_cases
 		SET state = 'failed', stage = 'interrupted',
@@ -195,39 +195,39 @@ func (SolveCaseTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) 
 	return nil
 }
 
-func (SolveCaseTable) SetRunning(ctx context.Context, db sqlutil.Executor, id domain.CaseID) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `state = 'running', error = '', updated_at = CURRENT_TIMESTAMP`, nil)
+func (CaseTable) SetRunning(ctx context.Context, db sqlutil.Executor, id domain.CaseID) error {
+	return (CaseTable{}).set(ctx, db, id, `state = 'running', error = '', updated_at = CURRENT_TIMESTAMP`, nil)
 }
 
-func (SolveCaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id domain.CaseID, stage string) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `stage = ?, updated_at = CURRENT_TIMESTAMP`, []any{stage})
+func (CaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id domain.CaseID, stage string) error {
+	return (CaseTable{}).set(ctx, db, id, `stage = ?, updated_at = CURRENT_TIMESTAMP`, []any{stage})
 }
 
-func (SolveCaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id domain.CaseID, questionType string) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `question_type = ?, updated_at = CURRENT_TIMESTAMP`, []any{questionType})
+func (CaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id domain.CaseID, questionType string) error {
+	return (CaseTable{}).set(ctx, db, id, `question_type = ?, updated_at = CURRENT_TIMESTAMP`, []any{questionType})
 }
 
-func (SolveCaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id domain.CaseID, situation string) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `situation_json = ?, updated_at = CURRENT_TIMESTAMP`, []any{situation})
+func (CaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id domain.CaseID, situation string) error {
+	return (CaseTable{}).set(ctx, db, id, `situation_json = ?, updated_at = CURRENT_TIMESTAMP`, []any{situation})
 }
 
-func (SolveCaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
+func (CaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
+	return (CaseTable{}).set(ctx, db, id, `source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
 }
 
-func (SolveCaseTable) SetSituationSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `situation_source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
+func (CaseTable) SetSituationSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
+	return (CaseTable{}).set(ctx, db, id, `situation_source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
 }
 
-func (SolveCaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id domain.CaseID, answerJSON string) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `answer_json = ?, state = 'done', stage = 'done', error = '', updated_at = CURRENT_TIMESTAMP`, []any{answerJSON})
+func (CaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id domain.CaseID, answerJSON string) error {
+	return (CaseTable{}).set(ctx, db, id, `answer_json = ?, state = 'done', stage = 'done', error = '', updated_at = CURRENT_TIMESTAMP`, []any{answerJSON})
 }
 
-func (SolveCaseTable) SetFailed(ctx context.Context, db sqlutil.Executor, id domain.CaseID, message string) error {
-	return (SolveCaseTable{}).set(ctx, db, id, `state = 'failed', error = ?, updated_at = CURRENT_TIMESTAMP`, []any{message})
+func (CaseTable) SetFailed(ctx context.Context, db sqlutil.Executor, id domain.CaseID, message string) error {
+	return (CaseTable{}).set(ctx, db, id, `state = 'failed', error = ?, updated_at = CURRENT_TIMESTAMP`, []any{message})
 }
 
-func (SolveCaseTable) set(ctx context.Context, db sqlutil.Executor, id domain.CaseID, assignment string, args []any) error {
+func (CaseTable) set(ctx context.Context, db sqlutil.Executor, id domain.CaseID, assignment string, args []any) error {
 	query := `UPDATE solve_cases SET ` + assignment + ` WHERE case_id = ?`
 	args = append(args, string(id))
 	if _, err := db.ExecContext(ctx, query, args...); err != nil {
@@ -244,7 +244,7 @@ type FailedCase struct {
 	Error          string
 }
 
-func (SolveCaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlutil.Executor) ([]int64, error) {
+func (CaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlutil.Executor) ([]int64, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT DISTINCT exam_question_id
 		FROM solve_cases
@@ -265,7 +265,7 @@ func (SolveCaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlut
 	return result, rows.Err()
 }
 
-func (SolveCaseTable) CountFailed(ctx context.Context, db sqlutil.Executor) (int, error) {
+func (CaseTable) CountFailed(ctx context.Context, db sqlutil.Executor) (int, error) {
 	var count int
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
@@ -279,7 +279,7 @@ func (SolveCaseTable) CountFailed(ctx context.Context, db sqlutil.Executor) (int
 	return count, nil
 }
 
-func (SolveCaseTable) ListFailed(ctx context.Context, db sqlutil.Executor, limit int) ([]FailedCase, error) {
+func (CaseTable) ListFailed(ctx context.Context, db sqlutil.Executor, limit int) ([]FailedCase, error) {
 	if limit <= 0 {
 		limit = 100
 	}
@@ -316,7 +316,7 @@ type ExamQuestionCaseStats struct {
 	Attempts     int
 }
 
-func (SolveCaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor, questionIDs []int64) (map[int64]ExamQuestionCaseStats, error) {
+func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor, questionIDs []int64) (map[int64]ExamQuestionCaseStats, error) {
 	result := make(map[int64]ExamQuestionCaseStats, len(questionIDs))
 	if len(questionIDs) == 0 {
 		return result, nil
@@ -363,7 +363,7 @@ func (SolveCaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Exe
 	return result, rows.Err()
 }
 
-func (SolveCaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
+func (CaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
 	var count int
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
@@ -374,7 +374,7 @@ func (SolveCaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Exec
 	return count, nil
 }
 
-func (SolveCaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]domain.CaseID, error) {
+func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]domain.CaseID, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT case_id
 		FROM solve_cases
@@ -395,7 +395,7 @@ func (SolveCaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Ex
 	return result, rows.Err()
 }
 
-func (SolveCaseTable) DeleteByIDs(ctx context.Context, db sqlutil.Executor, ids []domain.CaseID) error {
+func (CaseTable) DeleteByIDs(ctx context.Context, db sqlutil.Executor, ids []domain.CaseID) error {
 	if len(ids) == 0 {
 		return nil
 	}

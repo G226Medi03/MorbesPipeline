@@ -9,7 +9,10 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
+	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/entity"
+	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/postprocess"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
@@ -32,10 +35,10 @@ type Store struct {
 	Response *responsestore.Store
 
 	Source      storesource.Repository
-	Solve       storerepo.SolveRepository
-	Benchmark   storerepo.BenchmarkRepository
-	Postprocess storerepo.PostprocessRepository
-	Entity      storerepo.EntityRepository
+	Solve       srepo.Repository
+	Benchmark   benchmarkrepo.Repository
+	Postprocess postprocessrepo.Repository
+	Entity      entityrepo.Repository
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -65,9 +68,9 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 func (s *Store) bind() {
 	s.Medical = nil
 	s.Response = nil
-	s.Solve = storerepo.NewSolveRepository()
-	s.Benchmark = storerepo.BenchmarkRepository{}
-	s.Postprocess = storerepo.NewPostprocessRepository()
+	s.Solve = srepo.NewRepository()
+	s.Benchmark = benchmarkrepo.Repository{}
+	s.Postprocess = postprocessrepo.NewRepository()
 }
 
 func (s *Store) Context() context.Context {
@@ -102,19 +105,19 @@ func (s *Store) SourceRepo() storesource.Repository {
 	return s.Source
 }
 
-func (s *Store) SolveRepo() storerepo.SolveRepository {
+func (s *Store) SolveRepo() srepo.Repository {
 	return s.Solve
 }
 
-func (s *Store) BenchmarkRepo() storerepo.BenchmarkRepository {
+func (s *Store) BenchmarkRepo() benchmarkrepo.Repository {
 	return s.Benchmark
 }
 
-func (s *Store) PostprocessRepo() storerepo.PostprocessRepository {
+func (s *Store) PostprocessRepo() postprocessrepo.Repository {
 	return s.Postprocess
 }
 
-func (s *Store) EntityRepo() storerepo.EntityRepository {
+func (s *Store) EntityRepo() entityrepo.Repository {
 	return s.Entity
 }
 

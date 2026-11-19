@@ -7,7 +7,7 @@ import (
 
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/core"
+	store "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 	source "github.com/G226Medi03/SourceEntity"
 )

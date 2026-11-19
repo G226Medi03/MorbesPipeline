@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/core/store"
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
 	"github.com/G226Medi03/SourceEntity"
 )
 
@@ -78,7 +78,7 @@ func (s *SolveService) CountFailedCases() (int, error) {
 	return s.store.SolveRepo().Case.CountFailed(s.store.Context(), s.store.SolveExecutor())
 }
 
-func (s *SolveService) ListFailedCases(limit int) ([]storerepo.FailedCase, error) {
+func (s *SolveService) ListFailedCases(limit int) ([]srepo.FailedCase, error) {
 	return s.store.SolveRepo().Case.ListFailed(s.store.Context(), s.store.SolveExecutor(), limit)
 }
 
@@ -173,6 +173,6 @@ func (s *SolveService) SetFailed(id domain.CaseID, ce error) error {
 	return s.store.SolveRepo().Case.SetFailed(s.store.Context(), s.store.SolveExecutor(), id, message)
 }
 
-func (s *SolveService) ExamQuestionCaseStats(ids []int64) (map[int64]storerepo.ExamQuestionCaseStats, error) {
+func (s *SolveService) ExamQuestionCaseStats(ids []int64) (map[int64]srepo.ExamQuestionCaseStats, error) {
 	return s.store.SolveRepo().Case.StatsByExamQuestionIDs(s.store.Context(), s.store.SolveExecutor(), ids)
 }

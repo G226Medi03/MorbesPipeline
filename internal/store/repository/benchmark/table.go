@@ -1,4 +1,4 @@
-package repository
+package benchmark
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type BenchmarkFilter struct {
+type Filter struct {
 	Correct     *bool
 	ResponseIDs []source.RespId
 	Order       string
@@ -17,7 +17,7 @@ type BenchmarkFilter struct {
 	Offset      int
 }
 
-type BenchmarkRow struct {
+type Row struct {
 	ID             int64
 	ExamQuestionID int64
 	LLMResponseID  source.RespId
@@ -25,9 +25,9 @@ type BenchmarkRow struct {
 	CreatedAt      string
 }
 
-type BenchmarkTable struct{}
+type Table struct{}
 
-func (BenchmarkTable) Init(ctx context.Context, db sqlutil.Executor) error {
+func (Table) Init(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS llm_problem_results (
 			llm_problem_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,8 +52,8 @@ func (BenchmarkTable) Init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (BenchmarkTable) GetByID(ctx context.Context, db sqlutil.Executor, id int64) (BenchmarkRow, bool, error) {
-	var row BenchmarkRow
+func (Table) GetByID(ctx context.Context, db sqlutil.Executor, id int64) (Row, bool, error) {
+	var row Row
 	var correct int
 	err := db.QueryRowContext(ctx, `
 		SELECT llm_problem_result_id, exam_question_id, llm_response_id, correct, created_at
@@ -61,16 +61,16 @@ func (BenchmarkTable) GetByID(ctx context.Context, db sqlutil.Executor, id int64
 		WHERE llm_problem_result_id = ?`, id).
 		Scan(&row.ID, &row.ExamQuestionID, &row.LLMResponseID, &correct, &row.CreatedAt)
 	if err == sql.ErrNoRows {
-		return BenchmarkRow{}, false, nil
+		return Row{}, false, nil
 	}
 	if err != nil {
-		return BenchmarkRow{}, false, fmt.Errorf("llm_problem_results 조회 실패: %w", err)
+		return Row{}, false, fmt.Errorf("llm_problem_results 조회 실패: %w", err)
 	}
 	row.Correct = correct != 0
 	return row, true, nil
 }
 
-func (BenchmarkTable) List(ctx context.Context, db sqlutil.Executor, filter BenchmarkFilter) ([]BenchmarkRow, error) {
+func (Table) List(ctx context.Context, db sqlutil.Executor, filter Filter) ([]Row, error) {
 	where, args, err := filterWhere(filter)
 	if err != nil {
 		return nil, err
@@ -101,9 +101,9 @@ func (BenchmarkTable) List(ctx context.Context, db sqlutil.Executor, filter Benc
 		return nil, fmt.Errorf("llm_problem_results 조회 실패: %w", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	result := make([]BenchmarkRow, 0, limit)
+	result := make([]Row, 0, limit)
 	for rows.Next() {
-		var item BenchmarkRow
+		var item Row
 		var correct int
 		if err := rows.Scan(&item.ID, &item.ExamQuestionID, &item.LLMResponseID, &correct, &item.CreatedAt); err != nil {
 			return nil, err
@@ -114,7 +114,7 @@ func (BenchmarkTable) List(ctx context.Context, db sqlutil.Executor, filter Benc
 	return result, rows.Err()
 }
 
-func (BenchmarkTable) Count(ctx context.Context, db sqlutil.Executor, filter BenchmarkFilter) (int, error) {
+func (Table) Count(ctx context.Context, db sqlutil.Executor, filter Filter) (int, error) {
 	where, args, err := filterWhere(filter)
 	if err != nil {
 		return 0, err
@@ -129,7 +129,7 @@ func (BenchmarkTable) Count(ctx context.Context, db sqlutil.Executor, filter Ben
 	return count, nil
 }
 
-func (BenchmarkTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
+func (Table) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
 	var count int
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
@@ -140,7 +140,7 @@ func (BenchmarkTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Exec
 	return count, nil
 }
 
-func (BenchmarkTable) ListResponseIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]source.RespId, error) {
+func (Table) ListResponseIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]source.RespId, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT DISTINCT llm_response_id
 		FROM llm_problem_results
@@ -161,7 +161,7 @@ func (BenchmarkTable) ListResponseIDsByExamQuestionID(ctx context.Context, db sq
 	return result, rows.Err()
 }
 
-func (BenchmarkTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
+func (Table) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
 	if _, err := db.ExecContext(ctx, `
 		DELETE FROM llm_problem_results
 		WHERE exam_question_id = ?`, ExamQuestionID); err != nil {
@@ -170,7 +170,7 @@ func (BenchmarkTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Exe
 	return nil
 }
 
-func (BenchmarkTable) ListResponseIDs(ctx context.Context, db sqlutil.Executor) ([]source.RespId, error) {
+func (Table) ListResponseIDs(ctx context.Context, db sqlutil.Executor) ([]source.RespId, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT DISTINCT llm_response_id
 		FROM llm_problem_results
@@ -190,7 +190,7 @@ func (BenchmarkTable) ListResponseIDs(ctx context.Context, db sqlutil.Executor) 
 	return result, rows.Err()
 }
 
-func filterWhere(filter BenchmarkFilter) (string, []any, error) {
+func filterWhere(filter Filter) (string, []any, error) {
 	conditions := make([]string, 0, 2)
 	args := make([]any, 0, 2)
 	if filter.Correct != nil {

@@ -1,4 +1,4 @@
-package repository
+package entity
 
 import (
 	"context"
@@ -8,10 +8,10 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-// EntityRepository owns entity ID/link/read operations.
-type EntityRepository struct{}
+// Repository owns entity ID/link/read operations.
+type Repository struct{}
 
-func (EntityRepository) table(
+func (Repository) table(
 	ctx context.Context,
 	db sqlutil.Executor,
 	entities *repo.Store,

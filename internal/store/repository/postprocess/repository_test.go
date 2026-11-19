@@ -1,4 +1,4 @@
-package repository
+package postprocess
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 )
 
-func TestPostprocessRepositoryAppendAndListByEntity(t *testing.T) {
+func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	ctx := context.Background()
 	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess.db"))
 	if err != nil {
@@ -17,15 +17,15 @@ func TestPostprocessRepositoryAppendAndListByEntity(t *testing.T) {
 	}
 	defer db.Close() //nolint:errcheck // deferred close
 
-	repo := NewPostprocessRepository()
+	repo := NewRepository()
 	if err := repo.Init(ctx, db); err != nil {
 		t.Fatalf("init: %v", err)
 	}
 	finished := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
-	id, err := repo.Append(ctx, db, PostprocessRecord{
+	id, err := repo.Append(ctx, db, Record{
 		PostprocessorName: "transplant_rejection",
-		Operation:         PostprocessOperationCreated,
-		EntityType:        PostprocessEntityStatus,
+		Operation:         OperationCreated,
+		EntityType:        EntityStatus,
 		EntityID:          10,
 		FinishedAt:        finished,
 	})
@@ -35,7 +35,7 @@ func TestPostprocessRepositoryAppendAndListByEntity(t *testing.T) {
 	if id <= 0 {
 		t.Fatalf("id = %d", id)
 	}
-	records, err := repo.ListByEntity(ctx, db, PostprocessEntityStatus, 10)
+	records, err := repo.ListByEntity(ctx, db, EntityStatus, 10)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestPostprocessRepositoryAppendAndListByEntity(t *testing.T) {
 	if records[0].PostprocessorName != "transplant_rejection" {
 		t.Fatalf("record = %#v", records[0])
 	}
-	if records[0].Operation != PostprocessOperationCreated {
+	if records[0].Operation != OperationCreated {
 		t.Fatalf("record = %#v", records[0])
 	}
 }

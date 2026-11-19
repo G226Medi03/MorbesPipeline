@@ -4,31 +4,38 @@
 
 ```text
 internal/store/
-  core/
+  store.go
+  facade/
     store.go
     schema.go
     benchmark_tx.go
-    store/
   repository/
+    benchmark/
+    entity/
+    solve/
+    postprocess/
+    schema/
+    migration/
 ```
 
 ## StoreContainer
 
 ```text
-internal/store/core/store.go
+internal/store/facade/store.go
   Store *store.Store
   Entity/Solve/Source/Benchmark/Postprocess service
 
-internal/store/core/store/store.go
+internal/store/store.go
   ctx
   medical db/tx
   source db/tx
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  Solve storerepo.SolveRepository
-  Benchmark storerepo.BenchmarkRepository
-  Postprocess storerepo.PostprocessRepository
+  Entity entity.Repository
+  Solve solve.Repository
+  Benchmark benchmark.Repository
+  Postprocess postprocess.Repository
 ```
 
 ## 주요 구성
@@ -37,7 +44,7 @@ internal/store/core/store/store.go
 internal/service
   Entity/Solve/Source/Benchmark/Postprocess services
 
-core
+store/facade
   InitSchema
   transaction wrappers
   StoreContainer facade
@@ -45,11 +52,17 @@ core
 store
   ctx/db + repositories
 
-repository
-  Table + Repository
+repository/benchmark
+  llm_problem_results
+repository/entity
   entity ID/link/read/save
-  benchmark/solve/postprocess table과 repository
-  ProblemResultRow, ExamQuestionDataCounts
+repository/solve
+  solve_cases, solve_steps, solve_llm_calls, answer checks
+repository/postprocess
+  morbes_postprocesses
+repository/schema
+  schema ensure helpers
+repository/migration
   legacy schema migration
 ```
 

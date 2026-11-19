@@ -1,15 +1,15 @@
-package store
+package facade
 
 import (
 	"context"
 
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
 )
 
 type (
-	ProblemResultFilter    = storerepo.ProblemResultFilter
-	ProblemResultRow       = storerepo.ProblemResultRow
-	ExamQuestionDataCounts = storerepo.ExamQuestionDataCounts
+	ProblemResultFilter    = benchmark.ProblemResultFilter
+	ProblemResultRow       = benchmark.ProblemResultRow
+	ExamQuestionDataCounts = benchmark.ExamQuestionDataCounts
 )
 
 func (s *StoreContainer) ensure_llm_problem_results() error {

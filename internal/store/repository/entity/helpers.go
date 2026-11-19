@@ -1,4 +1,4 @@
-package repository
+package entity
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"

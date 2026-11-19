@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/core/store"
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
 
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 // ExamQuestionDataCounts summarizes data linked to one exam question.
-type ExamQuestionDataCounts = storerepo.ExamQuestionDataCounts
+type ExamQuestionDataCounts = benchmarkrepo.ExamQuestionDataCounts
 
 func (s *BenchmarkService) CountExamQuestionData(ctx context.Context, examQuestionID int64) (ExamQuestionDataCounts, error) {
 	var result ExamQuestionDataCounts
