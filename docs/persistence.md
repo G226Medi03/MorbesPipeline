@@ -5,6 +5,14 @@
 ```text
 internal/store/
   core/
+    internal/
+      entity/
+      solve/
+      source/
+      benchmark/
+      postprocess/
+      schema/
+      deps/
   repository/
 ```
 
@@ -29,9 +37,8 @@ internal/store/core/store.go
 core
   InitSchema
   transaction
-  entity ID/link SQL
+  core/internal: entity ID/link/read, solve, source, benchmark, postprocess, schema
   entity read는 MedicalEntityRepository facade 위임
-  solve/source access
 
 repository
   entity helper

@@ -9,8 +9,13 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
+	corebenchmark "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/benchmark"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/deps"
+	coreentity "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/entity"
+	corepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/postprocess"
+	coresolve "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/solve"
+	coresource "github.com/G226Medi03/MorbesPipeline/internal/store/core/internal/source"
 	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
-
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
@@ -35,6 +40,12 @@ type StoreContainer struct {
 	Solve       storerepo.SolveRepository
 	Benchmark   storerepo.BenchmarkRepository
 	Postprocess storerepo.PostprocessRepository
+
+	*coreentity.EntityService
+	*coresolve.SolveService
+	*coresource.SourceService
+	*corebenchmark.BenchmarkService
+	*corepostprocess.PostprocessService
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -68,6 +79,67 @@ func (s *StoreContainer) bind() {
 	s.Solve = storerepo.NewSolveRepository()
 	s.Benchmark = storerepo.BenchmarkRepository{}
 	s.Postprocess = storerepo.NewPostprocessRepository()
+	s.bindServices()
+}
+
+func (s *StoreContainer) bindServices() {
+	s.EntityService = coreentity.New(s)
+	s.SolveService = coresolve.New(s)
+	s.SourceService = coresource.New(s)
+	s.BenchmarkService = corebenchmark.New(s)
+	s.PostprocessService = corepostprocess.New(s)
+}
+
+func (s *StoreContainer) Context() context.Context {
+	return s.ctx
+}
+
+func (s *StoreContainer) MainExecutor() sqlutil.Executor {
+	return s
+}
+
+func (s *StoreContainer) SourceExecutor() sqlutil.Executor {
+	return s.sourceExecutor()
+}
+
+func (s *StoreContainer) SolveExecutor() sqlutil.Executor {
+	return s.solveExecutor()
+}
+
+func (s *StoreContainer) SourceRepository() storesource.Repository {
+	return s.Source
+}
+
+func (s *StoreContainer) SolveRepository() storerepo.SolveRepository {
+	return s.Solve
+}
+
+func (s *StoreContainer) BenchmarkRepository() storerepo.BenchmarkRepository {
+	return s.Benchmark
+}
+
+func (s *StoreContainer) PostprocessRepository() storerepo.PostprocessRepository {
+	return s.Postprocess
+}
+
+func (s *StoreContainer) ResponseStore() *responsestore.Store {
+	return s.Response
+}
+
+func (s *StoreContainer) LockWrite() func() {
+	return s.lockWrite()
+}
+
+func (s *StoreContainer) RunTx(ctx context.Context, fn func(deps.Store) error) error {
+	return s.WithTx(ctx, func(tx *StoreContainer) error {
+		return fn(tx)
+	})
+}
+
+func (s *StoreContainer) RunSolveTx(ctx context.Context, fn func(deps.Store) error) error {
+	return s.WithSolveTx(ctx, func(tx *StoreContainer) error {
+		return fn(tx)
+	})
 }
 
 func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {
@@ -103,12 +175,14 @@ func (s *StoreContainer) withSourceTx(tx *sql.Tx) *StoreContainer {
 	clone := *s
 	clone.sourceTx = tx
 	clone.Response = s.Response.WithExecutor(tx)
+	clone.bindServices()
 	return &clone
 }
 
 func (s *StoreContainer) withSolveTx(tx *sql.Tx) *StoreContainer {
 	clone := *s
 	clone.solveTx = tx
+	clone.bindServices()
 	return &clone
 }
 

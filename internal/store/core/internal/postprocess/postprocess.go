@@ -1,7 +1,6 @@
-package store
+package postprocess
 
 import (
-	"context"
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
@@ -11,7 +10,7 @@ import (
 
 // RecordPostprocess writes one postprocess audit row and returns the source
 // that represents that operation.
-func (s *StoreContainer) RecordPostprocess(
+func (s *PostprocessService) RecordPostprocess(
 	name string,
 	operation storerepo.PostprocessOperation,
 	entityType storerepo.PostprocessEntityType,
@@ -19,7 +18,7 @@ func (s *StoreContainer) RecordPostprocess(
 	targetType storerepo.PostprocessEntityType,
 	targetID int64,
 ) (source.SourceId, error) {
-	postprocessID, err := s.Postprocess.Append(s.ctx, s, storerepo.PostprocessRecord{
+	postprocessID, err := s.store.PostprocessRepository().Append(s.store.Context(), s.store.MainExecutor(), storerepo.PostprocessRecord{
 		PostprocessorName: name,
 		Operation:         operation,
 		EntityType:        entityType,
@@ -30,12 +29,12 @@ func (s *StoreContainer) RecordPostprocess(
 	if err != nil {
 		return source.SourceId{}, err
 	}
-	return s.EnsureSource(source.SourceKindMorbesPostprocess, postprocessID)
+	return s.store.EnsureSource(source.SourceKindMorbesPostprocess, postprocessID)
 }
 
 // AuditPostprocessStatus records one status observation.
-func (s *StoreContainer) AuditPostprocessStatus(name string, operation storerepo.PostprocessOperation, value repo.IEStatus) error {
-	id, err := s.statusIDForValue(value)
+func (s *PostprocessService) AuditPostprocessStatus(name string, operation storerepo.PostprocessOperation, value repo.IEStatus) error {
+	id, err := s.store.StatusIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -45,8 +44,8 @@ func (s *StoreContainer) AuditPostprocessStatus(name string, operation storerepo
 
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
-func (s *StoreContainer) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	id, err := s.statusIDForValue(value)
+func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
+	id, err := s.store.StatusIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -58,8 +57,8 @@ func (s *StoreContainer) AuditPostprocessStatusCreated(name string, value repo.I
 }
 
 // AuditPostprocessAction records one action observation.
-func (s *StoreContainer) AuditPostprocessAction(name string, operation storerepo.PostprocessOperation, value repo.IEAction) error {
-	id, err := s.actionIDForValue(value)
+func (s *PostprocessService) AuditPostprocessAction(name string, operation storerepo.PostprocessOperation, value repo.IEAction) error {
+	id, err := s.store.ActionIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -69,8 +68,8 @@ func (s *StoreContainer) AuditPostprocessAction(name string, operation storerepo
 
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
-func (s *StoreContainer) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	id, err := s.actionIDForValue(value)
+func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
+	id, err := s.store.ActionIDForValue(value)
 	if err != nil {
 		return err
 	}
@@ -82,17 +81,17 @@ func (s *StoreContainer) AuditPostprocessActionCreated(name string, value repo.I
 }
 
 // AuditPostprocessStatusAction records one status-action link operation.
-func (s *StoreContainer) AuditPostprocessStatusAction(
+func (s *PostprocessService) AuditPostprocessStatusAction(
 	name string,
 	operation storerepo.PostprocessOperation,
 	status repo.IEStatus,
 	action repo.IEAction,
 ) error {
-	statusID, err := s.statusIDForValue(status)
+	statusID, err := s.store.StatusIDForValue(status)
 	if err != nil {
 		return err
 	}
-	actionID, err := s.actionIDForValue(action)
+	actionID, err := s.store.ActionIDForValue(action)
 	if err != nil {
 		return err
 	}
@@ -108,17 +107,17 @@ func (s *StoreContainer) AuditPostprocessStatusAction(
 }
 
 // AuditPostprocessActionResultStatus records one action-result link operation.
-func (s *StoreContainer) AuditPostprocessActionResultStatus(
+func (s *PostprocessService) AuditPostprocessActionResultStatus(
 	name string,
 	operation storerepo.PostprocessOperation,
 	action repo.IEAction,
 	status repo.IEStatus,
 ) error {
-	actionID, err := s.actionIDForValue(action)
+	actionID, err := s.store.ActionIDForValue(action)
 	if err != nil {
 		return err
 	}
-	statusID, err := s.statusIDForValue(status)
+	statusID, err := s.store.StatusIDForValue(status)
 	if err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func (s *StoreContainer) AuditPostprocessActionResultStatus(
 }
 
 // AddPostprocessSource links a postprocess source to an entity row.
-func (s *StoreContainer) AddPostprocessSource(
+func (s *PostprocessService) AddPostprocessSource(
 	entityType storerepo.PostprocessEntityType,
 	entityID int64,
 	sourceID source.SourceId,
@@ -143,9 +142,9 @@ func (s *StoreContainer) AddPostprocessSource(
 	if !ok {
 		return fmt.Errorf("unsupported postprocess entity type: %s", entityType)
 	}
-	return s.Source.AddSourceIDs(
-		s.ctx,
-		s.sourceExecutor(),
+	return s.store.SourceRepository().AddSourceIDs(
+		s.store.Context(),
+		s.store.SourceExecutor(),
 		table,
 		column,
 		entityID,
@@ -168,15 +167,4 @@ func postprocessSourceTable(entityType storerepo.PostprocessEntityType) (string,
 	default:
 		return "", "", false
 	}
-}
-
-// WithPostprocessTx runs postprocess writes in one main.db transaction.
-func (s *StoreContainer) WithPostprocessTx(ctx context.Context, fn func(*StoreContainer) error) error {
-	if s == nil || s.db == nil {
-		return fmt.Errorf("store db is required")
-	}
-	if s.sourceDB != s.db || s.solveDB != s.db {
-		return fmt.Errorf("postprocess requires a single database")
-	}
-	return s.WithTx(ctx, fn)
 }

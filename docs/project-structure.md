@@ -84,7 +84,15 @@ selection
 
 ```text
 internal/store/
-  core/            # StoreContainer, schema, transaction, core SQL
+  core/            # StoreContainer, transaction, schema facade
+    internal/
+      entity/      # entity ID/link/read/save
+      solve/       # solve case/step/call/prompt
+      source/      # source/response trace
+      benchmark/   # problem result/exam question data
+      postprocess/ # postprocess audit
+      schema/      # schema ensure helpers
+      deps/        # core internal dependency interface
   repository/      # merged entity helper, solve/benchmark/postprocess tables,
                    # read models, migration
 ```
@@ -95,7 +103,7 @@ internal/store/
 core
   StoreContainer, New/NewWithDBs, InitSchema
   transaction executor, entity/solve/source 조립
-  entity ID lookup, link/delete, read API
+  core/internal: entity/solve/source/benchmark/postprocess/schema
 
 repository
   entity helper

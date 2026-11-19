@@ -1,4 +1,4 @@
-package store
+package entity
 
 import (
 	"errors"
@@ -8,12 +8,12 @@ import (
 )
 
 // GetActorByName returns the actor entity for a name.
-func (s *StoreContainer) GetActorByName(name string) (repo.Actor, bool, error) {
+func (s *EntityService) GetActorByName(name string) (repo.Actor, bool, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return repo.Actor{}, false, nil
 	}
-	entityStore, err := s.Entities()
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return repo.Actor{}, false, err
 	}
@@ -28,7 +28,7 @@ func (s *StoreContainer) GetActorByName(name string) (repo.Actor, bool, error) {
 }
 
 // GetDeviceByName returns the device actor entity for a name.
-func (s *StoreContainer) GetDeviceByName(name string) (repo.Actor, bool, error) {
+func (s *EntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
 	actor, found, err := s.GetActorByName(name)
 	if err != nil || !found {
 		return repo.Actor{}, found, err
@@ -40,8 +40,8 @@ func (s *StoreContainer) GetDeviceByName(name string) (repo.Actor, bool, error) 
 }
 
 // GetAction returns the action entity for a typed action value.
-func (s *StoreContainer) GetAction(value repo.IEAction) (repo.Action, bool, error) {
-	entityStore, err := s.Entities()
+func (s *EntityService) GetAction(value repo.IEAction) (repo.Action, bool, error) {
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return repo.Action{}, false, err
 	}
@@ -56,8 +56,8 @@ func (s *StoreContainer) GetAction(value repo.IEAction) (repo.Action, bool, erro
 }
 
 // GetStatus returns the status entity for a typed status value.
-func (s *StoreContainer) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
-	entityStore, err := s.Entities()
+func (s *EntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return repo.Status{}, false, err
 	}
@@ -72,8 +72,8 @@ func (s *StoreContainer) GetStatus(value repo.IEStatus) (repo.Status, bool, erro
 }
 
 // GetProcedure returns the procedure entity for a typed procedure value.
-func (s *StoreContainer) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
-	entityStore, err := s.Entities()
+func (s *EntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return repo.Procedure{}, false, err
 	}

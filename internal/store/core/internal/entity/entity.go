@@ -1,4 +1,4 @@
-package store
+package entity
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
+func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
-	unlock := s.lockWrite()
+	unlock := s.store.LockWrite()
 	defer unlock()
-	entityStore, err := s.entities()
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return 0, err
 	}
@@ -26,10 +26,10 @@ func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []tr
 	return s.procedureIDForValue(value)
 }
 
-func (s *StoreContainer) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
-	unlock := s.lockWrite()
+func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
+	unlock := s.store.LockWrite()
 	defer unlock()
-	entityStore, err := s.entities()
+	entityStore, err := s.store.Entities()
 	if err != nil {
 		return option, err
 	}
@@ -43,7 +43,7 @@ func (s *StoreContainer) SaveMedicalProcedureOption(option repo.MedicalProcedure
 	return option, nil
 }
 
-func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
+func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	procedure repo.IMedicalProcedure,
 	category string,
 	traits []trait.Trait,
@@ -80,7 +80,7 @@ func traitStrings(values []trait.Trait) []string {
 
 // LinkActionResultStatusValues links typed action/status values using their
 // persisted row identifiers.
-func (s *StoreContainer) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
+func (s *EntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
 	actionID, err := s.actionIDForValue(action)
 	if err != nil {
 		return err

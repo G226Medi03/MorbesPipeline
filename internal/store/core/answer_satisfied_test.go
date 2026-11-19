@@ -38,7 +38,7 @@ func TestApplyAnswerCheckUsesAnswerSatisfied(t *testing.T) {
 		t.Fatalf("insert check: %v", err)
 	}
 	item := domain.Case{ID: "6"}
-	if err := st.applyAnswerCheck(&item); err != nil {
+	if err := st.ApplyAnswerCheck(&item); err != nil {
 		t.Fatalf("applyAnswerCheck: %v", err)
 	}
 	if !item.Processed {
