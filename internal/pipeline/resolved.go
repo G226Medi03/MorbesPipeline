@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/G226Medi03/MedicalEntityParser/llmdto"
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -23,7 +24,7 @@ type ResolvedCaseExtraction struct {
 func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 	statuses := make(map[string]json.RawMessage, len(value.Statuses))
 	for key, status := range value.Statuses {
-		encoded, err := entityjson.EncodeStatus(status)
+		encoded, err := json.Marshal(llmparser.StatusToDTO(status))
 		if err != nil {
 			return nil, err
 		}
@@ -31,7 +32,7 @@ func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 	}
 	actions := make(map[string]json.RawMessage, len(value.Actions))
 	for key, action := range value.Actions {
-		encoded, err := entityjson.EncodeAction(action)
+		encoded, err := json.Marshal(llmparser.ActionToDTO(action))
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +66,11 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	value.PatientDescriptions = aux.PatientDescriptions
 	value.Statuses = make(map[string]repo.IEStatus, len(aux.Statuses))
 	for key, raw := range aux.Statuses {
-		status, err := entityjson.DecodeStatus(raw)
+		var statusDTO llmdto.Status
+		if err := json.Unmarshal(raw, &statusDTO); err != nil {
+			return err
+		}
+		status, err := llmparser.StatusFromDTO(statusDTO)
 		if err != nil {
 			return err
 		}
@@ -73,7 +78,11 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	}
 	value.Actions = make(map[string]repo.IEAction, len(aux.Actions))
 	for key, raw := range aux.Actions {
-		action, err := entityjson.DecodeAction(raw)
+		var actionDTO llmdto.Action
+		if err := json.Unmarshal(raw, &actionDTO); err != nil {
+			return err
+		}
+		action, err := llmparser.ActionFromDTO(actionDTO)
 		if err != nil {
 			return err
 		}

@@ -5,9 +5,9 @@ package patient
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/G226Medi03/MedicalEntityParser/llmdto"
 	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 )
 
 // PatientDescription is the minimal patient-reported context for one answer
@@ -19,26 +19,22 @@ type PatientDescription struct {
 }
 
 func (value PatientDescription) MarshalJSON() ([]byte, error) {
-	descriptions := make([]json.RawMessage, 0, len(value.Description))
+	descriptions := make([]llmdto.Status, 0, len(value.Description))
 	for _, status := range value.Description {
-		encoded, err := entityjson.EncodeStatus(status)
-		if err != nil {
-			return nil, err
-		}
-		descriptions = append(descriptions, encoded)
+		descriptions = append(descriptions, llmparser.StatusToDTO(status))
 	}
 	return json.Marshal(struct {
-		Choice      string            `json:"choice,omitempty"`
-		Description []json.RawMessage `json:"description"`
-		Knowledge   []string          `json:"knowledge,omitempty"`
+		Choice      string          `json:"choice,omitempty"`
+		Description []llmdto.Status `json:"description"`
+		Knowledge   []string        `json:"knowledge,omitempty"`
 	}{value.Choice, descriptions, value.Knowledge})
 }
 
 func (value *PatientDescription) UnmarshalJSON(data []byte) error {
 	aux := struct {
-		Choice      string            `json:"choice,omitempty"`
-		Description []json.RawMessage `json:"description"`
-		Knowledge   []string          `json:"knowledge,omitempty"`
+		Choice      string          `json:"choice,omitempty"`
+		Description []llmdto.Status `json:"description"`
+		Knowledge   []string        `json:"knowledge,omitempty"`
 	}{}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
@@ -46,8 +42,8 @@ func (value *PatientDescription) UnmarshalJSON(data []byte) error {
 	value.Choice = aux.Choice
 	value.Knowledge = aux.Knowledge
 	value.Description = make([]repo.IEStatus, 0, len(aux.Description))
-	for _, raw := range aux.Description {
-		status, err := entityjson.DecodeStatus(raw)
+	for _, statusDTO := range aux.Description {
+		status, err := llmparser.StatusFromDTO(statusDTO)
 		if err != nil {
 			return err
 		}

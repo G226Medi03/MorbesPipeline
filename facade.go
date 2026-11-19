@@ -9,7 +9,8 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 	clog "github.com/G226Medi03/log-sqlite"
 
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
+	"github.com/G226Medi03/MedicalEntityParser/llmdto"
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	label "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -188,17 +189,17 @@ func SelectMedicalProcedureOption(options []MedicalProcedureOptionGraphItem, pro
 
 // MarshalAction encodes a typed action value.
 func MarshalAction(value IEAction) ([]byte, error) {
-	return entityjson.EncodeAction(value)
+	return json.Marshal(llmparser.ActionToDTO(value))
 }
 
 // MarshalProcedure encodes a typed medical procedure value.
 func MarshalProcedure(value IMedicalProcedure) ([]byte, error) {
-	return entityjson.EncodeProcedure(value)
+	return json.Marshal(llmparser.ProcedureToDTO(value))
 }
 
 // MarshalStatus encodes a typed status value.
 func MarshalStatus(value IEStatus) ([]byte, error) {
-	return entityjson.EncodeStatus(value)
+	return json.Marshal(llmparser.StatusToDTO(value))
 }
 
 // IsStatusKind reports whether kind is a persisted status variant.
@@ -217,7 +218,11 @@ func StatusLabel(kind, data string) string {
 	if err != nil {
 		return strings.TrimSpace(data)
 	}
-	value, err := entityjson.DecodeStatus(raw)
+	var statusDTO llmdto.Status
+	if err := json.Unmarshal(raw, &statusDTO); err != nil {
+		return strings.TrimSpace(data)
+	}
+	value, err := llmparser.StatusFromDTO(statusDTO)
 	if err != nil {
 		return strings.TrimSpace(data)
 	}
@@ -231,11 +236,17 @@ func NodeLabel(kind, data string) string {
 	}
 	raw, err := withJSONKind(kind, data)
 	if err == nil {
-		if value, err := entityjson.DecodeAction(raw); err == nil {
-			return label.ActionLabelValue(value)
+		var actionDTO llmdto.Action
+		if json.Unmarshal(raw, &actionDTO) == nil {
+			if value, err := llmparser.ActionFromDTO(actionDTO); err == nil {
+				return label.ActionLabelValue(value)
+			}
 		}
-		if value, err := entityjson.DecodeProcedure(raw); err == nil {
-			return label.ProcedureLabel(value)
+		var procedureDTO llmdto.Procedure
+		if json.Unmarshal(raw, &procedureDTO) == nil {
+			if value, err := llmparser.ProcedureFromDTO(&procedureDTO); err == nil {
+				return label.ProcedureLabel(value)
+			}
 		}
 	}
 	return strings.TrimSpace(kind) + ":" + strings.TrimSpace(data)
