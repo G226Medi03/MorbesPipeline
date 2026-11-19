@@ -180,8 +180,8 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 				Category:         strings.TrimSpace(item.Category),
 				Traits:           item.Traits,
 				MedicalProcedure: item.MedicalProcedure,
-				Indications:      trim_string_list(item.Indications),
-				ExpectedEffects:  trim_string_list(item.ExpectedEffects),
+				Indications:      item.Indications,
+				ExpectedEffects:  item.ExpectedEffects,
 				SourceID:         source_id,
 			})
 		}

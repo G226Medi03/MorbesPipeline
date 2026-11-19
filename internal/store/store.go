@@ -9,7 +9,6 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/option"
 	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
@@ -31,9 +30,7 @@ type StoreContainer struct {
 	medicalErr error
 	medicalMu  *sync.Mutex
 
-	Response *responsestore.Store
-
-	Option      medicalprocedureoption.Repository
+	Response    *responsestore.Store
 	Source      storesource.Repository
 	Solve       storesolve.Repository
 	Postprocess storepostprocess.Repository
@@ -71,7 +68,6 @@ func (s *StoreContainer) bind() {
 	s.Medical = nil
 	s.medicalErr = nil
 	s.Response = nil
-	s.Option = medicalprocedureoption.NewRepository(s.ctx, s)
 	s.Postprocess = storepostprocess.NewRepository(s.ctx, s)
 }
 

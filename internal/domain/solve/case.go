@@ -2,8 +2,6 @@ package domain
 
 import (
 	"time"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/SourceEntity"
 )
 
@@ -20,7 +18,7 @@ type CaseState string
 
 type Case struct {
 	ID                CaseID             `json:"id"`
-	ExamQuestionID    ids.ExamQuestionID `json:"examQuestionId"`
+	ExamQuestionID    int64 `json:"examQuestionId"`
 	Processed         bool               `json:"processed"`
 	Problem           string             `json:"problem,omitempty"`
 	Answer            string             `json:"answer,omitempty"`

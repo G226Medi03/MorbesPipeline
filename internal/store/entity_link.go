@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 // LinkStatusAction connects a status and an action with one source.
-func (s *StoreContainer) LinkStatusAction(statusID ids.StatusID, actionID ids.ActionID, sourceID source.SourceId) error {
+func (s *StoreContainer) LinkStatusAction(statusID int64, actionID int64, sourceID source.SourceId) error {
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("status-action source가 필요합니다")
 	}
@@ -17,7 +16,7 @@ func (s *StoreContainer) LinkStatusAction(statusID ids.StatusID, actionID ids.Ac
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,
 		`INSERT OR IGNORE INTO status_actions (estatus_id, eaction_id, source_id) VALUES (?, ?, ?)`,
-		statusID.ToI64(), actionID.ToI64(), sourceID.ToI64())
+		statusID, actionID, sourceID.ToI64())
 	return err
 }
 
@@ -36,7 +35,7 @@ func (s *StoreContainer) LinkStatusActionValues(status repo.IEStatus, action rep
 
 // LinkActionResultStatus connects an action and its result status with one
 // source.
-func (s *StoreContainer) LinkActionResultStatus(actionID ids.ActionID, statusID ids.StatusID, sourceID source.SourceId) error {
+func (s *StoreContainer) LinkActionResultStatus(actionID int64, statusID int64, sourceID source.SourceId) error {
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("action-result source가 필요합니다")
 	}
@@ -44,17 +43,17 @@ func (s *StoreContainer) LinkActionResultStatus(actionID ids.ActionID, statusID 
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,
 		`INSERT OR IGNORE INTO action_result_statuses (eaction_id, estatus_id, source_id) VALUES (?, ?, ?)`,
-		actionID.ToI64(), statusID.ToI64(), sourceID.ToI64())
+		actionID, statusID, sourceID.ToI64())
 	return err
 }
 
 // DeleteStatusAction removes one status-action edge.
-func (s *StoreContainer) DeleteStatusAction(statusID ids.StatusID, actionID ids.ActionID) error {
+func (s *StoreContainer) DeleteStatusAction(statusID int64, actionID int64) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,
 		`DELETE FROM status_actions WHERE estatus_id = ? AND eaction_id = ?`,
-		statusID.ToI64(), actionID.ToI64())
+		statusID, actionID)
 	return err
 }
 
@@ -72,12 +71,12 @@ func (s *StoreContainer) DeleteStatusActionValues(status repo.IEStatus, action r
 }
 
 // DeleteActionResultStatus removes one action-result edge.
-func (s *StoreContainer) DeleteActionResultStatus(actionID ids.ActionID, statusID ids.StatusID) error {
+func (s *StoreContainer) DeleteActionResultStatus(actionID int64, statusID int64) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	_, err := s.ExecContext(s.ctx,
 		`DELETE FROM action_result_statuses WHERE eaction_id = ? AND estatus_id = ?`,
-		actionID.ToI64(), statusID.ToI64())
+		actionID, statusID)
 	return err
 }
 

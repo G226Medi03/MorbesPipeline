@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -230,10 +229,10 @@ func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor
 	return nil
 }
 
-func (AnswerCheckTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) error {
+func (AnswerCheckTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
 	if _, err := db.ExecContext(ctx, `
 		DELETE FROM solve_answer_checks
-		WHERE case_id IN (SELECT case_id FROM solve_cases WHERE exam_question_id = ?)`, examQuestionID.ToI64()); err != nil {
+		WHERE case_id IN (SELECT case_id FROM solve_cases WHERE exam_question_id = ?)`, ExamQuestionID); err != nil {
 		return fmt.Errorf("exam question answer check 삭제 실패: %w", err)
 	}
 	return nil

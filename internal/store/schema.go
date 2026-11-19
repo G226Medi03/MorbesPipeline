@@ -12,9 +12,6 @@ func (s *StoreContainer) InitSchema() error {
 	if _, err := s.entities(); err != nil {
 		return err
 	}
-	if err := s.Option.Init(); err != nil {
-		return err
-	}
 	if err := s.Postprocess.Init(); err != nil {
 		return err
 	}

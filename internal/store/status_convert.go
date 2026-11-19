@@ -7,13 +7,12 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
 // StatusNameRef is the result of converting one status entity to another type.
 type StatusNameRef struct {
 	Type string
-	ID   ids.StatusEntityID
+	ID   int64
 	Name string
 }
 
@@ -30,7 +29,7 @@ var statusTables = map[string]statusTableInfo{
 	"index":   {"eindex", "index_id", "index_id", "index_sources"},
 }
 
-func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.StatusEntityID, targetType, direction string) (StatusNameRef, error) {
+func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID int64, targetType, direction string) (StatusNameRef, error) {
 	sourceInfo, ok := statusTables[sourceType]
 	if !ok {
 		return StatusNameRef{}, fmt.Errorf("지원하지 않는 status type: %s", sourceType)
@@ -49,11 +48,11 @@ func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.Sta
 		var sourceIDValue int64
 		if err := tx.QueryRowContext(s.ctx,
 			`SELECT name, COALESCE(source_id, 0) FROM `+sourceInfo.table+` WHERE `+sourceInfo.pkColumn+` = ?`,
-			sourceID.ToI64()).Scan(&name, &sourceIDValue); err != nil {
+			sourceID).Scan(&name, &sourceIDValue); err != nil {
 			return fmt.Errorf("변환 source entity 조회 실패: %w", err)
 		}
 
-		var targetID ids.StatusEntityID
+		var targetID int64
 		err := tx.QueryRowContext(s.ctx,
 			`SELECT `+targetInfo.pkColumn+` FROM `+targetInfo.table+` WHERE name = ?`, name).Scan(&targetID)
 		if err == sql.ErrNoRows {
@@ -66,7 +65,7 @@ func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.Sta
 			if err != nil {
 				return err
 			}
-			targetID = ids.StatusEntityID(rawTargetID)
+			targetID = int64(rawTargetID)
 		} else if err != nil {
 			return fmt.Errorf("변환 target entity 조회 실패: %w", err)
 		}
@@ -78,13 +77,13 @@ func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.Sta
 			return err
 		}
 		if _, err := tx.ExecContext(s.ctx,
-			`DELETE FROM `+sourceInfo.table+` WHERE `+sourceInfo.pkColumn+` = ?`, sourceID.ToI64()); err != nil {
+			`DELETE FROM `+sourceInfo.table+` WHERE `+sourceInfo.pkColumn+` = ?`, sourceID); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(s.ctx, `
 			UPDATE status_other_name
 			SET status_type = ?, status_id = ?
-			WHERE name = ?`, targetType, targetID.ToI64(), strings.TrimSpace(name)); err != nil {
+			WHERE name = ?`, targetType, targetID, strings.TrimSpace(name)); err != nil {
 			return err
 		}
 		ref = StatusNameRef{Type: targetType, ID: targetID, Name: name}
@@ -93,7 +92,7 @@ func (s *StoreContainer) ConvertStatusEntity(sourceType string, sourceID ids.Sta
 	return ref, err
 }
 
-func (s *StoreContainer) move_status_rows(name, sourceType string, sourceID ids.StatusEntityID, targetType string, targetID ids.StatusEntityID, direction string) error {
+func (s *StoreContainer) move_status_rows(name, sourceType string, sourceID int64, targetType string, targetID int64, direction string) error {
 	query := ""
 	switch sourceType {
 	case "symptom":
@@ -105,13 +104,13 @@ func (s *StoreContainer) move_status_rows(name, sourceType string, sourceID ids.
 	default:
 		return fmt.Errorf("지원하지 않는 status type: %s", sourceType)
 	}
-	rows, err := s.QueryContext(s.ctx, query, sourceID.ToI64())
+	rows, err := s.QueryContext(s.ctx, query, sourceID)
 	if err != nil {
 		return err
 	}
-	statusIDs := []ids.StatusID{}
+	statusIDs := []int64{}
 	for rows.Next() {
-		var statusID ids.StatusID
+		var statusID int64
 		if err := rows.Scan(&statusID); err != nil {
 			_ = rows.Close()
 			return err
@@ -155,14 +154,14 @@ func (s *StoreContainer) move_status_rows(name, sourceType string, sourceID ids.
 		if err := s.merge_status_references(statusID, newID); err != nil {
 			return err
 		}
-		if _, err := s.ExecContext(s.ctx, `DELETE FROM estatus WHERE estatus_id = ?`, statusID.ToI64()); err != nil {
+		if _, err := s.ExecContext(s.ctx, `DELETE FROM estatus WHERE estatus_id = ?`, statusID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *StoreContainer) merge_status_references(sourceID, targetID ids.StatusID) error {
+func (s *StoreContainer) merge_status_references(sourceID, targetID int64) error {
 	for _, item := range []struct {
 		table  string
 		column string
@@ -173,29 +172,29 @@ func (s *StoreContainer) merge_status_references(sourceID, targetID ids.StatusID
 	} {
 		if _, err := s.ExecContext(s.ctx,
 			`UPDATE OR IGNORE `+item.table+` SET `+item.column+` = ? WHERE `+item.column+` = ?`,
-			targetID.ToI64(), sourceID.ToI64()); err != nil {
+			targetID, sourceID); err != nil {
 			return err
 		}
 		if _, err := s.ExecContext(s.ctx,
-			`DELETE FROM `+item.table+` WHERE `+item.column+` = ?`, sourceID.ToI64()); err != nil {
+			`DELETE FROM `+item.table+` WHERE `+item.column+` = ?`, sourceID); err != nil {
 			return err
 		}
 	}
 	if _, err := s.ExecContext(s.ctx, `
 		UPDATE OR IGNORE entity_sources SET entity_id = ?
-		WHERE entity_kind = 'status' AND entity_id = ?`, targetID.ToI64(), sourceID.ToI64()); err != nil {
+		WHERE entity_kind = 'status' AND entity_id = ?`, targetID, sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx, `
-		DELETE FROM entity_sources WHERE entity_kind = 'status' AND entity_id = ?`, sourceID.ToI64()); err != nil {
+		DELETE FROM entity_sources WHERE entity_kind = 'status' AND entity_id = ?`, sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx, `
-		UPDATE OR IGNORE status_other_name SET status_id = ? WHERE status_id = ?`, targetID.ToI64(), sourceID.ToI64()); err != nil {
+		UPDATE OR IGNORE status_other_name SET status_id = ? WHERE status_id = ?`, targetID, sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx, `
-		DELETE FROM status_other_name WHERE status_id = ?`, sourceID.ToI64()); err != nil {
+		DELETE FROM status_other_name WHERE status_id = ?`, sourceID); err != nil {
 		return err
 	}
 	rows, err := s.QueryContext(s.ctx, `
@@ -205,17 +204,17 @@ func (s *StoreContainer) merge_status_references(sourceID, targetID ids.StatusID
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
 	type update struct {
-		id     ids.MedicalProcedureOptionID
-		values []ids.StatusID
+		id     int64
+		values []int64
 	}
 	updates := make([]update, 0)
 	for rows.Next() {
-		var id ids.MedicalProcedureOptionID
+		var id int64
 		var raw string
 		if err := rows.Scan(&id, &raw); err != nil {
 			return err
 		}
-		var values []ids.StatusID
+		var values []int64
 		if err := json.Unmarshal([]byte(raw), &values); err != nil {
 			return err
 		}
@@ -240,35 +239,35 @@ func (s *StoreContainer) merge_status_references(sourceID, targetID ids.StatusID
 		}
 		if _, err := s.ExecContext(s.ctx,
 			`UPDATE medical_procedure_options SET indication_status_ids_json = ? WHERE medical_procedure_option_id = ?`,
-			string(encoded), item.id.ToI64()); err != nil {
+			string(encoded), item.id); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *StoreContainer) move_status_entity_sources(sourceInfo, targetInfo statusTableInfo, sourceID, targetID ids.StatusEntityID) error {
+func (s *StoreContainer) move_status_entity_sources(sourceInfo, targetInfo statusTableInfo, sourceID, targetID int64) error {
 	if _, err := s.ExecContext(s.ctx, `
 		INSERT OR IGNORE INTO `+targetInfo.sourceTable+`
 			(`+targetInfo.idColumn+`, source_id)
 		SELECT ?, source_id FROM `+sourceInfo.sourceTable+` WHERE `+sourceInfo.idColumn+` = ?`,
-		targetID.ToI64(), sourceID.ToI64()); err != nil {
+		targetID, sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx,
-		`DELETE FROM `+sourceInfo.sourceTable+` WHERE `+sourceInfo.idColumn+` = ?`, sourceID.ToI64()); err != nil {
+		`DELETE FROM `+sourceInfo.sourceTable+` WHERE `+sourceInfo.idColumn+` = ?`, sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx, `
 		INSERT OR IGNORE INTO entity_sources (entity_kind, entity_id, source_id, created_at)
 		SELECT ?, ?, source_id, created_at FROM entity_sources
 		WHERE entity_kind = ? AND entity_id = ?`,
-		targetInfo.table[1:], targetID.ToI64(), sourceInfo.table[1:], sourceID.ToI64()); err != nil {
+		targetInfo.table[1:], targetID, sourceInfo.table[1:], sourceID); err != nil {
 		return err
 	}
 	if _, err := s.ExecContext(s.ctx,
 		`DELETE FROM entity_sources WHERE entity_kind = ? AND entity_id = ?`,
-		sourceInfo.table[1:], sourceID.ToI64()); err != nil {
+		sourceInfo.table[1:], sourceID); err != nil {
 		return err
 	}
 	return nil

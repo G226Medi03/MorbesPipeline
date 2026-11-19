@@ -47,8 +47,8 @@ type OptionDraft struct {
 	Category         string
 	Traits           []string
 	MedicalProcedure repo.IMedicalProcedure
-	Indications      []string
-	ExpectedEffects  []string
+	Indications      []repo.IEStatus
+	ExpectedEffects  []repo.IEStatus
 	SourceID         source.SourceId
 }
 
@@ -133,14 +133,22 @@ type optionDraftJSON struct {
 	Key              string          `json:"key"`
 	Category         string          `json:"category"`
 	Traits           []string        `json:"traits"`
-	MedicalProcedure json.RawMessage `json:"medicalProcedure"`
-	Indications      []string        `json:"indications"`
-	ExpectedEffects  []string        `json:"expectedEffects,omitempty"`
-	SourceID         source.SourceId `json:"sourceId,omitempty"`
+	MedicalProcedure json.RawMessage   `json:"medicalProcedure"`
+	Indications      []json.RawMessage `json:"indications"`
+	ExpectedEffects  []json.RawMessage `json:"expectedEffects,omitempty"`
+	SourceID         source.SourceId   `json:"sourceId,omitempty"`
 }
 
 func (draft OptionDraft) MarshalJSON() ([]byte, error) {
 	value, err := entityjson.EncodeProcedure(draft.MedicalProcedure)
+	if err != nil {
+		return nil, err
+	}
+	indications, err := encodeStatuses(draft.Indications)
+	if err != nil {
+		return nil, err
+	}
+	effects, err := encodeStatuses(draft.ExpectedEffects)
 	if err != nil {
 		return nil, err
 	}
@@ -149,10 +157,34 @@ func (draft OptionDraft) MarshalJSON() ([]byte, error) {
 		Category:         draft.Category,
 		Traits:           draft.Traits,
 		MedicalProcedure: value,
-		Indications:      draft.Indications,
-		ExpectedEffects:  draft.ExpectedEffects,
+		Indications:      indications,
+		ExpectedEffects:  effects,
 		SourceID:         draft.SourceID,
 	})
+}
+
+func encodeStatuses(values []repo.IEStatus) ([]json.RawMessage, error) {
+	result := make([]json.RawMessage, 0, len(values))
+	for _, value := range values {
+		encoded, err := entityjson.EncodeStatus(value)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, encoded)
+	}
+	return result, nil
+}
+
+func decodeStatuses(values []json.RawMessage) ([]repo.IEStatus, error) {
+	result := make([]repo.IEStatus, 0, len(values))
+	for _, raw := range values {
+		value, err := entityjson.DecodeStatus(raw)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+	}
+	return result, nil
 }
 
 func (draft *OptionDraft) UnmarshalJSON(data []byte) error {
@@ -164,12 +196,20 @@ func (draft *OptionDraft) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
+	indications, err := decodeStatuses(encoded.Indications)
+	if err != nil {
+		return err
+	}
+	effects, err := decodeStatuses(encoded.ExpectedEffects)
+	if err != nil {
+		return err
+	}
 	draft.Key = encoded.Key
 	draft.Category = encoded.Category
 	draft.Traits = encoded.Traits
 	draft.MedicalProcedure = value
-	draft.Indications = encoded.Indications
-	draft.ExpectedEffects = encoded.ExpectedEffects
+	draft.Indications = indications
+	draft.ExpectedEffects = effects
 	draft.SourceID = encoded.SourceID
 	return nil
 }

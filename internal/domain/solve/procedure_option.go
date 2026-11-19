@@ -2,7 +2,6 @@ package domain
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -10,14 +9,14 @@ import (
 // choice questions.
 type MedicalProcedureOptionGraph struct {
 	Options                         []MedicalProcedureOptionGraphItem `json:"options"`
-	SelectedOptionID                ids.MedicalProcedureOptionID      `json:"selectedOptionId,omitempty"`
+	SelectedOptionID                int64      `json:"selectedOptionId,omitempty"`
 	Selected                        *MedicalProcedureOptionGraphItem  `json:"selected,omitempty"`
 	AnswerInMedicalProcedureOptions bool                              `json:"answerInMedicalProcedureOptions"`
 }
 
 type MedicalProcedureOptionGraphItem struct {
-	ID                  ids.MedicalProcedureOptionID       `json:"id"`
-	ProcedureID         ids.ProcedureID                    `json:"procedureId"`
+	ID                  int64       `json:"id"`
+	ProcedureID         int64                    `json:"procedureId"`
 	Category            string                             `json:"category"`
 	ProcedureTraits     []trait.Trait                      `json:"procedureTraits,omitempty"`
 	ContextTraits       []trait.Trait                      `json:"contextTraits,omitempty"`
@@ -34,13 +33,13 @@ type MedicalProcedureOptionGraphItem struct {
 }
 
 type MedicalProcedureOptionOutcome struct {
-	StatusID ids.StatusID `json:"statusId"`
+	StatusID int64 `json:"statusId"`
 	Label    string       `json:"label"`
 	Kind     string       `json:"kind,omitempty"`
 }
 
 type MedicalProcedureOptionIndication struct {
-	StatusID ids.StatusID `json:"statusId"`
+	StatusID int64 `json:"statusId"`
 	Label    string       `json:"label"`
 	Observed bool         `json:"observed"`
 	Cause    bool         `json:"cause,omitempty"`

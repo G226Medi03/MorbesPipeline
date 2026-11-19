@@ -40,7 +40,7 @@ func (s *StoreContainer) AuditPostprocessStatus(name string, operation postproce
 	if err != nil {
 		return err
 	}
-	_, err = s.RecordPostprocess(name, operation, postprocess.EntityStatus, id.ToI64(), "", 0)
+	_, err = s.RecordPostprocess(name, operation, postprocess.EntityStatus, id, "", 0)
 	return err
 }
 
@@ -51,11 +51,11 @@ func (s *StoreContainer) AuditPostprocessStatusCreated(name string, value repo.I
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocess.OperationCreated, postprocess.EntityStatus, id.ToI64(), "", 0)
+	sourceID, err := s.RecordPostprocess(name, postprocess.OperationCreated, postprocess.EntityStatus, id, "", 0)
 	if err != nil {
 		return err
 	}
-	return s.AddPostprocessSource(postprocess.EntityStatus, id.ToI64(), sourceID)
+	return s.AddPostprocessSource(postprocess.EntityStatus, id, sourceID)
 }
 
 // AuditPostprocessAction records one action observation.
@@ -64,7 +64,7 @@ func (s *StoreContainer) AuditPostprocessAction(name string, operation postproce
 	if err != nil {
 		return err
 	}
-	_, err = s.RecordPostprocess(name, operation, postprocess.EntityAction, id.ToI64(), "", 0)
+	_, err = s.RecordPostprocess(name, operation, postprocess.EntityAction, id, "", 0)
 	return err
 }
 
@@ -75,11 +75,11 @@ func (s *StoreContainer) AuditPostprocessActionCreated(name string, value repo.I
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocess.OperationCreated, postprocess.EntityAction, id.ToI64(), "", 0)
+	sourceID, err := s.RecordPostprocess(name, postprocess.OperationCreated, postprocess.EntityAction, id, "", 0)
 	if err != nil {
 		return err
 	}
-	return s.AddPostprocessSource(postprocess.EntityAction, id.ToI64(), sourceID)
+	return s.AddPostprocessSource(postprocess.EntityAction, id, sourceID)
 }
 
 // AuditPostprocessStatusAction records one status-action link operation.
@@ -101,9 +101,9 @@ func (s *StoreContainer) AuditPostprocessStatusAction(
 		name,
 		operation,
 		postprocess.EntityStatus,
-		statusID.ToI64(),
+		statusID,
 		postprocess.EntityAction,
-		actionID.ToI64(),
+		actionID,
 	)
 	return err
 }
@@ -127,9 +127,9 @@ func (s *StoreContainer) AuditPostprocessActionResultStatus(
 		name,
 		operation,
 		postprocess.EntityAction,
-		actionID.ToI64(),
+		actionID,
 		postprocess.EntityStatus,
-		statusID.ToI64(),
+		statusID,
 	)
 	return err
 }

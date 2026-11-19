@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 // UnresolvedTransplantTarget is a transplant procedure whose target actor kind
 // is still unknown.
 type UnresolvedTransplantTarget struct {
-	ProcedureID  ids.ProcedureID
+	ProcedureID  int64
 	TargetName   string
 	DetectedKind string
 }
@@ -49,7 +48,7 @@ func (s *StoreContainer) ListUnresolvedTransplantTargets() ([]UnresolvedTranspla
 	return result, rows.Err()
 }
 
-func (s *StoreContainer) ResolveTransplantTarget(id ids.ProcedureID, kind string) error {
+func (s *StoreContainer) ResolveTransplantTarget(id int64, kind string) error {
 	kind = normalizeTransplantTargetKind(kind)
 	if kind == "" {
 		return fmt.Errorf("지원하지 않는 transplant target kind 입니다: %s", kind)
@@ -57,7 +56,7 @@ func (s *StoreContainer) ResolveTransplantTarget(id ids.ProcedureID, kind string
 	var rowKind string
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
-		`SELECT kind, ptr FROM emedical_procedure WHERE emedical_procedure_id = ?`, id.ToI64()).
+		`SELECT kind, ptr FROM emedical_procedure WHERE emedical_procedure_id = ?`, id).
 		Scan(&rowKind, &ptr)
 	if err == sql.ErrNoRows || rowKind != "Transplant" {
 		return fmt.Errorf("transplant procedure를 찾을 수 없습니다: %d", id)
@@ -76,7 +75,7 @@ func (s *StoreContainer) ResolveTransplantTarget(id ids.ProcedureID, kind string
 	}
 	var sourceID source.SourceId
 	err = s.QueryRowContext(s.ctx,
-		`SELECT source_id FROM procedure_sources WHERE emedical_procedure_id = ? ORDER BY id LIMIT 1`, id.ToI64()).
+		`SELECT source_id FROM procedure_sources WHERE emedical_procedure_id = ? ORDER BY id LIMIT 1`, id).
 		Scan(&sourceID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -109,7 +108,7 @@ func (s *StoreContainer) ResolveTransplantTarget(id ids.ProcedureID, kind string
 	defer unlock()
 	if _, err := s.ExecContext(s.ctx,
 		`UPDATE procedure_transplant SET target_kind = ?, target_eactor_id = ?, target_name = '' WHERE id = ?`,
-		kind, actorID.ToI64(), ptr); err != nil {
+		kind, actorID, ptr); err != nil {
 		return err
 	}
 	return nil

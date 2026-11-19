@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -124,13 +123,13 @@ func drop_legacy_processed_column(ctx context.Context, db sqlutil.Executor) erro
 	return nil
 }
 
-func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID, sourceID source.SourceId) (domain.CaseID, error) {
+func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, sourceID source.SourceId) (domain.CaseID, error) {
 	if sourceID.ToI64() <= 0 {
 		return "", fmt.Errorf("solve case source가 필요합니다")
 	}
 	result, err := db.ExecContext(ctx,
 		`INSERT INTO solve_cases (exam_question_id, source_id, state, stage) VALUES (?, ?, 'pending', 'queued')`,
-		examQuestionID.ToI64(), sourceID.ToI64())
+		ExamQuestionID, sourceID)
 	if err != nil {
 		return "", fmt.Errorf("solve case 생성 실패: %w", err)
 	}
@@ -141,13 +140,13 @@ func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor,
 	return domain.CaseID(strconv.FormatInt(id, 10)), nil
 }
 
-func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
+func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO solve_cases (
 			exam_question_id, source_id, state, stage,
 			replay_of, replay_mode, replay_from_node
 		) VALUES (?, (SELECT source_id FROM solve_cases WHERE case_id = ?), 'pending', 'queued', ?, ?, ?)`,
-		examQuestionID.ToI64(), replayOf, replayOf, mode, fromNode)
+		ExamQuestionID, replayOf, replayOf, mode, fromNode)
 	if err != nil {
 		return "", fmt.Errorf("solve replay case 생성 실패: %w", err)
 	}
@@ -286,13 +285,13 @@ func (CaseTable) set(ctx context.Context, db sqlutil.Executor, id domain.CaseID,
 
 type FailedCase struct {
 	ID             domain.CaseID
-	ExamQuestionID ids.ExamQuestionID
+	ExamQuestionID int64
 	State          string
 	Stage          string
 	Error          string
 }
 
-func (CaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlutil.Executor) ([]ids.ExamQuestionID, error) {
+func (CaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlutil.Executor) ([]int64, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT DISTINCT exam_question_id
 		FROM solve_cases
@@ -302,9 +301,9 @@ func (CaseTable) ListExamQuestionIDsWithCases(ctx context.Context, db sqlutil.Ex
 		return nil, fmt.Errorf("case 보유 문제 목록 조회 실패: %w", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	result := make([]ids.ExamQuestionID, 0)
+	result := make([]int64, 0)
 	for rows.Next() {
-		var questionID ids.ExamQuestionID
+		var questionID int64
 		if err := rows.Scan(&questionID); err != nil {
 			return nil, err
 		}
@@ -364,8 +363,8 @@ type ExamQuestionCaseStats struct {
 	Attempts     int
 }
 
-func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor, questionIDs []ids.ExamQuestionID) (map[ids.ExamQuestionID]ExamQuestionCaseStats, error) {
-	result := make(map[ids.ExamQuestionID]ExamQuestionCaseStats, len(questionIDs))
+func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor, questionIDs []int64) (map[int64]ExamQuestionCaseStats, error) {
+	result := make(map[int64]ExamQuestionCaseStats, len(questionIDs))
 	if len(questionIDs) == 0 {
 		return result, nil
 	}
@@ -373,7 +372,7 @@ func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor
 	args := make([]any, 0, len(questionIDs))
 	for _, id := range questionIDs {
 		placeholders = append(placeholders, "?")
-		args = append(args, id.ToI64())
+		args = append(args, id)
 	}
 	rows, err := db.QueryContext(ctx, `
 		SELECT c.exam_question_id, c.case_id, c.state,
@@ -390,7 +389,7 @@ func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
 	for rows.Next() {
-		var questionID ids.ExamQuestionID
+		var questionID int64
 		var caseID string
 		var state string
 		var processed int
@@ -411,23 +410,23 @@ func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor
 	return result, rows.Err()
 }
 
-func (CaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) (int, error) {
+func (CaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
 	var count int
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM solve_cases
-		WHERE exam_question_id = ?`, examQuestionID.ToI64()).Scan(&count); err != nil {
+		WHERE exam_question_id = ?`, ExamQuestionID).Scan(&count); err != nil {
 		return 0, fmt.Errorf("solve_cases 문제별 개수 조회 실패: %w", err)
 	}
 	return count, nil
 }
 
-func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) ([]domain.CaseID, error) {
+func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]domain.CaseID, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT case_id
 		FROM solve_cases
 		WHERE exam_question_id = ?
-		ORDER BY case_id`, examQuestionID.ToI64())
+		ORDER BY case_id`, ExamQuestionID)
 	if err != nil {
 		return nil, fmt.Errorf("solve_cases 문제별 id 조회 실패: %w", err)
 	}

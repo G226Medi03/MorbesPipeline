@@ -12,14 +12,12 @@ import (
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	label "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
-	procedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline"
 	persistence "github.com/G226Medi03/MorbesPipeline/internal/store"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
 )
@@ -49,8 +47,8 @@ type (
 	QuestionStore = solve.QuestionStore
 	AnswerCheck   = solve.AnswerCheck
 
-	MedicalProcedureOption   = procedureoption.MedicalProcedureOption
-	MedicalProcedureOptionID = ids.MedicalProcedureOptionID
+	MedicalProcedureOption   = repo.MedicalProcedureOption
+	MedicalProcedureOptionID = int64
 	PatientDescription       = patient.PatientDescription
 	Trait                    = trait.Trait
 )
@@ -90,15 +88,15 @@ type (
 )
 
 type (
-	StatusID           = ids.StatusID
-	ActionID           = ids.ActionID
-	ActorID            = ids.ActorID
-	ProcedureID        = ids.ProcedureID
-	DeviceID           = ids.DeviceID
-	ExamQuestionID     = ids.ExamQuestionID
-	LLMProblemResultID = ids.LLMProblemResultID
-	LLMCallID          = ids.LLMCallID
-	StatusEntityID     = ids.StatusEntityID
+	StatusID           = int64
+	ActionID           = int64
+	ActorID            = int64
+	ProcedureID        = int64
+	DeviceID           = int64
+	ExamQuestionID     = int64
+	LLMProblemResultID = int64
+	LLMCallID          = int64
+	StatusEntityID     = int64
 
 	Attr    = clog.Attr
 	Logger  = clog.Logger

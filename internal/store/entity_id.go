@@ -8,10 +8,9 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
-func (s *StoreContainer) statusIDForValue(value repo.IEStatus) (ids.StatusID, error) {
+func (s *StoreContainer) statusIDForValue(value repo.IEStatus) (int64, error) {
 	kind, ptr, err := s.statusPtr(value)
 	if err != nil {
 		return 0, err
@@ -19,8 +18,8 @@ func (s *StoreContainer) statusIDForValue(value repo.IEStatus) (ids.StatusID, er
 	return s.statusIDByKindPtr(kind, ptr)
 }
 
-func (s *StoreContainer) statusIDByKindPtr(kind string, ptr int64) (ids.StatusID, error) {
-	var id ids.StatusID
+func (s *StoreContainer) statusIDByKindPtr(kind string, ptr int64) (int64, error) {
+	var id int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT estatus_id FROM estatus WHERE kind = ? AND ptr = ?`, kind, ptr).Scan(&id)
 	if err == sql.ErrNoRows {
@@ -60,19 +59,19 @@ func (s *StoreContainer) statusPtr(value repo.IEStatus) (string, int64, error) {
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("status_damaged", "eactor_id", actorID.ToI64(), string(repo.StatusKindDamaged))
+		return s.subtypePtr("status_damaged", "eactor_id", actorID, string(repo.StatusKindDamaged))
 	case repo.Inflammation:
 		actorID, err := s.actorIDForValue(typed.Actor)
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("status_inflammation", "eactor_id", actorID.ToI64(), string(repo.StatusKindInflammation))
+		return s.subtypePtr("status_inflammation", "eactor_id", actorID, string(repo.StatusKindInflammation))
 	case repo.ReceivedMedicalProcedure:
 		procedureID, err := s.procedureIDForValue(typed.MedicalProcedure)
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("status_received_medical_procedure", "emedical_procedure_id", procedureID.ToI64(), string(repo.StatusKindReceivedMedicalProcedure))
+		return s.subtypePtr("status_received_medical_procedure", "emedical_procedure_id", procedureID, string(repo.StatusKindReceivedMedicalProcedure))
 	default:
 		return "", 0, fmt.Errorf("지원하지 않는 status 타입입니다: %T", value)
 	}
@@ -88,12 +87,12 @@ func (s *StoreContainer) subtypePtr(table, column string, value int64, kind stri
 	return kind, ptr, err
 }
 
-func (s *StoreContainer) actionIDForValue(value repo.IEAction) (ids.ActionID, error) {
+func (s *StoreContainer) actionIDForValue(value repo.IEAction) (int64, error) {
 	kind, ptr, err := s.actionPtr(value)
 	if err != nil {
 		return 0, err
 	}
-	var id ids.ActionID
+	var id int64
 	err = s.QueryRowContext(s.ctx,
 		`SELECT eaction_id FROM eaction WHERE kind = ? AND ptr = ?`, kind, ptr).Scan(&id)
 	if err == sql.ErrNoRows {
@@ -112,25 +111,25 @@ func (s *StoreContainer) actionPtr(value repo.IEAction) (string, int64, error) {
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("action_cause_status", "estatus_id", statusID.ToI64(), string(repo.ActionKindCauseStatus))
+		return s.subtypePtr("action_cause_status", "estatus_id", statusID, string(repo.ActionKindCauseStatus))
 	case repo.Block:
 		actorID, err := s.actorIDForValue(typed.Actor)
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("action_block", "eactor_id", actorID.ToI64(), string(repo.ActionKindBlock))
+		return s.subtypePtr("action_block", "eactor_id", actorID, string(repo.ActionKindBlock))
 	case repo.Relax:
 		actorID, err := s.actorIDForValue(typed.Actor)
 		if err != nil {
 			return "", 0, err
 		}
-		return s.subtypePtr("action_relax", "eactor_id", actorID.ToI64(), string(repo.ActionKindRelax))
+		return s.subtypePtr("action_relax", "eactor_id", actorID, string(repo.ActionKindRelax))
 	default:
 		return "", 0, fmt.Errorf("지원하지 않는 action 타입입니다: %T", value)
 	}
 }
 
-func (s *StoreContainer) actorIDForValue(value repo.IEActor) (ids.ActorID, error) {
+func (s *StoreContainer) actorIDForValue(value repo.IEActor) (int64, error) {
 	if value == nil {
 		return 0, fmt.Errorf("actor value is nil")
 	}
@@ -139,7 +138,7 @@ func (s *StoreContainer) actorIDForValue(value repo.IEActor) (ids.ActorID, error
 		return 0, fmt.Errorf("actor name이 비어 있습니다")
 	}
 	kind := string(repo.ParseActorKind(value.Kind()))
-	var id ids.ActorID
+	var id int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT eactor_id FROM eactor WHERE kind = ? AND name = ?`, kind, name).Scan(&id)
 	if err == nil {
@@ -158,8 +157,8 @@ func (s *StoreContainer) actorIDForValue(value repo.IEActor) (ids.ActorID, error
 	return 0, fmt.Errorf("actor row not found: kind=%s name=%s", kind, name)
 }
 
-func (s *StoreContainer) actorIDByName(name string) (ids.ActorID, bool, error) {
-	var id ids.ActorID
+func (s *StoreContainer) actorIDByName(name string) (int64, bool, error) {
+	var id int64
 	err := s.QueryRowContext(s.ctx,
 		`SELECT eactor_id FROM actor_other_name WHERE name = ?`, strings.TrimSpace(name)).Scan(&id)
 	if err == nil {
@@ -176,7 +175,7 @@ func (s *StoreContainer) actorIDByName(name string) (ids.ActorID, bool, error) {
 	return id, err == nil, err
 }
 
-func (s *StoreContainer) procedureIDForValue(value repo.IMedicalProcedure) (ids.ProcedureID, error) {
+func (s *StoreContainer) procedureIDForValue(value repo.IMedicalProcedure) (int64, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
@@ -196,7 +195,7 @@ func (s *StoreContainer) procedureIDForValue(value repo.IMedicalProcedure) (ids.
 	if err != nil {
 		return 0, err
 	}
-	var id ids.ProcedureID
+	var id int64
 	err = s.QueryRowContext(s.ctx,
 		`SELECT emedical_procedure_id FROM emedical_procedure WHERE kind = ? AND ptr = ?`, kind, ptr).Scan(&id)
 	if err == sql.ErrNoRows {

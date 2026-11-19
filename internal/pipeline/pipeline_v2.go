@@ -174,33 +174,22 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for _, draft := range state.Extraction.MedicalProcedureOptions {
-		indications := make([]repo.IEStatus, 0, len(draft.Indications))
-		for _, key := range draft.Indications {
-			if status, ok := resolved.Statuses[key]; ok {
-				indications = append(indications, status)
-			}
-		}
+		indications := append([]repo.IEStatus(nil), draft.Indications...)
 		if len(indications) == 0 {
 			for _, status := range resolved.Statuses {
 				indications = append(indications, status)
 			}
 		}
-		effects := make([]repo.IEStatus, 0, len(draft.ExpectedEffects))
-		for _, key := range draft.ExpectedEffects {
-			if status, ok := resolved.Statuses[key]; ok {
-				effects = append(effects, status)
-			}
-		}
+		effects := append([]repo.IEStatus(nil), draft.ExpectedEffects...)
 		option_sources := draft_sources(draft.SourceID)
 		procedure := draft.MedicalProcedure
 		optionTraits := trait.NormalizeTraits(draft.Traits)
-		procedureID, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources)
-		if err != nil {
+		if _, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources); err != nil {
 			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}
 		saved, err := self.store.SaveMedicalProcedureOptionByValues(
-			procedureID,
+			procedure,
 			draft.Category,
 			trait.IntrinsicTraits(optionTraits),
 			trait.ContextTraits(optionTraits),
@@ -293,12 +282,11 @@ func (self *Service) ensure_infusion_option(name string, sources []source.Source
 		Material: repo.NewUnknownActor(name),
 		Route:    repo.InfuseRouteUnknown,
 	}
-	procedureID, err := self.store.SaveProcedure(procedure, nil, sources)
-	if err != nil {
+	if _, err := self.store.SaveProcedure(procedure, nil, sources); err != nil {
 		return err
 	}
-	_, err = self.store.SaveMedicalProcedureOptionByValues(
-		procedureID,
+	_, err := self.store.SaveMedicalProcedureOptionByValues(
+		procedure,
 		"treatment",
 		nil,
 		nil,

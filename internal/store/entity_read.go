@@ -6,15 +6,14 @@ import (
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"strings"
 )
 
-func (s *StoreContainer) statusValueByID(id ids.StatusID) (repo.IEStatus, error) {
+func (s *StoreContainer) statusValueByID(id int64) (repo.IEStatus, error) {
 	var kind string
 	var ptr int64
 	err := s.QueryRowContext(s.ctx,
-		`SELECT kind, ptr FROM estatus WHERE estatus_id = ?`, id.ToI64()).Scan(&kind, &ptr)
+		`SELECT kind, ptr FROM estatus WHERE estatus_id = ?`, id).Scan(&kind, &ptr)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +301,7 @@ func (s *StoreContainer) procedureTargetValue(kind string, id sql.NullInt64, nam
 func (s *StoreContainer) actionValueByKindPtr(kind string, ptr int64) (repo.IEAction, error) {
 	switch repo.ActionKind(kind) {
 	case repo.ActionKindCauseStatus:
-		var statusID ids.StatusID
+		var statusID int64
 		err := s.QueryRowContext(s.ctx,
 			`SELECT estatus_id FROM action_cause_status WHERE id = ?`, ptr).Scan(&statusID)
 		if err != nil {

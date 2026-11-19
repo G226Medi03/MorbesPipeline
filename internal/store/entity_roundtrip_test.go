@@ -37,12 +37,12 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 	if err := entityStore.LinkStatusAction(status, action, source.NewSourceId(1)); err != nil {
 		t.Fatalf("LinkStatusAction: %v", err)
 	}
-	procedureID, err := st.SaveProcedure(repo.Surgery{Name: "기관절개술"}, nil, sources)
-	if err != nil {
+	procedure := repo.Surgery{Name: "기관절개술"}
+	if _, err := st.SaveProcedure(procedure, nil, sources); err != nil {
 		t.Fatalf("SaveProcedure: %v", err)
 	}
 	if _, err := st.SaveMedicalProcedureOptionByValues(
-		procedureID, "treatment", nil, nil, []repo.IEStatus{status}, nil, sources,
+		procedure, "treatment", nil, nil, []repo.IEStatus{status}, nil, sources,
 	); err != nil {
 		t.Fatalf("SaveMedicalProcedureOptionByValues: %v", err)
 	}

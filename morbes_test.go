@@ -7,14 +7,12 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	source "github.com/G226Medi03/SourceEntity"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 )
 
 type testQuestionStore struct{}
 
-func (testQuestionStore) GetQuestion(context.Context, ids.ExamQuestionID) (QuestionInput, bool, error) {
+func (testQuestionStore) GetQuestion(context.Context, int64) (QuestionInput, bool, error) {
 	return QuestionInput{}, false, nil
 }
 

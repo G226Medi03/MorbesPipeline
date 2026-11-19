@@ -6,7 +6,6 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -179,7 +178,7 @@ func (s *StoreContainer) GetActionRecord(value repo.IEAction) (ActionRecord, boo
 		}
 		return ActionRecord{}, false, err
 	}
-	action, err := s.getActionShallow(actionID.ToI64())
+	action, err := s.getActionShallow(actionID)
 	if err != nil {
 		return ActionRecord{}, false, err
 	}
@@ -238,7 +237,7 @@ func (s *StoreContainer) GetStatusRecord(value repo.IEStatus) (StatusRecord, boo
 		}
 		return StatusRecord{}, false, err
 	}
-	status, err := s.getStatusShallow(statusID.ToI64())
+	status, err := s.getStatusShallow(statusID)
 	if err != nil {
 		return StatusRecord{}, false, err
 	}
@@ -264,7 +263,7 @@ func (s *StoreContainer) GetStatusRecord(value repo.IEStatus) (StatusRecord, boo
 }
 
 func (s *StoreContainer) getStatusShallow(statusID int64) (StatusRecord, error) {
-	value, err := s.statusValueByID(ids.StatusID(statusID))
+	value, err := s.statusValueByID(int64(statusID))
 	if err != nil {
 		return StatusRecord{}, err
 	}
@@ -284,11 +283,11 @@ func (s *StoreContainer) GetProcedureRecord(value repo.IMedicalProcedure) (Proce
 		}
 		return ProcedureRecord{}, false, err
 	}
-	stored, err := s.procedureValueByID(procedureID.ToI64())
+	stored, err := s.procedureValueByID(procedureID)
 	if err != nil {
 		return ProcedureRecord{}, false, err
 	}
-	refs, err := s.sourceRefsFor("procedure_sources", "emedical_procedure_id", procedureID.ToI64())
+	refs, err := s.sourceRefsFor("procedure_sources", "emedical_procedure_id", procedureID)
 	if err != nil {
 		return ProcedureRecord{}, false, err
 	}

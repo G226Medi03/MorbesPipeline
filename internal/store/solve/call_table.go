@@ -7,7 +7,6 @@ import (
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -62,7 +61,7 @@ func (CallTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseI
 	return nil
 }
 
-func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLMCallInput) (ids.LLMCallID, error) {
+func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLMCallInput) (int64, error) {
 	if call.State == "" {
 		call.State = "ok"
 	}
@@ -82,7 +81,7 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", "solve_llm_calls LastInsertId 실패", err)
 	}
-	return ids.LLMCallID(id), nil
+	return int64(id), nil
 }
 
 func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) ([]model.LLMCall, error) {

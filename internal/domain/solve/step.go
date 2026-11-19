@@ -2,12 +2,10 @@ package domain
 
 import (
 	"time"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
 type Step struct {
-	ID         ids.SolveStepID `json:"id"`
+	ID         int64 `json:"id"`
 	Node       string          `json:"node"`
 	Seq        int             `json:"seq"`
 	State      StepState       `json:"state"`
@@ -24,5 +22,5 @@ type SolveStepMeta struct {
 	CaseID        CaseID        `json:"caseId"`
 	PromptVersion int           `json:"promptVersion"`
 	OutputJSON    string        `json:"outputJson"`
-	CallID        ids.LLMCallID `json:"callId"`
+	CallID        int64 `json:"callId"`
 }

@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
 func (s *StoreContainer) ResetSteps(caseID domain.CaseID) error {
@@ -11,13 +10,13 @@ func (s *StoreContainer) ResetSteps(caseID domain.CaseID) error {
 	return s.Solve.Step.Reset(s.ctx, s.solveExecutor(), caseID)
 }
 
-func (s *StoreContainer) StartStep(caseID domain.CaseID, node string, promptVersion int) (ids.SolveStepID, error) {
+func (s *StoreContainer) StartStep(caseID domain.CaseID, node string, promptVersion int) (int64, error) {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.Step.Start(s.ctx, s.solveExecutor(), caseID, node, promptVersion)
 }
 
-func (s *StoreContainer) FinishStep(id ids.SolveStepID, state, outputJSON, message string, callID ids.LLMCallID) error {
+func (s *StoreContainer) FinishStep(id int64, state, outputJSON, message string, callID int64) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.Step.Finish(s.ctx, s.solveExecutor(), id, state, outputJSON, message, callID)

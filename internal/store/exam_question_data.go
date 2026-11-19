@@ -5,7 +5,6 @@ import (
 
 	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	source "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
@@ -17,7 +16,7 @@ type ExamQuestionDataCounts struct {
 	SolveCaseCount   int
 }
 
-func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) (ExamQuestionDataCounts, error) {
+func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestionID int64) (ExamQuestionDataCounts, error) {
 	var result ExamQuestionDataCounts
 	executor := s.solveExecutor()
 	llmResultCount, err := (benchmarkresult.Table{}).CountByExamQuestionID(ctx, executor, examQuestionID)
@@ -39,7 +38,7 @@ func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestion
 	}, nil
 }
 
-func (s *StoreContainer) DeleteExamQuestionData(ctx context.Context, examQuestionID ids.ExamQuestionID) error {
+func (s *StoreContainer) DeleteExamQuestionData(ctx context.Context, examQuestionID int64) error {
 	responseIDs := []source.RespId{}
 	err := s.WithSolveTx(ctx, func(tx *StoreContainer) error {
 		executor := tx.solveExecutor()

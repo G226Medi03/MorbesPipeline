@@ -2,8 +2,6 @@ package store
 
 import (
 	"fmt"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/SourceEntity"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -46,13 +44,13 @@ func (s *StoreContainer) RecoverInterrupted() error {
 	})
 }
 
-func (s *StoreContainer) CreateForExamQuestionWithSource(examQuestionID ids.ExamQuestionID, sourceID source.SourceId) (domain.CaseID, error) {
+func (s *StoreContainer) CreateForExamQuestionWithSource(examQuestionID int64, sourceID source.SourceId) (domain.CaseID, error) {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.Case.CreateForExamQuestion(s.ctx, s.solveExecutor(), examQuestionID, sourceID)
 }
 
-func (s *StoreContainer) CreateReplay(examQuestionID ids.ExamQuestionID, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
+func (s *StoreContainer) CreateReplay(examQuestionID int64, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.Case.CreateReplay(s.ctx, s.solveExecutor(), examQuestionID, replayOf, mode, fromNode)
@@ -71,7 +69,7 @@ func (s *StoreContainer) ListCases(limit int) ([]domain.Case, error) {
 	return items, nil
 }
 
-func (s *StoreContainer) ListExamQuestionIDsWithCases() ([]ids.ExamQuestionID, error) {
+func (s *StoreContainer) ListExamQuestionIDsWithCases() ([]int64, error) {
 	return s.Solve.Case.ListExamQuestionIDsWithCases(s.ctx, s.solveExecutor())
 }
 
@@ -113,7 +111,7 @@ func (s *StoreContainer) GetAnswerCheck(caseID domain.CaseID) (domain.AnswerChec
 	return s.Solve.AnswerCheck.Get(s.ctx, s.solveExecutor(), caseID)
 }
 
-func (s *StoreContainer) DeleteAnswerChecksByExamQuestionID(examQuestionID ids.ExamQuestionID) error {
+func (s *StoreContainer) DeleteAnswerChecksByExamQuestionID(examQuestionID int64) error {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.AnswerCheck.DeleteByExamQuestionID(s.ctx, s.solveExecutor(), examQuestionID)
@@ -174,6 +172,6 @@ func (s *StoreContainer) SetFailed(id domain.CaseID, ce error) error {
 	return s.Solve.Case.SetFailed(s.ctx, s.solveExecutor(), id, message)
 }
 
-func (s *StoreContainer) ExamQuestionCaseStats(ids []ids.ExamQuestionID) (map[ids.ExamQuestionID]solve.ExamQuestionCaseStats, error) {
+func (s *StoreContainer) ExamQuestionCaseStats(ids []int64) (map[int64]solve.ExamQuestionCaseStats, error) {
 	return s.Solve.Case.StatsByExamQuestionIDs(s.ctx, s.solveExecutor(), ids)
 }
