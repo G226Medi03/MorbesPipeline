@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
+	"strings"
 )
 
 type Filter struct {
@@ -28,33 +28,6 @@ type Row struct {
 type Table struct{}
 
 func (Table) Init(ctx context.Context, db sqlutil.Executor) error {
-	rows, err := db.QueryContext(ctx, `PRAGMA table_info(llm_problem_results)`)
-	if err != nil {
-		return fmt.Errorf("llm_problem_results schema 조회 실패: %w", err)
-	}
-	legacy := false
-	for rows.Next() {
-		var cid, notnull, pk int
-		var name, columnType string
-		var defaultValue sql.NullString
-		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		if name == "model" || name == "predicted" || name == "updated_at" {
-			legacy = true
-		}
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-	if legacy {
-		if _, err := db.ExecContext(ctx, `DROP TABLE llm_problem_results`); err != nil {
-			return err
-		}
-	}
 	if _, err := db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS llm_problem_results (
 			llm_problem_result_id INTEGER PRIMARY KEY AUTOINCREMENT,

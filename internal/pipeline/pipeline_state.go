@@ -5,7 +5,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	csituation "github.com/G226Medi03/MorbesPipeline/internal/domain/situation"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
+	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 	source "github.com/G226Medi03/SourceEntity"
 )
 

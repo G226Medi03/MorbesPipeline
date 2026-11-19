@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
+	ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 	"strings"
 	"time"
 

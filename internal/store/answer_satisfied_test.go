@@ -45,20 +45,3 @@ func TestApplyAnswerCheckUsesAnswerSatisfied(t *testing.T) {
 		t.Fatal("processed must use answer_satisfied, not contains_answer")
 	}
 }
-
-func TestLegacyAnswerSatisfiedNullFallsBackToContainsAnswer(t *testing.T) {
-	st := newAnswerCheckStore(t)
-	if _, err := st.ExecContext(context.Background(), `
-		INSERT INTO solve_answer_checks
-			(case_id, question_type, contains_answer, answer_present, answer_satisfied, matched_type, matched_key, analysis_json)
-		VALUES (6, '', 1, NULL, NULL, 'medical_procedure_option', '1', '{"verdict":"correct"}')`); err != nil {
-		t.Fatalf("insert check: %v", err)
-	}
-	check, found, err := st.Solve.AnswerCheck.Get(context.Background(), st.solveExecutor(), domain.CaseID("6"))
-	if err != nil || !found {
-		t.Fatalf("Get: found=%v err=%v", found, err)
-	}
-	if !check.AnswerSatisfied {
-		t.Fatal("legacy NULL answer_satisfied must fall back to contains_answer")
-	}
-}

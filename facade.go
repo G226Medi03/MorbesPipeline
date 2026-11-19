@@ -20,7 +20,7 @@ import (
 	persistence "github.com/G226Medi03/MorbesPipeline/internal/store"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
-	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
+	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 )
 
 type (
@@ -78,14 +78,12 @@ type (
 	ProblemResultFilter = persistence.ProblemResultFilter
 	ProblemResultRow    = persistence.ProblemResultRow
 
-	ActorRecord                = persistence.ActorRecord
-	ActionRecord               = persistence.ActionRecord
-	StatusRecord               = persistence.StatusRecord
-	ProcedureRecord            = persistence.ProcedureRecord
-	StatusNameRef              = persistence.StatusNameRef
-	UnresolvedTransplantTarget = persistence.UnresolvedTransplantTarget
-	ExamQuestionDataCounts     = persistence.ExamQuestionDataCounts
-	ExamQuestionCaseStats      = storesolve.ExamQuestionCaseStats
+	ActorRecord            = persistence.ActorRecord
+	ActionRecord           = persistence.ActionRecord
+	StatusRecord           = persistence.StatusRecord
+	ProcedureRecord        = persistence.ProcedureRecord
+	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
+	ExamQuestionCaseStats  = storesolve.ExamQuestionCaseStats
 )
 
 type (
