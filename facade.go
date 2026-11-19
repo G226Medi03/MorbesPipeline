@@ -71,7 +71,7 @@ type (
 )
 
 type (
-	Store          = persistence.Store
+	Store          = persistence.StoreContainer
 	StoreContainer = persistence.StoreContainer
 
 	ProblemResultFilter = persistence.ProblemResultFilter

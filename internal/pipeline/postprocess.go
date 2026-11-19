@@ -16,7 +16,7 @@ const RejectionStatusName = "급성면역반응"
 
 // Postprocess applies the deterministic postprocess rules to the statuses and
 // actions owned by the current case.
-func Postprocess(ctx context.Context, st *store.Store, state *pipelineState) error {
+func Postprocess(ctx context.Context, st *store.StoreContainer, state *pipelineState) error {
 	if state == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func Postprocess(ctx context.Context, st *store.Store, state *pipelineState) err
 	}
 	statuses := currentStatuses(state)
 	actions := currentActions(state)
-	rules := []func(*store.Store, *repo.Store, *pipelineState, map[string]repo.IEStatus, map[string]repo.IEAction) error{
+	rules := []func(*store.StoreContainer, *repo.Store, *pipelineState, map[string]repo.IEStatus, map[string]repo.IEAction) error{
 		transplantRejectionRule,
 		increasedIndexActionRule,
 		causeStatusResultRule,
@@ -43,7 +43,7 @@ func Postprocess(ctx context.Context, st *store.Store, state *pipelineState) err
 }
 
 func transplantRejectionRule(
-	st *store.Store,
+	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state *pipelineState,
 	statuses map[string]repo.IEStatus,
@@ -122,7 +122,7 @@ func transplantRejectionRule(
 // exactly one canonical increase_index action. Any other action -> status edge
 // is removed, and predecessor statuses are rewired through the canonical action.
 func increasedIndexActionRule(
-	st *store.Store,
+	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state *pipelineState,
 	statuses map[string]repo.IEStatus,
@@ -245,7 +245,7 @@ func increasedIndexActionRule(
 // causeStatusResultRule ensures every cause_status action exposes its embedded
 // status as a result status.
 func causeStatusResultRule(
-	st *store.Store,
+	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state *pipelineState,
 	statuses map[string]repo.IEStatus,
@@ -364,7 +364,7 @@ func findStatus(statuses map[string]repo.IEStatus, target repo.IEStatus) (string
 }
 
 func ensureStatus(
-	st *store.Store,
+	st *store.StoreContainer,
 	entityStore *repo.Store,
 	postprocessorName string,
 	value repo.IEStatus,
@@ -388,7 +388,7 @@ func ensureStatus(
 }
 
 func ensureAction(
-	st *store.Store,
+	st *store.StoreContainer,
 	entityStore *repo.Store,
 	postprocessorName string,
 	value repo.IEAction,

@@ -13,7 +13,7 @@ import (
 )
 
 type Dependencies struct {
-	Store *store.Store
+	Store *store.StoreContainer
 	LLM   *morbesllm.Service
 
 	Solver     *cllmcall.Client
@@ -24,7 +24,7 @@ type Dependencies struct {
 
 type Service struct {
 	ctx              context.Context
-	store            *store.Store
+	store            *store.StoreContainer
 	llm              *morbesllm.Service
 	llmExtraction    *morbesllm.ExtractionRunner
 	question_store   QuestionStore
