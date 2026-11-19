@@ -3,7 +3,9 @@ package csolve
 import (
 	"encoding/json"
 
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
+	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -57,4 +59,34 @@ type PatientDescriptionDraft struct {
 	Description []StatusDraft   `json:"description"`
 	Knowledge   []string        `json:"knowledge,omitempty"`
 	SourceID    source.SourceId `json:"sourceId,omitempty"`
+}
+
+func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
+	payload := map[string]any{}
+	if len(draft.Value) > 0 {
+		if err := json.Unmarshal(draft.Value, &payload); err != nil {
+			return nil, err
+		}
+	}
+	payload["kind"] = draft.Kind
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return entityjson.DecodeStatus(encoded)
+}
+
+func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {
+	payload := map[string]any{}
+	if len(draft.Value) > 0 {
+		if err := json.Unmarshal(draft.Value, &payload); err != nil {
+			return nil, err
+		}
+	}
+	payload["kind"] = draft.Variant
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return entityjson.DecodeAction(encoded)
 }

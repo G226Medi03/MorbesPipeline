@@ -30,7 +30,7 @@ type MedicalProcedureOptionGraphItem struct {
 	Indications         []MedicalProcedureOptionIndication `json:"indications"`
 	ExpectedEffects     []MedicalProcedureOptionIndication `json:"expectedEffects,omitempty"`
 	Outcomes            []MedicalProcedureOptionOutcome    `json:"outcomes,omitempty"`
-	Sources             []source.SourceRef                 `json:"sources"`
+	Sources             []source.Source                    `json:"sources"`
 }
 
 type MedicalProcedureOptionOutcome struct {

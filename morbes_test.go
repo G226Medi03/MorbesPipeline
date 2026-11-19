@@ -5,11 +5,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	source "github.com/G226Medi03/SourceEntity"
 
+	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 	graph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 )
+
+type testQuestionStore struct{}
+
+func (testQuestionStore) GetQuestion(context.Context, ids.ExamQuestionID) (QuestionInput, bool, error) {
+	return QuestionInput{}, false, nil
+}
 
 func TestPublicFacade(t *testing.T) {
 	ctx := context.Background()
@@ -31,7 +39,14 @@ func TestPublicFacade(t *testing.T) {
 	if _, err := store.LoadGraph(); err != nil {
 		t.Fatalf("LoadGraph: %v", err)
 	}
-	service, serviceErr := NewService(ctx, Dependencies{Store: store})
+	if _, err := NewService(ctx, Dependencies{}); err == nil {
+		t.Fatal("NewService accepted missing dependencies")
+	}
+	service, serviceErr := NewService(ctx, Dependencies{
+		Store:         store,
+		LLM:           &morbesllm.Service{},
+		QuestionStore: testQuestionStore{},
+	})
 	if serviceErr != nil {
 		t.Fatalf("NewService: %v", serviceErr)
 	}

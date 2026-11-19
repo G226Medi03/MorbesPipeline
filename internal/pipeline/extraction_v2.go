@@ -36,21 +36,14 @@ func (self *Service) run_v2_actor_extraction(ctx context.Context, id domain.Case
 
 func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]StatusDraft, error) {
 	started := time.Now()
-	var statuses map[string]repo.IEStatus
-	var response *source.LlmResponse
-	var err error
-	if self.llm == nil {
-		err = fmt.Errorf("extraction LLM is not configured")
-	} else {
-		statuses, response, err = self.llm.ExtractStatuses(
-			ctx,
-			problem_stem(state.Case.Problem),
-			"",
-			"",
-			extraction_refered_source(state),
-			self.cache_mode,
-		)
-	}
+	statuses, response, err := self.llm.ExtractStatuses(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	prompt, raw := response_texts(response)
 	var drafts []StatusDraft
 	if err == nil {
@@ -79,21 +72,14 @@ func (self *Service) run_v2_status_extraction(ctx context.Context, id domain.Cas
 
 func (self *Service) run_v2_action_extraction(ctx context.Context, id domain.CaseID, state *pipelineState) ([]ActionDraft, error) {
 	started := time.Now()
-	var actions map[string]repo.IEAction
-	var response *source.LlmResponse
-	var err error
-	if self.llm == nil {
-		err = fmt.Errorf("extraction LLM is not configured")
-	} else {
-		actions, response, err = self.llm.ExtractActions(
-			ctx,
-			problem_stem(state.Case.Problem),
-			"",
-			"",
-			extraction_refered_source(state),
-			self.cache_mode,
-		)
-	}
+	actions, response, err := self.llm.ExtractActions(
+		ctx,
+		problem_stem(state.Case.Problem),
+		"",
+		"",
+		extraction_refered_source(state),
+		self.cache_mode,
+	)
 	prompt, raw := response_texts(response)
 	var drafts []ActionDraft
 	if err == nil {
@@ -158,8 +144,12 @@ func (self *Service) run_v2_patient_description_extraction(
 				Knowledge: trim_string_list(item.Knowledge),
 				SourceID:  source_id,
 			}
-			for status_index, raw_status := range item.Description {
-				status_draft, ok := status_draft_from_raw(raw_status, fmt.Sprintf("p%d_%d", index+1, status_index+1))
+			for status_index, status_value := range item.Description {
+				encoded, encode_err := entityjson.EncodeStatus(status_value)
+				if encode_err != nil {
+					continue
+				}
+				status_draft, ok := status_draft_from_raw(encoded, fmt.Sprintf("p%d_%d", index+1, status_index+1))
 				if !ok {
 					continue
 				}
@@ -209,11 +199,15 @@ func (self *Service) run_v2_medical_procedure_option_extraction(
 			if source_id.ToI64() <= 0 {
 				source_id = extraction_source_id(result.Response, state)
 			}
+			encoded, encode_err := entityjson.EncodeProcedure(item.MedicalProcedure)
+			if encode_err != nil {
+				continue
+			}
 			drafts = append(drafts, OptionDraft{
 				Key:              strings.TrimSpace(item.Key),
 				Category:         strings.TrimSpace(item.Category),
 				Traits:           item.Traits,
-				MedicalProcedure: item.MedicalProcedure,
+				MedicalProcedure: encoded,
 				Indications:      trim_string_list(item.Indications),
 				ExpectedEffects:  trim_string_list(item.ExpectedEffects),
 				SourceID:         source_id,
@@ -320,20 +314,12 @@ func patient_descriptions_for_service(drafts []PatientDescriptionDraft) []morbes
 			Knowledge: draft.Knowledge,
 			SourceID:  draft.SourceID,
 		}
-		for _, status := range draft.Description {
-			payload := map[string]any{
-				"key":   status.Key,
-				"kind":  status.Kind,
-				"value": status.Value,
-			}
-			if status.SourceID.ToI64() > 0 {
-				payload["sourceId"] = status.SourceID
-			}
-			encoded, err := json.Marshal(payload)
+		for _, status_draft := range draft.Description {
+			status, err := parseStatusDraft(status_draft)
 			if err != nil {
 				continue
 			}
-			item.Description = append(item.Description, encoded)
+			item.Description = append(item.Description, status)
 		}
 		result = append(result, item)
 	}

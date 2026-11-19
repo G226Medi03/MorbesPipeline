@@ -23,7 +23,7 @@ type pipelineState struct {
 	Actions             map[string]repo.IEAction
 	PatientDescriptions []patient.PatientDescription
 	Relations           [][]string
-	RelationSource      source.SourceRef
+	RelationSource      source.Source
 	SituationJSON       string
 	Situation           csituation.Situation
 	SituationSourceID   source.SourceId

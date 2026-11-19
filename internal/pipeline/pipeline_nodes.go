@@ -92,9 +92,6 @@ func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error 
 		return fmt.Errorf("solve case 를 찾지 못했습니다: %s", caseID)
 	}
 	if item.ExamQuestionID > 0 {
-		if self.question_store == nil {
-			return fmt.Errorf("exam question store 가 없습니다")
-		}
 		question, questionFound, questionErr := self.question_store.GetQuestion(ctx, item.ExamQuestionID)
 		if questionErr != nil {
 			return questionErr
@@ -110,9 +107,6 @@ func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error 
 	if err != nil {
 		_ = self.store.SetFailed(caseID, err)
 		return err
-	}
-	if self.llm == nil {
-		return fmt.Errorf("extraction LLM 이 없습니다")
 	}
 	if fromNode == "" {
 		if err := self.store.ResetSteps(caseID); err != nil {
