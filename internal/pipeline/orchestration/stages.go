@@ -1,4 +1,4 @@
-package orchestration
+package csolve
 
 import "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 
@@ -8,6 +8,8 @@ const (
 	NodeResolve        = string(domain.StageResolve)
 	NodeCause          = string(domain.StageCause)
 )
+
+type Step = domain.Step
 
 func StepSeq(node string) int { return domain.Sequence(domain.Stage(node)) }
 
