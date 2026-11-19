@@ -18,7 +18,6 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
 	persistence "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
-	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 )
@@ -83,7 +82,7 @@ type (
 	Status                 = repo.Status
 	Procedure              = repo.Procedure
 	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
-	ExamQuestionCaseStats  = srepo.ExamQuestionCaseStats
+	ExamQuestionCaseStats  = persistence.ExamQuestionCaseStats
 )
 
 type (

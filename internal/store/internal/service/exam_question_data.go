@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
-	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/benchmark"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/internal/store"
 
 	source "github.com/G226Medi03/SourceEntity"
 )

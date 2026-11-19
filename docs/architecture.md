@@ -6,8 +6,7 @@
 root facade
   -> internal/pipeline/orchestration
   -> internal/pipeline/* helper packages
-  -> internal/service
-  -> internal/store/facade + store
+  -> internal/store/facade
   -> internal/domain
 ```
 
@@ -55,10 +54,10 @@ App
 | pipeline/resolve | DTO → Entity helper |
 | pipeline/postprocess | deterministic postprocess |
 | pipeline/selection | procedure option 선택 |
-| store | Store: ctx/db + repositories |
-| store/facade | StoreContainer, transaction |
-| internal/service | application services |
-| store/repository | benchmark/entity/solve/postprocess table과 repository |
+| store/facade | public store package |
+| store/internal/store | Store: ctx/db + repositories |
+| store/internal/service | application services |
+| store/internal/repository | benchmark/entity/solve/postprocess table과 repository |
 | tracing | reverse link cause trace |
 | domain | solve/domain/entity key/label/trait |
 

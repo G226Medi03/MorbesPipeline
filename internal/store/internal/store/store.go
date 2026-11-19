@@ -9,10 +9,10 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
-	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/entity"
-	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/postprocess"
-	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/benchmark"
+	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/entity"
+	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/postprocess"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )

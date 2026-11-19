@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/postprocess"
+	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
 

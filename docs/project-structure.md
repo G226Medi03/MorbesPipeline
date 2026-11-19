@@ -84,30 +84,33 @@ selection
 
 ```text
 internal/store/
-  store.go         # Store: ctx/db + repositories
-  facade/          # StoreContainer, transaction wrappers, InitSchema
-  repository/      # repository별 하위 패키지
-    benchmark/
-    entity/
-    solve/
-    postprocess/
-    schema/
-    migration/
+  facade/          # public StoreContainer
+  internal/
+    store/         # Store: ctx/db + repositories
+    service/       # application services
+    repository/    # repository별 하위 패키지
+      benchmark/
+      entity/
+      solve/
+      postprocess/
+      schema/
+      migration/
 ```
 
 역할:
 
 ```text
-internal/service
-  Entity/Solve/Source/Benchmark/Postprocess application services
+internal/store/facade
+  StoreContainer, New/NewWithDBs, InitSchema
+  유일한 public store package
 
-store
+internal/store/internal/store
   Store: ctx/db + repositories + transaction
 
-store/facade
-  StoreContainer, New/NewWithDBs, InitSchema
+internal/store/internal/service
+  Entity/Solve/Source/Benchmark/Postprocess application services
 
-repository/benchmark
+internal/store/internal/repository/benchmark
   llm_problem_results, ProblemResult, ExamQuestionDataCounts
 
 repository/entity

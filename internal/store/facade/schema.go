@@ -2,8 +2,8 @@ package facade
 
 import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/migration"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/schema"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/migration"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/schema"
 )
 
 func (s *StoreContainer) InitSchema() error {

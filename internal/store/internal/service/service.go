@@ -1,6 +1,6 @@
 package service
 
-import corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
+import corestore "github.com/G226Medi03/MorbesPipeline/internal/store/internal/store"
 
 type EntityService struct {
 	store *corestore.Store

@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 
-	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/solve"
 )
 
 func (s *SolveService) GetPrompt(stage string) (string, int, error) {

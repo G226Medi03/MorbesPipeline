@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	corestore "github.com/G226Medi03/MorbesPipeline/internal/store"
-	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/solve"
+	srepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/solve"
+	corestore "github.com/G226Medi03/MorbesPipeline/internal/store/internal/store"
 	"github.com/G226Medi03/SourceEntity"
 )
 

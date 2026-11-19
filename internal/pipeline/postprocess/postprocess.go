@@ -8,7 +8,6 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	store "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
-	audit "github.com/G226Medi03/MorbesPipeline/internal/store/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -76,15 +75,15 @@ func transplantRejectionRule(
 		Symptom: repo.EOtherSymptom{Name: RejectionStatusName},
 	}
 	for _, key := range transplantKeys {
-		if err := st.AuditPostprocessStatus(audit.PostprocessorTransplantRejection, audit.OperationObserved, statuses[key]); err != nil {
+		if err := st.AuditPostprocessStatus(store.PostprocessorTransplantRejection, store.OperationObserved, statuses[key]); err != nil {
 			return err
 		}
 	}
-	if _, err := ensureStatus(st, entityStore, audit.PostprocessorTransplantRejection, effect, sourceID); err != nil {
+	if _, err := ensureStatus(st, entityStore, store.PostprocessorTransplantRejection, effect, sourceID); err != nil {
 		return err
 	}
 	action := repo.CauseStatus{Status: effect}
-	if _, err := ensureAction(st, entityStore, audit.PostprocessorTransplantRejection, action, sourceID); err != nil {
+	if _, err := ensureAction(st, entityStore, store.PostprocessorTransplantRejection, action, sourceID); err != nil {
 		return err
 	}
 	for _, key := range transplantKeys {
@@ -93,8 +92,8 @@ func transplantRejectionRule(
 			return err
 		}
 		if err := st.AuditPostprocessStatusAction(
-			audit.PostprocessorTransplantRejection,
-			audit.OperationLinkAdded,
+			store.PostprocessorTransplantRejection,
+			store.OperationLinkAdded,
 			status,
 			action,
 		); err != nil {
@@ -104,8 +103,8 @@ func transplantRejectionRule(
 			return err
 		}
 		if err := st.AuditPostprocessActionResultStatus(
-			audit.PostprocessorTransplantRejection,
-			audit.OperationLinkAdded,
+			store.PostprocessorTransplantRejection,
+			store.OperationLinkAdded,
 			action,
 			effect,
 		); err != nil {
@@ -129,13 +128,13 @@ func increasedIndexActionRule(
 		if status.Kind() != "increased_index" {
 			continue
 		}
-		if err := st.AuditPostprocessStatus(audit.PostprocessorIncreasedIndexAction, audit.OperationObserved, status); err != nil {
+		if err := st.AuditPostprocessStatus(store.PostprocessorIncreasedIndexAction, store.OperationObserved, status); err != nil {
 			return err
 		}
 		action := repo.CauseStatus{Status: status}
 		actionKey := entitykey.Action(action)
 		sourceID := sourceForStatus(state, key)
-		if _, err := ensureAction(st, entityStore, audit.PostprocessorIncreasedIndexAction, action, sourceID); err != nil {
+		if _, err := ensureAction(st, entityStore, store.PostprocessorIncreasedIndexAction, action, sourceID); err != nil {
 			return err
 		}
 
@@ -154,8 +153,8 @@ func increasedIndexActionRule(
 				return err
 			}
 			if err := st.AuditPostprocessStatusAction(
-				audit.PostprocessorIncreasedIndexAction,
-				audit.OperationLinkRemoved,
+				store.PostprocessorIncreasedIndexAction,
+				store.OperationLinkRemoved,
 				status,
 				other,
 			); err != nil {
@@ -188,8 +187,8 @@ func increasedIndexActionRule(
 					return err
 				}
 				if err := st.AuditPostprocessStatusAction(
-					audit.PostprocessorIncreasedIndexAction,
-					audit.OperationLinkAdded,
+					store.PostprocessorIncreasedIndexAction,
+					store.OperationLinkAdded,
 					pred,
 					action,
 				); err != nil {
@@ -200,8 +199,8 @@ func increasedIndexActionRule(
 						return err
 					}
 					if err := st.AuditPostprocessStatusAction(
-						audit.PostprocessorIncreasedIndexAction,
-						audit.OperationLinkRemoved,
+						store.PostprocessorIncreasedIndexAction,
+						store.OperationLinkRemoved,
 						pred,
 						other,
 					); err != nil {
@@ -213,8 +212,8 @@ func increasedIndexActionRule(
 				return err
 			}
 			if err := st.AuditPostprocessActionResultStatus(
-				audit.PostprocessorIncreasedIndexAction,
-				audit.OperationLinkRemoved,
+				store.PostprocessorIncreasedIndexAction,
+				store.OperationLinkRemoved,
 				other,
 				status,
 			); err != nil {
@@ -228,8 +227,8 @@ func increasedIndexActionRule(
 			return err
 		}
 		if err := st.AuditPostprocessActionResultStatus(
-			audit.PostprocessorIncreasedIndexAction,
-			audit.OperationLinkAdded,
+			store.PostprocessorIncreasedIndexAction,
+			store.OperationLinkAdded,
 			action,
 			status,
 		); err != nil {
@@ -269,8 +268,8 @@ func causeStatusResultRule(
 				return err
 			}
 			if err := st.AuditPostprocessActionResultStatus(
-				audit.PostprocessorCauseStatusResult,
-				audit.OperationLinkRemoved,
+				store.PostprocessorCauseStatusResult,
+				store.OperationLinkRemoved,
 				action,
 				link.Status,
 			); err != nil {
@@ -288,8 +287,8 @@ func causeStatusResultRule(
 			return err
 		}
 		if err := st.AuditPostprocessActionResultStatus(
-			audit.PostprocessorCauseStatusResult,
-			audit.OperationLinkAdded,
+			store.PostprocessorCauseStatusResult,
+			store.OperationLinkAdded,
 			action,
 			status,
 		); err != nil {

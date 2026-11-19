@@ -3,7 +3,7 @@ package facade
 import (
 	"context"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/benchmark"
 )
 
 type (

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository/benchmark"
+	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/benchmark"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
