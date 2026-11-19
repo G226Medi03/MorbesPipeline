@@ -23,14 +23,39 @@ type Dependencies struct {
 }
 
 type Service struct {
-	ctx            context.Context
-	store          *store.Store
-	llm            *morbesllm.Service
-	question_store QuestionStore
+	ctx              context.Context
+	store            *store.Store
+	llm              *morbesllm.Service
+	llmExtraction    *morbesllm.ExtractionRunner
+	question_store   QuestionStore
 
 	replay_live        *cllmcall.Client
 	replay_live_stages map[string]bool
 	cache_mode         core.CacheMode
+}
+
+type extractionCallRecorder struct {
+	service *Service
+}
+
+func (recorder extractionCallRecorder) RecordExtractionCall(call morbesllm.ExtractionCall) error {
+	recorder.service.record_call(LLMCallInput{
+		CaseID:        domain.CaseID(call.CaseID),
+		Seq:           call.Seq,
+		Stage:         call.Stage,
+		Role:          call.Role,
+		Model:         call.Model,
+		PromptVersion: call.PromptVersion,
+		Prompt:        call.Prompt,
+		RawOutput:     call.RawOutput,
+		ParsedOutput:  encode_json(call.ParsedOutput),
+		SourceID:      call.SourceID,
+		RespID:        call.RespID,
+		State:         call.State,
+		Error:         call.Error,
+		DurationMS:    call.DurationMS,
+	})
+	return nil
 }
 
 func (self *Service) SetReplayLive(live *cllmcall.Client, stages map[string]bool) {
@@ -66,12 +91,14 @@ func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
 		}
 		llmService = created
 	}
-	return &Service{
+	service := &Service{
 		ctx:            ctx,
 		store:          deps.Store,
 		llm:            llmService,
 		question_store: deps.QuestionStore,
-	}, nil
+	}
+	service.llmExtraction = morbesllm.NewExtractionRunner(llmService, extractionCallRecorder{service: service})
+	return service, nil
 }
 
 func (self *Service) set_stage(id domain.CaseID, stage string) error {
