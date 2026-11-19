@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/store"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
@@ -37,7 +38,7 @@ func TestPostprocessCreatesTransplantRejection(t *testing.T) {
 		Statuses: map[string]repo.IEStatus{"s1": status},
 		Actions:  map[string]repo.IEAction{},
 		Extraction: CaseExtraction{
-			Statuses: []StatusDraft{{Key: "s1", Value: status, SourceID: sourceID}},
+			Statuses: []StatusDraft{{Key: "s1", Value: llmparser.StatusToDTO(status), SourceID: sourceID}},
 		},
 	}
 	if err := Postprocess(ctx, st, state); err != nil {

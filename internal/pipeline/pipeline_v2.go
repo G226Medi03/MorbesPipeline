@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
@@ -97,18 +98,18 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		return []source.Source{{SourceID: draft_source_id}}
 	}
 
-	for _, draft := range state.Extraction.Actors {
+	for index, draft := range state.Extraction.Actors {
 		actor, err := self.resolve_actor(draft)
 		if err != nil {
-			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
 		if actor == nil {
 			continue
 		}
-		sources := draft_sources(draft.SourceID)
+		sources := draft_sources(source_id)
 		if _, err := entityStore.InsertActor(actor, nil, sourceIDs(sources)); err != nil {
-			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
 		if strings.Contains(strings.TrimSpace(draft.Name), "투여") {
@@ -133,10 +134,13 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		if draft_source_id.ToI64() <= 0 {
 			draft_source_id = source_id
 		}
-		status := draft.Value
+		status, err := llmparser.StatusFromDTO(draft.Value)
+		if err != nil {
+			panic(fmt.Errorf("status DTO conversion failed key=%s: %w", draft.Key, err))
+		}
 		if draft_source_id.ToI64() > 0 {
 			if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-				panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, draft.Value.Kind(), draft_source_id, err))
+				panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, status.Kind(), draft_source_id, err))
 			}
 		}
 		resolved.Statuses[draft.Key] = status
@@ -153,10 +157,13 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			if draft_source_id.ToI64() <= 0 {
 				draft_source_id = source_id
 			}
-			status := draft.Value
+			status, err := llmparser.StatusFromDTO(draft.Value)
+			if err != nil {
+				continue
+			}
 			if draft_source_id.ToI64() > 0 {
 				if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-					panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, draft.Value.Kind(), draft_source_id, err))
+					panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, status.Kind(), draft_source_id, err))
 				}
 			}
 			resolved.Statuses[draft.Key] = status
@@ -164,7 +171,11 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for _, draft := range state.Extraction.Actions {
-		value := draft.Value
+		value, err := llmparser.ActionFromDTO(draft.Value)
+		if err != nil {
+			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			continue
+		}
 		sources := draft_sources(draft.SourceID)
 		if _, err := entityStore.InsertAction(value, nil, sourceIDs(sources)); err != nil {
 			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
@@ -174,15 +185,29 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for _, draft := range state.Extraction.MedicalProcedureOptions {
-		indications := append([]repo.IEStatus(nil), draft.Indications...)
+		indications := make([]repo.IEStatus, 0, len(draft.Indications))
+		for _, statusDTO := range draft.Indications {
+			if status, err := llmparser.StatusFromDTO(statusDTO); err == nil {
+				indications = append(indications, status)
+			}
+		}
 		if len(indications) == 0 {
 			for _, status := range resolved.Statuses {
 				indications = append(indications, status)
 			}
 		}
-		effects := append([]repo.IEStatus(nil), draft.ExpectedEffects...)
+		effects := make([]repo.IEStatus, 0, len(draft.ExpectedEffects))
+		for _, statusDTO := range draft.ExpectedEffects {
+			if status, err := llmparser.StatusFromDTO(statusDTO); err == nil {
+				effects = append(effects, status)
+			}
+		}
 		option_sources := draft_sources(draft.SourceID)
-		procedure := draft.MedicalProcedure
+		procedure, err := llmparser.ProcedureFromDTO(&draft.MedicalProcedure)
+		if err != nil {
+			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			continue
+		}
 		optionTraits := trait.NormalizeTraits(draft.Traits)
 		if _, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources); err != nil {
 			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
@@ -245,7 +270,10 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 				if draft_source_id.ToI64() <= 0 {
 					draft_source_id = source_id
 				}
-				status = draft.Value
+				status, err = llmparser.StatusFromDTO(draft.Value)
+				if err != nil {
+					continue
+				}
 				if draft_source_id.ToI64() > 0 {
 					if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
 						continue
@@ -267,7 +295,7 @@ func (self *Service) resolve_actor(draft ActorDraft) (repo.IEActor, error) {
 	if name == "" {
 		return nil, nil
 	}
-	if repo.ParseActorKind(draft.Kind) == repo.ActorKindDevice {
+	if repo.ParseActorKind(string(draft.Kind)) == repo.ActorKindDevice {
 		return repo.NewDevice(name), nil
 	}
 	return repo.NewUnknownActor(name), nil
