@@ -87,7 +87,6 @@ internal/store/
   core/            # StoreContainer, schema, transaction, core SQL
   entity/          # entity helper
   read/            # read model types
-  source/          # source/LLM response trace
   solve/           # solve table repository
   benchmark/       # benchmark table repository
   postprocess/     # postprocess audit repository
@@ -106,11 +105,8 @@ entity
   actor value helper, MedicalEntity trait conversion
 
 read
-  ActorRecord, ActionRecord, StatusRecord, ProcedureRecord,
   ProblemResultRow, ExamQuestionDataCounts
-
-source
-  SourceEntityRepository 기반 source/response trace
+  entity read model은 MedicalEntityRepository facade 사용
 
 solve
   solve_cases, solve_steps, solve_llm_calls, answer checks

@@ -1,259 +1,88 @@
 package store
 
 import (
-	"database/sql"
+	"errors"
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
-	source "github.com/G226Medi03/SourceEntity"
 )
 
-// ActorRecord is the name-based read model for an actor row.
-type (
-	ActorRecord            = read.ActorRecord
-	ActorActionLink        = read.ActorActionLink
-	ActionRecord           = read.ActionRecord
-	ActionResultStatusLink = read.ActionResultStatusLink
-	StatusRecord           = read.StatusRecord
-	StatusActionLink       = read.StatusActionLink
-	ProcedureRecord        = read.ProcedureRecord
-)
-
-func (s *StoreContainer) sourceRefsFor(table, column string, id int64) ([]source.Source, error) {
-	rows, err := s.QueryContext(s.ctx,
-		`SELECT source_id FROM `+table+` WHERE `+column+` = ? ORDER BY id`, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	var sourceIDs []source.SourceId
-	for rows.Next() {
-		var sourceID source.SourceId
-		if err := rows.Scan(&sourceID); err != nil {
-			return nil, err
-		}
-		sourceIDs = append(sourceIDs, sourceID)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return s.refs(s.ctx, sourceIDs), nil
-}
-
-// GetActorRecordByName returns the actor read model for a name.
-func (s *StoreContainer) GetActorRecordByName(name string) (ActorRecord, bool, error) {
+// GetActorByName returns the actor entity for a name.
+func (s *StoreContainer) GetActorByName(name string) (repo.Actor, bool, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return ActorRecord{}, false, nil
+		return repo.Actor{}, false, nil
 	}
-	var actorID int64
-	err := s.QueryRowContext(s.ctx, `SELECT eactor_id FROM actor_other_name WHERE name = ? LIMIT 1`, name).Scan(&actorID)
-	if err == sql.ErrNoRows {
-		err = s.QueryRowContext(s.ctx,
-			`SELECT eactor_id FROM eactor WHERE name = ? AND kind <> 'procedure' LIMIT 1`, name).Scan(&actorID)
+	entityStore, err := s.Entities()
+	if err != nil {
+		return repo.Actor{}, false, err
 	}
-	if err == sql.ErrNoRows {
-		return ActorRecord{}, false, nil
+	actor, err := entityStore.GetActorByName(name)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Actor{}, false, nil
 	}
 	if err != nil {
-		return ActorRecord{}, false, err
+		return repo.Actor{}, false, err
 	}
-	return s.loadActorRecord(actorID)
+	return actor, true, nil
 }
 
-// GetDeviceByName returns the device actor read model for a name.
-func (s *StoreContainer) GetDeviceByName(name string) (ActorRecord, bool, error) {
-	record, found, err := s.GetActorRecordByName(name)
+// GetDeviceByName returns the device actor entity for a name.
+func (s *StoreContainer) GetDeviceByName(name string) (repo.Actor, bool, error) {
+	actor, found, err := s.GetActorByName(name)
 	if err != nil || !found {
-		return ActorRecord{}, found, err
+		return repo.Actor{}, found, err
 	}
-	if record.Value.Kind() != string(repo.ActorKindDevice) {
-		return ActorRecord{}, false, nil
+	if actor.Name().Kind() != string(repo.ActorKindDevice) {
+		return repo.Actor{}, false, nil
 	}
-	return record, true, nil
+	return actor, true, nil
 }
 
-func (s *StoreContainer) loadActorRecord(actorID int64) (ActorRecord, bool, error) {
-	value, err := s.actorValueByID(actorID)
+// GetAction returns the action entity for a typed action value.
+func (s *StoreContainer) GetAction(value repo.IEAction) (repo.Action, bool, error) {
+	entityStore, err := s.Entities()
 	if err != nil {
-		return ActorRecord{}, false, err
+		return repo.Action{}, false, err
 	}
-	refs, err := s.sourceRefsFor("actor_sources", "eactor_id", actorID)
+	action, err := entityStore.GetAction(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Action{}, false, nil
+	}
 	if err != nil {
-		return ActorRecord{}, false, err
+		return repo.Action{}, false, err
 	}
-	record := ActorRecord{
-		Key:     entitykey.Actor(value),
-		Value:   value,
-		Sources: refs,
-	}
-	rows, err := s.QueryContext(s.ctx,
-		`SELECT name FROM actor_other_name WHERE eactor_id = ? ORDER BY id`, actorID)
-	if err != nil {
-		return ActorRecord{}, false, err
-	}
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			_ = rows.Close()
-			return ActorRecord{}, false, err
-		}
-		record.OtherNames = append(record.OtherNames, name)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return ActorRecord{}, false, err
-	}
-	_ = rows.Close()
-
-	rows, err = s.QueryContext(s.ctx,
-		`SELECT eaction_id, source_id FROM actor_actions WHERE eactor_id = ? ORDER BY id`, actorID)
-	if err != nil {
-		return ActorRecord{}, false, err
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	for rows.Next() {
-		var actionID int64
-		var sourceID source.SourceId
-		if err := rows.Scan(&actionID, &sourceID); err != nil {
-			return ActorRecord{}, false, err
-		}
-		action, err := s.getActionShallow(actionID)
-		if err != nil {
-			continue
-		}
-		record.Actions = append(record.Actions, ActorActionLink{Action: action, SourceID: sourceID})
-	}
-	return record, true, rows.Err()
+	return action, true, nil
 }
 
-// GetActionRecord returns the action read model for a typed action value.
-func (s *StoreContainer) GetActionRecord(value repo.IEAction) (ActionRecord, bool, error) {
-	actionID, err := s.actionIDForValue(value)
+// GetStatus returns the status entity for a typed status value.
+func (s *StoreContainer) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
+	entityStore, err := s.Entities()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return ActionRecord{}, false, nil
-		}
-		return ActionRecord{}, false, err
+		return repo.Status{}, false, err
 	}
-	action, err := s.getActionShallow(actionID)
+	status, err := entityStore.GetStatus(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Status{}, false, nil
+	}
 	if err != nil {
-		return ActionRecord{}, false, err
+		return repo.Status{}, false, err
 	}
-	rows, err := s.QueryContext(s.ctx,
-		`SELECT estatus_id, source_id FROM action_result_statuses WHERE eaction_id = ? ORDER BY id`, actionID)
-	if err != nil {
-		return ActionRecord{}, false, err
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	for rows.Next() {
-		var statusID int64
-		var sourceID source.SourceId
-		if err := rows.Scan(&statusID, &sourceID); err != nil {
-			return ActionRecord{}, false, err
-		}
-		status, err := s.getStatusShallow(statusID)
-		if err != nil {
-			continue
-		}
-		action.ResultStatuses = append(action.ResultStatuses, ActionResultStatusLink{
-			Status: status, SourceID: sourceID,
-		})
-	}
-	return action, true, rows.Err()
+	return status, true, nil
 }
 
-func (s *StoreContainer) actionValueByID(actionID int64) (repo.IEAction, error) {
-	var kind string
-	var ptr int64
-	err := s.QueryRowContext(s.ctx,
-		`SELECT kind, ptr FROM eaction WHERE eaction_id = ?`, actionID).Scan(&kind, &ptr)
+// GetProcedure returns the procedure entity for a typed procedure value.
+func (s *StoreContainer) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
+	entityStore, err := s.Entities()
 	if err != nil {
-		return nil, err
+		return repo.Procedure{}, false, err
 	}
-	return s.actionValueByKindPtr(kind, ptr)
-}
-
-func (s *StoreContainer) getActionShallow(actionID int64) (ActionRecord, error) {
-	value, err := s.actionValueByID(actionID)
+	procedure, err := entityStore.GetProcedure(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Procedure{}, false, nil
+	}
 	if err != nil {
-		return ActionRecord{}, err
+		return repo.Procedure{}, false, err
 	}
-	refs, err := s.sourceRefsFor("action_sources", "eaction_id", actionID)
-	if err != nil {
-		return ActionRecord{}, err
-	}
-	return ActionRecord{Key: entitykey.Action(value), Value: value, Sources: refs}, nil
-}
-
-// GetStatusRecord returns the status read model for a typed status value.
-func (s *StoreContainer) GetStatusRecord(value repo.IEStatus) (StatusRecord, bool, error) {
-	statusID, err := s.statusIDForValue(value)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return StatusRecord{}, false, nil
-		}
-		return StatusRecord{}, false, err
-	}
-	status, err := s.getStatusShallow(statusID)
-	if err != nil {
-		return StatusRecord{}, false, err
-	}
-	rows, err := s.QueryContext(s.ctx,
-		`SELECT eaction_id, source_id FROM status_actions WHERE estatus_id = ? ORDER BY id`, statusID)
-	if err != nil {
-		return StatusRecord{}, false, err
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	for rows.Next() {
-		var actionID int64
-		var sourceID source.SourceId
-		if err := rows.Scan(&actionID, &sourceID); err != nil {
-			return StatusRecord{}, false, err
-		}
-		action, err := s.getActionShallow(actionID)
-		if err != nil {
-			continue
-		}
-		status.Actions = append(status.Actions, StatusActionLink{Action: action, SourceID: sourceID})
-	}
-	return status, true, rows.Err()
-}
-
-func (s *StoreContainer) getStatusShallow(statusID int64) (StatusRecord, error) {
-	value, err := s.statusValueByID(int64(statusID))
-	if err != nil {
-		return StatusRecord{}, err
-	}
-	refs, err := s.sourceRefsFor("status_sources", "estatus_id", statusID)
-	if err != nil {
-		return StatusRecord{}, err
-	}
-	return StatusRecord{Key: entitykey.Status(value), Value: value, Sources: refs}, nil
-}
-
-// GetProcedureRecord returns the procedure read model for a typed value.
-func (s *StoreContainer) GetProcedureRecord(value repo.IMedicalProcedure) (ProcedureRecord, bool, error) {
-	procedureID, err := s.procedureIDForValue(value)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return ProcedureRecord{}, false, nil
-		}
-		return ProcedureRecord{}, false, err
-	}
-	stored, err := s.procedureValueByID(procedureID)
-	if err != nil {
-		return ProcedureRecord{}, false, err
-	}
-	refs, err := s.sourceRefsFor("procedure_sources", "emedical_procedure_id", procedureID)
-	if err != nil {
-		return ProcedureRecord{}, false, err
-	}
-	return ProcedureRecord{
-		Key:     entitykey.Procedure(stored),
-		Value:   stored,
-		Sources: refs,
-	}, true, nil
+	return procedure, true, nil
 }

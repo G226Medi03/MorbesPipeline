@@ -78,10 +78,10 @@ type (
 	ProblemResultFilter = persistence.ProblemResultFilter
 	ProblemResultRow    = persistence.ProblemResultRow
 
-	ActorRecord            = persistence.ActorRecord
-	ActionRecord           = persistence.ActionRecord
-	StatusRecord           = persistence.StatusRecord
-	ProcedureRecord        = persistence.ProcedureRecord
+	Actor     = repo.Actor
+	Action    = repo.Action
+	Status    = repo.Status
+	Procedure = repo.Procedure
 	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
 	ExamQuestionCaseStats  = storesolve.ExamQuestionCaseStats
 )
