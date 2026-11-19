@@ -99,7 +99,7 @@ private GitHub module이 포함되어 있으므로 Git 인증이 필요하다.
 - `MedicalEntity` 직접 import는 금지한다. `MedicalEntityRepository/repo` facade를 사용한다.
 - `go-duration`은 `MorbesLLMService` 또는 `MedicalEntityParser` 경유로만 사용한다.
 
-상세 규칙은 `docs/packages.md`, `docs/importlint.md`를 따른다.
+상세 규칙은 `docs/project-structure.md`, `docs/importlint.md`를 따른다.
 
 ---
 
