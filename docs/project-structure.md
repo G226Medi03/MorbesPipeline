@@ -84,13 +84,13 @@ selection
 
 ```text
 internal/store/
-  core/            # StoreContainer, schema, transaction, core SQL
-  entity/          # entity helper
-  read/            # read model types
-  solve/           # solve table repository
-  benchmark/       # benchmark table repository
-  postprocess/     # postprocess audit repository
-  migration/       # legacy schema migration
+  core/            # StoreContainer, transaction, schema facade
+    internal/
+      store/       # Store: ctx/db + repositories
+      service/     # Entity/Solve/Source/Benchmark/Postprocess services
+      schema/      # schema ensure helpers
+  repository/      # Table + Repository layer
+                   # entity/solve/benchmark/postprocess/read/migration
 ```
 
 역할:
@@ -98,27 +98,17 @@ internal/store/
 ```text
 core
   StoreContainer, New/NewWithDBs, InitSchema
-  transaction executor, entity/solve/source 조립
-  entity ID lookup, link/delete, read API
+  core/internal/store: ctx/db + repositories
+  core/internal/service: application services
 
-entity
-  actor value helper, MedicalEntity trait conversion
-
-read
-  ProblemResultRow, ExamQuestionDataCounts
-  entity read model은 MedicalEntityRepository facade 사용
-
-solve
+repository
+  Table + Repository
+  entity ID/link/read/save
   solve_cases, solve_steps, solve_llm_calls, answer checks
-
-benchmark
   llm_problem_results
-
-postprocess
   morbes_postprocesses audit
-
-migration
-  legacy table/column rename
+  ProblemResultRow, ExamQuestionDataCounts
+  legacy schema migration
 ```
 
 ## internal/domain

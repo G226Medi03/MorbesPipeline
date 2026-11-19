@@ -18,7 +18,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
 	persistence "github.com/G226Medi03/MorbesPipeline/internal/store/core"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 )
@@ -78,12 +78,12 @@ type (
 	ProblemResultFilter = persistence.ProblemResultFilter
 	ProblemResultRow    = persistence.ProblemResultRow
 
-	Actor     = repo.Actor
-	Action    = repo.Action
-	Status    = repo.Status
-	Procedure = repo.Procedure
+	Actor                  = repo.Actor
+	Action                 = repo.Action
+	Status                 = repo.Status
+	Procedure              = repo.Procedure
 	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
-	ExamQuestionCaseStats  = storesolve.ExamQuestionCaseStats
+	ExamQuestionCaseStats  = storerepo.ExamQuestionCaseStats
 )
 
 type (

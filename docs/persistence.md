@@ -5,12 +5,11 @@
 ```text
 internal/store/
   core/
-  entity/
-  read/
-  solve/
-  benchmark/
-  postprocess/
-  migration/
+    internal/
+      store/
+      service/
+      schema/
+  repository/
 ```
 
 ## StoreContainer
@@ -23,8 +22,9 @@ internal/store/core/store.go
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  Solve storesolve.Repository
-  Postprocess storepostprocess.Repository
+  Solve storerepo.SolveRepository
+  Benchmark storerepo.BenchmarkRepository
+  Postprocess storerepo.PostprocessRepository
 ```
 
 ## 주요 구성
@@ -33,27 +33,15 @@ internal/store/core/store.go
 core
   InitSchema
   transaction
-  entity ID/link SQL
-  entity read는 MedicalEntityRepository facade 위임
-  solve/source access
+  core/internal/store: ctx/db + repositories
+  core/internal/service: application services
 
-entity
-  actor/trait helper
-
-read
-  benchmark/result read model types
-
-solve
-  solve_cases, solve_steps, solve_llm_calls, answer checks
-
-benchmark
-  llm_problem_results
-
-postprocess
-  morbes_postprocesses
-
-migration
-  legacy schema rename
+repository
+  Table + Repository
+  entity ID/link/read/save
+  benchmark/solve/postprocess table과 repository
+  ProblemResultRow, ExamQuestionDataCounts
+  legacy schema migration
 ```
 
 ## 인과 링크

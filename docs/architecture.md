@@ -54,11 +54,8 @@ App
 | pipeline/resolve | DTO → Entity helper |
 | pipeline/postprocess | deterministic postprocess |
 | pipeline/selection | procedure option 선택 |
-| store/core | StoreContainer, schema, transaction |
-| store/entity | entity helper |
-| store/read | benchmark/result read model |
-| store/solve | solve table |
-| store/postprocess | postprocess audit |
+| store/core | StoreContainer, transaction, core internal packages |
+| store/repository | benchmark/solve/postprocess table과 read model |
 | tracing | reverse link cause trace |
 | domain | solve/domain/entity key/label/trait |
 
