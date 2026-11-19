@@ -7,7 +7,7 @@ MorbesPipeline은 하나의 의학 문제 풀이 case를 다음 순서로 처리
 1. 문제/정답/해설을 확보한다.
 2. 문제 본문만 근거로 임상 소견, 행동, 관계, 환자 서술, 치료 선택지를 추출한다.
 3. 추출된 draft를 MedicalEntity 표준 엔티티로 canonicalize하여 저장한다.
-4. 저장된 상태/행동 그래프에서 관찰된 상태의 원인 후보를 추적한다.
+4. 저장된 상태/행동 인과 링크에서 관찰된 상태의 원인 후보를 추적한다.
 5. 추적 결과를 case의 답으로 확정한다.
 
 ## 계층
@@ -20,8 +20,8 @@ flowchart TD
     SOLVE --> CANON["canonical<br/>표준화"]
     SOLVE --> CAUSE["cause (ccause)<br/>원인 추적"]
 
-    CANON --> PORTS["ports.Store"]
-    CAUSE --> GRAPH["graph (cgraph)<br/>인메모리 그래프"]
+    CANON --> PORTS["store"]
+    CAUSE --> PORTS
     SERVICE --> PORTS
     SOLVE --> PORTS
 
@@ -40,31 +40,30 @@ flowchart TD
 
 | 계층 | 패키지 | 책임 |
 | --- | --- | --- |
-| 도메인 | `solve/domain` | Case, Step, Stage, 질문 유형/정책, 프롬프트 메타데이터, Graph DTO |
-| 영속 모델 | `solve/model` | `LLMCall`, `LLMCallInput`, `PromptVersion` |
-| 애플리케이션 | `solve` (`csolve`) | 노드 파이프라인, LLM 단계, draft→resolved 변환, replay |
-| 도메인 서비스 | `canonical`, `cause`, `service`, `situation`, `patient` | 표준화, 원인 추적, LLM 캐시/후처리, 구조 변환 |
-| 포트 | `ports` | 파이프라인이 요구하는 저장소 인터페이스 |
-| 어댑터 | `store` | SQLite 기반 `ports.Store` 구현과 테이블 관리 |
-| 공유 커널 | `legacy`, `trait`, `label`, `entityconv`, `logs` | 레거시 호환 DTO, trait 규칙, 라벨, 로깅 |
+| 도메인 | `internal/domain/*` | Case, Step, Stage, 질문 유형/정책, 프롬프트 메타데이터 |
+| 영속 모델 | `internal/domain/solve/model` | `LLMCall`, `LLMCallInput`, `PromptVersion` |
+| 애플리케이션 | `internal/pipeline` | 노드 파이프라인, LLM 단계, typed draft→resolved 변환, replay |
+| 도메인 서비스 | `internal/tracing/cause`, `internal/domain/*` | 원인 추적, 구조 변환, 라벨 |
+| 어댑터 | `internal/store` | SQLite 저장소, postprocess audit, 테이블 관리 |
+| 공유 커널 | `internal/domain/trait`, `internal/domain/label`, `internal/support/*` | trait 규칙, 라벨, 로깅 |
 | 외부 연동 | `MedicalEntityParser`, `PipeLineCore`, `SourceEntity*`, `SQLCore`, `log-sqlite`, `llm-client` | 직접 import |
 
 ## 의존 방향
 
 ```text
-solve ──► domain / model
-solve ──► canonical ──► ports
-solve ──► cause ──► graph
-solve ──► service ──► ports
-store ──► ports (구현)
-canonical / cause / service ──► legacy, trait, label
+internal/pipeline ──► internal/domain
+internal/pipeline ──► internal/tracing/cause ──► MedicalEntityRepository/repo
+internal/pipeline ──► internal/store
+internal/store ──► MedicalEntityRepository/repo
+internal/store ──► SourceEntityRepository
 ```
 
-- `ports`는 `store`를 모른다. 파이프라인은 인터페이스에만 의존한다.
-- `store`는 `ports.Store`보다 넓은 API를 제공한다. 애플리케이션은 좁은 포트를,
-  웹/CLI 계층은 `store.Store`의 확장 메서드를 사용할 수 있다.
-- `legacy`는 의료 엔티티를 파이프라인 내부 DTO로 감싸는 호환 계층이다. 새 코드가
-  영속 스키마의 JSON 형태를 직접 다루지 않게 한다.
+- `internal/tracing/cause`는 `ActionsResultingInStatus`,
+  `StatusesCausingAction`, `ActorsCausingAction`만 사용한다.
+- `internal/store`가 SQLite row와 numeric ID를 소유한다. 파이프라인은 typed value를
+  사용하고, numeric ID는 store 내부에서만 조회한다.
+- postprocess는 현재 case의 typed status/action을 대상으로 동작하며, audit row는
+  `morbes_postprocesses`에 기록한다.
 
 ## 외부 모듈
 
@@ -85,7 +84,7 @@ canonical / cause / service ──► legacy, trait, label
 - 질문 유형 분류와 소견 추출은 `problem_stem`(선택지 제거) 또는 문제 본문만 본다.
 - 정답/해설 사용 금지 지시는 `MorbesLLMService`가 소유한 prompt template에 포함한다.
 - 정답은 파이프라인 실행 중 후보 선택에 사용하지 않는다. 선택 로직은
-  `SelectMedicalProcedureOption`처럼 문제와 그래프 근거만 사용한다.
+  `SelectMedicalProcedureOption`처럼 문제와 저장된 인과 근거만 사용한다.
 
 ### 2. Draft → Resolve 2단계
 
@@ -124,7 +123,6 @@ sequenceDiagram
     participant Solve as solve.Service
     participant Store as ports.Store
     participant LLM as llm-client
-    participant Graph as graph.Container
 
     App->>Solve: Run(caseID)
     Solve->>Store: Get(caseID), GetPrompt, ResetSteps
@@ -139,9 +137,8 @@ sequenceDiagram
     Solve->>Store: FinishStep(case_extraction)
     Solve->>Store: SaveStatus/SaveAction/SaveOption/Link...
     Solve->>Store: FinishStep(resolve)
-    Solve->>Store: LoadGraph
-    Solve->>Graph: postprocess rules
-    Solve->>Graph: TraceContext
+    Solve->>Store: postprocess typed status/action
+    Solve->>Store: reverse causelinks
     Solve->>Store: SetAnswer(causeStepOutput)
 ```
 

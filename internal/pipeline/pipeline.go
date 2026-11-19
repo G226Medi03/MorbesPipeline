@@ -159,12 +159,16 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 	statuses, coverageAdded := coverageObservedStatuses(state, statuses)
 	cause_ctx, cancel := context.WithTimeout(ctx, cause_trace_timeout)
 	defer cancel()
-	container, err := Postprocess(cause_ctx, self.store)
+	if err := Postprocess(cause_ctx, self.store, state); err != nil {
+		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
+		return err
+	}
+	entityStore, err := self.store.Entities()
 	if err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	cause_service := ccause.New_ContainerService(container)
+	cause_service := ccause.New_Service(entityStore)
 	const cause_trace_max_depth = 100
 	candidates, err := cause_service.TraceContext(cause_ctx, statuses, cause_trace_max_depth)
 	self.record_call(LLMCallInput{
@@ -182,7 +186,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 		CoverageAdded: coverageAdded,
 	}
 	if len(candidates) == 0 {
-		result.Missing = []string{"Morbes graph 에서 원인 후보를 찾지 못했습니다"}
+		result.Missing = []string{"저장된 인과 관계에서 원인 후보를 찾지 못했습니다"}
 	}
 	encoded := encode_json(result)
 	if err := self.store.SetAnswer(id, encoded); err != nil {

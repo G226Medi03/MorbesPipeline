@@ -3,15 +3,14 @@ package csolve
 import (
 	"context"
 	"fmt"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
-	clog "github.com/G226Medi03/log-sqlite"
 	"strings"
 
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	source "github.com/G226Medi03/SourceEntity"
+	clog "github.com/G226Medi03/log-sqlite"
 )
 
 func (self *Service) run_v2_from(ctx context.Context, id domain.CaseID, from_node string) error {
@@ -134,13 +133,10 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		if draft_source_id.ToI64() <= 0 {
 			draft_source_id = source_id
 		}
-		status, err := parseStatusDraft(draft)
-		if err != nil {
-			panic(fmt.Errorf("status parse failed key=%s kind=%s value=%s source=%d: %w", draft.Key, draft.Kind, string(draft.Value), draft_source_id, err))
-		}
+		status := draft.Value
 		if draft_source_id.ToI64() > 0 {
 			if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-				panic(fmt.Errorf("status save failed key=%s kind=%s value=%s source=%d: %w", draft.Key, draft.Kind, string(draft.Value), draft_source_id, err))
+				panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, draft.Value.Kind(), draft_source_id, err))
 			}
 		}
 		resolved.Statuses[draft.Key] = status
@@ -157,13 +153,10 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			if draft_source_id.ToI64() <= 0 {
 				draft_source_id = source_id
 			}
-			status, err := parseStatusDraft(draft)
-			if err != nil {
-				panic(fmt.Errorf("status parse failed key=%s kind=%s value=%s source=%d: %w", draft.Key, draft.Kind, string(draft.Value), draft_source_id, err))
-			}
+			status := draft.Value
 			if draft_source_id.ToI64() > 0 {
 				if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-					panic(fmt.Errorf("status save failed key=%s kind=%s value=%s source=%d: %w", draft.Key, draft.Kind, string(draft.Value), draft_source_id, err))
+					panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, draft.Value.Kind(), draft_source_id, err))
 				}
 			}
 			resolved.Statuses[draft.Key] = status
@@ -171,15 +164,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for _, draft := range state.Extraction.Actions {
-		variant := draft.Variant
-		if strings.TrimSpace(variant) == "" {
-			variant = "cause_status"
-		}
-		value, err := parseActionDraft(ActionDraft{Key: draft.Key, Variant: variant, Value: draft.Value})
-		if err != nil {
-			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
-			continue
-		}
+		value := draft.Value
 		sources := draft_sources(draft.SourceID)
 		if _, err := entityStore.InsertAction(value, nil, sourceIDs(sources)); err != nil {
 			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
@@ -207,11 +192,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			}
 		}
 		option_sources := draft_sources(draft.SourceID)
-		procedure, err := entityjson.DecodeOrParseProcedure(draft.MedicalProcedure)
-		if err != nil {
-			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
-			continue
-		}
+		procedure := draft.MedicalProcedure
 		optionTraits := trait.NormalizeTraits(draft.Traits)
 		procedureID, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources)
 		if err != nil {
@@ -275,10 +256,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 				if draft_source_id.ToI64() <= 0 {
 					draft_source_id = source_id
 				}
-				status, err = parseStatusDraft(draft)
-				if err != nil {
-					continue
-				}
+				status = draft.Value
 				if draft_source_id.ToI64() > 0 {
 					if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
 						continue

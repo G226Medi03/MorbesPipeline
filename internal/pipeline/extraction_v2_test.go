@@ -2,69 +2,51 @@ package csolve
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
-func TestStatusDraftFromRawName(t *testing.T) {
-	draft, ok := status_draft_from_raw(json.RawMessage(`{"kind":"have_symptom","name":"두통"}`), "p1_1")
-	if !ok {
-		t.Fatal("status_draft_from_raw returned false")
+func TestStatusDraftJSONRoundTrip(t *testing.T) {
+	draft := StatusDraft{
+		Key:      "s1",
+		Value:    repo.HaveSymptom{Symptom: repo.EOtherSymptom{Name: "두통"}},
+		SourceID: source.NewSourceId(7),
 	}
-	if draft.Key != "p1_1" || draft.Kind != "have_symptom" {
-		t.Fatalf("draft = %#v", draft)
+	raw, err := json.Marshal(draft)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
 	}
-	if !strings.Contains(string(draft.Value), "두통") {
-		t.Fatalf("value = %s", draft.Value)
+	var loaded StatusDraft
+	if err := json.Unmarshal(raw, &loaded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
 	}
-}
-
-func TestStatusDraftFromRawValue(t *testing.T) {
-	draft, ok := status_draft_from_raw(json.RawMessage(`{"kind":"have_symptom","value":{"name":"두통"}}`), "p1_1")
-	if !ok {
-		t.Fatal("status_draft_from_raw returned false")
+	if loaded.Key != "s1" || loaded.Value == nil || loaded.Value.Kind() != "have_symptom" {
+		t.Fatalf("loaded = %#v", loaded)
 	}
-	if !strings.Contains(string(draft.Value), "두통") {
-		t.Fatalf("value = %s", draft.Value)
-	}
-}
-
-func TestStatusDraftsJSONUsesIDField(t *testing.T) {
-	raw := status_drafts_json([]StatusDraft{{
-		Key:   "s1",
-		Kind:  "have_symptom",
-		Value: json.RawMessage(`{"name":"두통"}`),
-	}})
-	if !strings.Contains(raw, `"id":"s1"`) || !strings.Contains(raw, `"kind":"have_symptom"`) {
-		t.Fatalf("status json = %s", raw)
+	if loaded.SourceID.ToI64() != 7 {
+		t.Fatalf("source = %d", loaded.SourceID.ToI64())
 	}
 }
 
 func TestPatientDescriptionsForService(t *testing.T) {
+	status := repo.HaveSymptom{Symptom: repo.EOtherSymptom{Name: "두통"}}
 	got := patient_descriptions_for_service([]PatientDescriptionDraft{{
 		Choice:    "②",
 		Knowledge: []string{"복약"},
 		Description: []StatusDraft{{
 			Key:   "s1",
-			Kind:  "have_symptom",
-			Value: json.RawMessage(`{"name":"두통"}`),
+			Value: status,
 		}},
 	}})
 	if len(got) != 1 {
 		t.Fatalf("len = %d", len(got))
 	}
-	raw, err := json.Marshal(got[0])
-	if err != nil {
-		t.Fatalf("Marshal: %v", err)
+	if got[0].Choice != "②" || len(got[0].Description) != 1 {
+		t.Fatalf("got = %#v", got[0])
 	}
-	for _, want := range []string{
-		`"choice":"②"`,
-		`"kind":"have_symptom"`,
-		`"name":"두통"`,
-		`"knowledge":["복약"]`,
-	} {
-		if !strings.Contains(string(raw), want) {
-			t.Fatalf("json = %s, want %s", raw, want)
-		}
+	if got[0].Description[0].Kind() != status.Kind() {
+		t.Fatalf("status = %s", got[0].Description[0].Kind())
 	}
 }

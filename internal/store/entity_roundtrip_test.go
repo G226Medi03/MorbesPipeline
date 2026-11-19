@@ -2,11 +2,12 @@ package store
 
 import (
 	"context"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
-	"github.com/G226Medi03/SourceEntity"
 	"path/filepath"
 	"testing"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func TestTypedStoreRoundTrip(t *testing.T) {
@@ -20,23 +21,21 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 	if err := st.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	sources := []source.Source{{SourceID: source.NewSourceId(1)}}
-	container, err := st.LoadGraph()
+	entityStore, err := st.Entities()
 	if err != nil {
-		t.Fatalf("LoadGraph: %v", err)
+		t.Fatalf("Entities: %v", err)
 	}
+	sources := []source.Source{{SourceID: source.NewSourceId(1)}}
 	status := repo.HaveDisease{Disease: repo.EDisease("고혈압")}
-	statusID, err := st.EnsureStatusIn(container, status, source.NewSourceId(1))
-	if err != nil {
-		t.Fatalf("EnsureStatusIn: %v", err)
+	if _, err := entityStore.InsertStatus(status, []source.SourceId{source.NewSourceId(1)}); err != nil {
+		t.Fatalf("InsertStatus: %v", err)
 	}
 	action := repo.CauseStatus{Status: status}
-	actionID, err := st.EnsureActionIn(container, action, source.NewSourceId(1))
-	if err != nil {
-		t.Fatalf("EnsureActionIn: %v", err)
+	if _, err := entityStore.InsertAction(action, nil, []source.SourceId{source.NewSourceId(1)}); err != nil {
+		t.Fatalf("InsertAction: %v", err)
 	}
-	if err := st.LinkStatusActionIn(container, statusID, actionID); err != nil {
-		t.Fatalf("LinkStatusActionIn: %v", err)
+	if err := entityStore.LinkStatusAction(status, action, source.NewSourceId(1)); err != nil {
+		t.Fatalf("LinkStatusAction: %v", err)
 	}
 	procedureID, err := st.SaveProcedure(repo.Surgery{Name: "기관절개술"}, nil, sources)
 	if err != nil {
@@ -47,11 +46,17 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 	); err != nil {
 		t.Fatalf("SaveMedicalProcedureOptionByValues: %v", err)
 	}
-	loaded, err := st.LoadGraph()
-	if err != nil {
-		t.Fatalf("LoadGraph: %v", err)
+	if _, err := entityStore.GetStatus(status); err != nil {
+		t.Fatalf("GetStatus: %v", err)
 	}
-	if len(loaded.Statuses) != 1 || len(loaded.Actions) != 1 || len(loaded.MedicalProcedureOptionsAll) != 1 {
-		t.Fatalf("graph = statuses:%d actions:%d options:%d", len(loaded.Statuses), len(loaded.Actions), len(loaded.MedicalProcedureOptionsAll))
+	if _, err := entityStore.GetAction(action); err != nil {
+		t.Fatalf("GetAction: %v", err)
+	}
+	links, err := entityStore.ActionsResultingInStatus(status)
+	if err != nil {
+		t.Fatalf("ActionsResultingInStatus: %v", err)
+	}
+	if len(links) != 0 {
+		t.Fatalf("ActionsResultingInStatus = %d, want 0", len(links))
 	}
 }

@@ -24,17 +24,15 @@ type CaseExtraction struct {
 type ActorDraft = morbesllm.ActorDraft
 
 type StatusDraft struct {
-	Key      string          `json:"key"`
-	Kind     string          `json:"kind"`
-	Value    json.RawMessage `json:"value"`
-	SourceID source.SourceId `json:"sourceId,omitempty"`
+	Key      string
+	Value    repo.IEStatus
+	SourceID source.SourceId
 }
 
 type ActionDraft struct {
-	Key      string          `json:"key"`
-	Variant  string          `json:"variant"`
-	Value    json.RawMessage `json:"value"`
-	SourceID source.SourceId `json:"sourceId,omitempty"`
+	Key      string
+	Value    repo.IEAction
+	SourceID source.SourceId
 }
 
 type RelationDraft struct {
@@ -45,13 +43,13 @@ type RelationDraft struct {
 }
 
 type OptionDraft struct {
-	Key              string          `json:"key"`
-	Category         string          `json:"category"`
-	Traits           []string        `json:"traits"`
-	MedicalProcedure json.RawMessage `json:"medicalProcedure"`
-	Indications      []string        `json:"indications"`
-	ExpectedEffects  []string        `json:"expectedEffects,omitempty"`
-	SourceID         source.SourceId `json:"sourceId,omitempty"`
+	Key              string
+	Category         string
+	Traits           []string
+	MedicalProcedure repo.IMedicalProcedure
+	Indications      []string
+	ExpectedEffects  []string
+	SourceID         source.SourceId
 }
 
 type PatientDescriptionDraft struct {
@@ -61,32 +59,117 @@ type PatientDescriptionDraft struct {
 	SourceID    source.SourceId `json:"sourceId,omitempty"`
 }
 
-func parseStatusDraft(draft StatusDraft) (repo.IEStatus, error) {
-	payload := map[string]any{}
-	if len(draft.Value) > 0 {
-		if err := json.Unmarshal(draft.Value, &payload); err != nil {
-			return nil, err
-		}
-	}
-	payload["kind"] = draft.Kind
-	encoded, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	return entityjson.DecodeStatus(encoded)
+type statusDraftJSON struct {
+	Key      string          `json:"key"`
+	Kind     string          `json:"kind"`
+	Value    json.RawMessage `json:"value"`
+	SourceID source.SourceId `json:"sourceId,omitempty"`
 }
 
-func parseActionDraft(draft ActionDraft) (repo.IEAction, error) {
-	payload := map[string]any{}
-	if len(draft.Value) > 0 {
-		if err := json.Unmarshal(draft.Value, &payload); err != nil {
-			return nil, err
-		}
-	}
-	payload["kind"] = draft.Variant
-	encoded, err := json.Marshal(payload)
+func (draft StatusDraft) MarshalJSON() ([]byte, error) {
+	value, err := entityjson.EncodeStatus(draft.Value)
 	if err != nil {
 		return nil, err
 	}
-	return entityjson.DecodeAction(encoded)
+	return json.Marshal(statusDraftJSON{
+		Key:      draft.Key,
+		Kind:     draft.Value.Kind(),
+		Value:    value,
+		SourceID: draft.SourceID,
+	})
+}
+
+func (draft *StatusDraft) UnmarshalJSON(data []byte) error {
+	var encoded statusDraftJSON
+	if err := json.Unmarshal(data, &encoded); err != nil {
+		return err
+	}
+	value, err := entityjson.DecodeStatus(encoded.Value)
+	if err != nil {
+		return err
+	}
+	draft.Key = encoded.Key
+	draft.Value = value
+	draft.SourceID = encoded.SourceID
+	return nil
+}
+
+type actionDraftJSON struct {
+	Key      string          `json:"key"`
+	Variant  string          `json:"variant"`
+	Value    json.RawMessage `json:"value"`
+	SourceID source.SourceId `json:"sourceId,omitempty"`
+}
+
+func (draft ActionDraft) MarshalJSON() ([]byte, error) {
+	value, err := entityjson.EncodeAction(draft.Value)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(actionDraftJSON{
+		Key:      draft.Key,
+		Variant:  draft.Value.Kind(),
+		Value:    value,
+		SourceID: draft.SourceID,
+	})
+}
+
+func (draft *ActionDraft) UnmarshalJSON(data []byte) error {
+	var encoded actionDraftJSON
+	if err := json.Unmarshal(data, &encoded); err != nil {
+		return err
+	}
+	value, err := entityjson.DecodeAction(encoded.Value)
+	if err != nil {
+		return err
+	}
+	draft.Key = encoded.Key
+	draft.Value = value
+	draft.SourceID = encoded.SourceID
+	return nil
+}
+
+type optionDraftJSON struct {
+	Key              string          `json:"key"`
+	Category         string          `json:"category"`
+	Traits           []string        `json:"traits"`
+	MedicalProcedure json.RawMessage `json:"medicalProcedure"`
+	Indications      []string        `json:"indications"`
+	ExpectedEffects  []string        `json:"expectedEffects,omitempty"`
+	SourceID         source.SourceId `json:"sourceId,omitempty"`
+}
+
+func (draft OptionDraft) MarshalJSON() ([]byte, error) {
+	value, err := entityjson.EncodeProcedure(draft.MedicalProcedure)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(optionDraftJSON{
+		Key:              draft.Key,
+		Category:         draft.Category,
+		Traits:           draft.Traits,
+		MedicalProcedure: value,
+		Indications:      draft.Indications,
+		ExpectedEffects:  draft.ExpectedEffects,
+		SourceID:         draft.SourceID,
+	})
+}
+
+func (draft *OptionDraft) UnmarshalJSON(data []byte) error {
+	var encoded optionDraftJSON
+	if err := json.Unmarshal(data, &encoded); err != nil {
+		return err
+	}
+	value, err := entityjson.DecodeProcedure(encoded.MedicalProcedure)
+	if err != nil {
+		return err
+	}
+	draft.Key = encoded.Key
+	draft.Category = encoded.Category
+	draft.Traits = encoded.Traits
+	draft.MedicalProcedure = value
+	draft.Indications = encoded.Indications
+	draft.ExpectedEffects = encoded.ExpectedEffects
+	draft.SourceID = encoded.SourceID
+	return nil
 }
