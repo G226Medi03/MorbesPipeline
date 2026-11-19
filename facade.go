@@ -17,7 +17,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
-	persistence "github.com/G226Medi03/MorbesPipeline/internal/store"
+	persistence "github.com/G226Medi03/MorbesPipeline/internal/store/core"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
