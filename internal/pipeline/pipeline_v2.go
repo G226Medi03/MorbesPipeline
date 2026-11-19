@@ -10,6 +10,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
+	presolve "github.com/G226Medi03/MorbesPipeline/internal/pipeline/resolve"
 	source "github.com/G226Medi03/SourceEntity"
 	clog "github.com/G226Medi03/log-sqlite"
 )
@@ -99,7 +100,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for index, draft := range state.Extraction.Actors {
-		actor, err := self.resolve_actor(draft)
+		actor, err := presolve.Actor(draft)
 		if err != nil {
 			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
@@ -230,7 +231,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	}
 
 	for _, actor := range infusion_actors {
-		if err := self.ensure_infusion_option(actor.name, actor.sources); err != nil {
+		if err := presolve.EnsureInfusionOption(self.store, actor.name, actor.sources); err != nil {
 			clog.Warn("case extraction infusion option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("name", actor.name), clog.AttrOf("error", err))
 		}
 	}
@@ -288,41 +289,6 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		}
 	}
 	return resolved, nil
-}
-
-func (self *Service) resolve_actor(draft ActorDraft) (repo.IEActor, error) {
-	name := strings.TrimSpace(draft.Name)
-	if name == "" {
-		return nil, nil
-	}
-	if repo.ParseActorKind(string(draft.Kind)) == repo.ActorKindDevice {
-		return repo.NewDevice(name), nil
-	}
-	return repo.NewUnknownActor(name), nil
-}
-
-func (self *Service) ensure_infusion_option(name string, sources []source.Source) error {
-	name = strings.TrimSpace(name)
-	if name == "" || len(sources) == 0 {
-		return nil
-	}
-	procedure := repo.Infuse{
-		Material: repo.NewUnknownActor(name),
-		Route:    repo.InfuseRouteUnknown,
-	}
-	if _, err := self.store.SaveProcedure(procedure, nil, sources); err != nil {
-		return err
-	}
-	_, err := self.store.SaveMedicalProcedureOptionByValues(
-		procedure,
-		"treatment",
-		nil,
-		nil,
-		nil,
-		nil,
-		sources,
-	)
-	return err
 }
 
 func (self *Service) load_case_extraction(id domain.CaseID, state *pipelineState) error {
