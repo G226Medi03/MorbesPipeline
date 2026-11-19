@@ -6,6 +6,7 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	pllm "github.com/G226Medi03/MorbesPipeline/internal/pipeline/llm"
 	"github.com/G226Medi03/MorbesPipeline/internal/store"
 	core "github.com/G226Medi03/PipeLineCore"
 	sourceentity "github.com/G226Medi03/SourceEntity"
@@ -23,11 +24,11 @@ type Dependencies struct {
 }
 
 type Service struct {
-	ctx              context.Context
-	store            *store.StoreContainer
-	llm              *morbesllm.Service
-	llmExtraction    *morbesllm.ExtractionRunner
-	question_store   QuestionStore
+	ctx            context.Context
+	store          *store.StoreContainer
+	llm            *morbesllm.Service
+	llmExtraction  *morbesllm.ExtractionRunner
+	question_store QuestionStore
 
 	replay_live        *cllmcall.Client
 	replay_live_stages map[string]bool
@@ -84,7 +85,7 @@ func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
 			extract,
 			deps.Store,
 			deps.Store,
-			llmLogger{},
+			pllm.Logger{},
 		)
 		if err != nil {
 			return nil, err
