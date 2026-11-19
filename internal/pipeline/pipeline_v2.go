@@ -32,7 +32,7 @@ func (self *Service) run_case_extraction_node(ctx context.Context, id domain.Cas
 		return err
 	}
 	output := caseExtractionStepOutput{QuestionType: string(state.QuestionType), CaseExtraction: state.Extraction}
-	return self.store.FinishStep(step_id, "succeeded", encode_json(output), "", 0)
+	return self.store.FinishStep(step_id, "succeeded", marshal_json(output), "", 0)
 }
 
 func (self *Service) run_resolve_node(ctx context.Context, id domain.CaseID, state *pipelineState) (err error) {
@@ -60,7 +60,7 @@ func (self *Service) run_resolve_node(ctx context.Context, id domain.CaseID, sta
 	state.Statuses = resolved.Statuses
 	state.Actions = resolved.Actions
 	state.PatientDescriptions = resolved.PatientDescriptions
-	return self.store.FinishStep(step_id, "succeeded", encode_json(resolveStepOutput{Resolved: resolved}), "", 0)
+	return self.store.FinishStep(step_id, "succeeded", marshal_json(resolveStepOutput{Resolved: resolved}), "", 0)
 }
 
 func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCaseExtraction, error) {

@@ -2,10 +2,8 @@ package store
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
-	"sort"
-	"strings"
+		"fmt"
+		"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
@@ -292,7 +290,7 @@ func (s *StoreContainer) symptomIDForValue(value repo.IESymptom) (int64, error) 
 		return s.symptomIDByName(typed.Name)
 	case repo.EPain:
 		siteKind, siteName := painSite(typed.Site)
-		aspects, err := marshalPainAspects(typed.Aspects)
+		aspects, err := repo.EncodePainAspects(typed.Aspects)
 		if err != nil {
 			return 0, err
 		}
@@ -321,41 +319,4 @@ func painSite(value repo.IEActor) (string, string) {
 		return "", ""
 	}
 	return string(repo.ParseActorKind(value.Kind())), value.ActorName()
-}
-
-type painAspectDocument struct {
-	Kind    string `json:"kind"`
-	Value   string `json:"value,omitempty"`
-	Measure string `json:"measure,omitempty"`
-	Name    string `json:"name,omitempty"`
-}
-
-func marshalPainAspects(aspects []repo.IPainAspect) (string, error) {
-	documents := make([]painAspectDocument, 0, len(aspects))
-	for _, aspect := range aspects {
-		switch typed := aspect.(type) {
-		case repo.SymptomDuration:
-			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Value: typed.Value, Measure: typed.Measure})
-		case repo.Intensity:
-			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Value: typed.Value, Measure: typed.Measure})
-		case repo.Quality:
-			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Name: typed.Name})
-		case repo.Radiation:
-			documents = append(documents, painAspectDocument{Kind: typed.Kind(), Name: typed.Name})
-		default:
-			return "", fmt.Errorf("지원하지 않는 pain aspect 타입입니다: %T", aspect)
-		}
-	}
-	sort.SliceStable(documents, func(i, j int) bool {
-		return painAspectDocumentKey(documents[i]) < painAspectDocumentKey(documents[j])
-	})
-	encoded, err := json.Marshal(documents)
-	if err != nil {
-		return "", err
-	}
-	return string(encoded), nil
-}
-
-func painAspectDocumentKey(document painAspectDocument) string {
-	return document.Kind + "\x1f" + document.Value + "\x1f" + document.Measure + "\x1f" + document.Name
 }

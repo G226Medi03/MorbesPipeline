@@ -2,8 +2,7 @@ package store
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
+		"fmt"
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
@@ -196,52 +195,6 @@ func (s *StoreContainer) merge_status_references(sourceID, targetID int64) error
 	if _, err := s.ExecContext(s.ctx, `
 		DELETE FROM status_other_name WHERE status_id = ?`, sourceID); err != nil {
 		return err
-	}
-	rows, err := s.QueryContext(s.ctx, `
-		SELECT medical_procedure_option_id, indication_status_ids_json FROM medical_procedure_options`)
-	if err != nil {
-		return err
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	type update struct {
-		id     int64
-		values []int64
-	}
-	updates := make([]update, 0)
-	for rows.Next() {
-		var id int64
-		var raw string
-		if err := rows.Scan(&id, &raw); err != nil {
-			return err
-		}
-		var values []int64
-		if err := json.Unmarshal([]byte(raw), &values); err != nil {
-			return err
-		}
-		changed := false
-		for index, value := range values {
-			if value == sourceID {
-				values[index] = targetID
-				changed = true
-			}
-		}
-		if changed {
-			updates = append(updates, update{id: id, values: values})
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	for _, item := range updates {
-		encoded, err := json.Marshal(item.values)
-		if err != nil {
-			return err
-		}
-		if _, err := s.ExecContext(s.ctx,
-			`UPDATE medical_procedure_options SET indication_status_ids_json = ? WHERE medical_procedure_option_id = ?`,
-			string(encoded), item.id); err != nil {
-			return err
-		}
 	}
 	return nil
 }

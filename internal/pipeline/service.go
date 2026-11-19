@@ -48,7 +48,7 @@ func (recorder extractionCallRecorder) RecordExtractionCall(call morbesllm.Extra
 		PromptVersion: call.PromptVersion,
 		Prompt:        call.Prompt,
 		RawOutput:     call.RawOutput,
-		ParsedOutput:  encode_json(call.ParsedOutput),
+		ParsedOutput:  marshal_json(call.ParsedOutput),
 		SourceID:      call.SourceID,
 		RespID:        call.RespID,
 		State:         call.State,
