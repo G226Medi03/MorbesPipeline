@@ -1,102 +1,80 @@
 # MorbesPipeline 문서
 
 MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go 모듈이다.
-문제에서 임상 소견을 추출하고 `MedicalEntityRepository`로 저장한 뒤,
-저장된 상태/행동 인과 링크에서 원인 후보를 계산해 `solve_cases.answer_json`에 답을 남긴다.
+
+```text
+LLM extraction
+  -> DTO
+  -> Entity
+  -> SQLite
+  -> postprocess
+  -> cause trace
+  -> answer JSON
+```
 
 ## 문서 지도
 
 | 문서 | 내용 |
 | --- | --- |
-| [packages.md](packages.md) | 현재 패키지 구조와 책임 |
-| [pr-guide.md](pr-guide.md) | 브랜치 생성, 검증, PR 생성 절차 |
-| [importlint.md](importlint.md) | 금지 dependency와 direct import 규칙 |
-| [plans/2026-11-14-json-encode-removal.md](plans/2026-11-14-json-encode-removal.md) | encode/JSON 제거 계획 |
-| [sync/README.md](sync/README.md) | 참조 GitHub repo별 동기화 현황 |
-| [pipeline.md](pipeline.md) | solve 노드, checkpoint, replay |
-| [extraction-llm.md](extraction-llm.md) | 프롬프트, LLM 캐시, 추출 단계 |
-| [domain-model.md](domain-model.md) | Case/Step/LLMCall, typed entity, trait |
-| [persistence.md](persistence.md) | SQLite 스키마와 인과 링크 |
-
-> `architecture.md`, `pipeline.md`, `extraction-llm.md`, `domain-model.md`,
-> `persistence.md`는 리팩터링 이전의 세부 설명을 일부 포함한다. 최신 패키지
-> 경계는 [packages.md](packages.md)와 [sync/README.md](sync/README.md)를 기준으로 한다.
+| [project-structure.md](project-structure.md) | 현재 프로젝트 구조와 package 책임 |
+| [architecture.md](architecture.md) | 계층과 dependency direction |
+| [pipeline.md](pipeline.md) | solve node, checkpoint, replay |
+| [persistence.md](persistence.md) | SQLite 저장 구조 |
+| [extraction-llm.md](extraction-llm.md) | LLM Output → DTO → Entity |
+| [domain-model.md](domain-model.md) | Case, Step, LLMCall, entity |
+| [pr-guide.md](pr-guide.md) | branch, 검증, PR 절차 |
+| [importlint.md](importlint.md) | dependency / import 규칙 |
+| [sync/README.md](sync/README.md) | upstream repo 동기화 |
+| [archive/plans/2026-11-14-json-encode-removal.md](archive/plans/2026-11-14-json-encode-removal.md) | 완료된 encode 제거 계획 |
 
 ## 30초 요약
 
-1. 외부 앱은 루트 패키지 `morbes` 하나만 import한다.
-2. `morbes.NewStore(ctx, db)`로 저장소를 만들고 `InitSchema()`를 호출한다.
-3. `morbes.NewService(ctx, morbes.Dependencies{...})`로 solve 서비스를 만든다.
-4. `Service.Run(ctx, caseID)`가 solve 파이프라인을 실행한다.
-5. typed draft는 MedicalEntity로 저장되고, postprocess 후 reverse link로 원인 후보를 추적한다.
-6. 결과는 `solve_cases.answer_json`에 저장된다.
+1. 외부 앱은 root package `morbes` 하나만 import한다.
+2. `morbes.NewStore(ctx, db)`로 store를 만들고 `InitSchema()`를 호출한다.
+3. `morbes.NewService`로 pipeline service를 만든다.
+4. `Service.Run(ctx, caseID)`가 solve pipeline을 실행한다.
+5. LLM extraction 결과는 DTO를 거쳐 Entity로 저장된다.
+6. postprocess 후 reverse link로 cause 후보를 추적한다.
 
-## 패키지 구조
+## 현재 구조
 
 ```text
 .
-├── facade.go                  # 공개 facade (package morbes_pipeline)
-│
-└── internal/
-    ├── pipeline/              # solve 오케스트레이션 (package csolve)
-    ├── store/                 # SQLite 저장소 (package store)
-    │   ├── solve/
-    │   ├── option/
-    │   ├── benchmark/
-    │   └── postprocess/
-    ├── tracing/
-    │   └── cause/             # 원인 추적 (package ccause)
-    ├── domain/
-    │   ├── solve/             # Case/Step/Stage/Question (package domain)
-    │   │   └── model/
-    │   ├── entityjson/
-    │   ├── entitykey/
-    │   ├── procedureoption/
-    │   ├── patient/
-    │   ├── situation/
-    │   ├── label/
-    │   └── trait/
-    ├── support/
-    │   ├── ids/
-    │   ├── logconfig/
-    │   └── sliceutil/
-    └── testdb/
-
-tools/
-└── importlint/                # A→B→C dependency linter
+├── facade.go
+├── internal/
+│   ├── pipeline/
+│   │   ├── orchestration/
+│   │   ├── checkpoint/
+│   │   ├── input/
+│   │   ├── llm/
+│   │   ├── resolve/
+│   │   ├── postprocess/
+│   │   └── selection/
+│   ├── store/
+│   │   ├── core/
+│   │   ├── entity/
+│   │   ├── read/
+│   │   ├── source/
+│   │   ├── solve/
+│   │   ├── benchmark/
+│   │   ├── postprocess/
+│   │   └── migration/
+│   ├── domain/
+│   ├── tracing/
+│   ├── support/
+│   └── testdb/
+├── tools/importlint/
+└── docs/
 ```
 
-## 공개 API 사용
-
-```go
-import morbes "github.com/G226Medi03/MorbesPipeline"
-
-store := morbes.NewStore(ctx, db)
-if err := store.InitSchema(); err != nil {
-    return err
-}
-
-svc, err := morbes.NewService(ctx, morbes.Dependencies{
-    Store: store,
-    Solver: solver,
-    ExtractLLM: extractor,
-})
-if err != nil {
-    return err
-}
-
-err = svc.Run(ctx, caseID)
-```
+자세한 내용은 [project-structure.md](project-structure.md)를 참고한다.
 
 ## 검증
 
 ```powershell
 go build ./...
-go test ./...
 go vet ./...
-```
-
-```powershell
-python D:\Coding\MedicalEntity\line_count.py . go
-python D:\Coding\MedicalEntity\line_count.py . go --no-blank --no-comment
+go test ./... -count=1
+go run ./tools/importlint --config importlint.json -v
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint.ps1
 ```

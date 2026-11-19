@@ -7,17 +7,17 @@
 
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
-| 1 | `MedicalEntity` | `v0.16.1` | `MedicalEntityRepository/repo` facade 경유 | 직접 import 제거 |
-| 2 | `MedicalEntityParser` | `v0.5.0` | `internal/domain/entityjson` | parser 경계 격리 |
-| 3 | `SourceEntity` | `v0.4.1` | `internal/store/source.go` | 동기화 완료 |
-| 4 | `SourceEntityRepository` | `v0.3.1` | `internal/store/source.go` | 동기화 완료 |
-| 5 | `SQLCore` | `v0.2.0` | `internal/store`, `internal/store/*` | 동기화 완료 |
-| 6 | `MedicalEntityRepository` | `v0.11.1` | `repo` facade + `internal/store/entity*.go`, `internal/store/option` | graph container 제거 |
-| 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/pipeline/pipeline_nodes.go`, `internal/pipeline/service.go` | 동기화 완료 |
-| 8 | `llm-client` | `v0.5.0` | `internal/pipeline` | `*call.Client` 직접 사용 |
+| 1 | `MedicalEntity` | `v0.17.0` | `MedicalEntityRepository/repo` facade 경유 | option ename 추가 |
+| 2 | `MedicalEntityParser` | `v0.6.1` | `internal/pipeline/llm`, `internal/pipeline/resolve` | DTO decode + Entity 변환 |
+| 3 | `SourceEntity` | `v0.4.1` | `internal/store/core`, `internal/store/source` | 동기화 완료 |
+| 4 | `SourceEntityRepository` | `v0.3.1` | `internal/store/core`, `internal/store/source` | 동기화 완료 |
+| 5 | `SQLCore` | `v0.2.0` | `internal/store/core`, `internal/store/*` | 동기화 완료 |
+| 6 | `MedicalEntityRepository` | `v0.12.1` | `repo` facade + `internal/store/core`, `internal/store/entity` | option DB 이관 |
+| 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/pipeline/orchestration` | 동기화 완료 |
+| 8 | `llm-client` | `v0.5.0` | `internal/pipeline/orchestration` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logconfig` + direct import | 동기화 완료 |
 | 10 | `go-duration` | `v0.1.0` | `MorbesLLMService` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLMService` | `v0.11.1` | prompt 소유, typed extraction, replay | 동기화 완료 |
+| 11 | `MorbesLLMService` | `v0.14.0` | extraction DTO, prompt, cache, replay | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -39,14 +39,20 @@
 ## 2. MedicalEntityParser
 
 - 사용 API:
-  - `DecodeStatuses`
-  - `DecodeActions`
+  - `DecodeStatusDTOs`
+  - `DecodeActionDTOs`
+  - `DecodeSymptomDTO`
+  - `DecodeProcedureDTO`
+  - `DecodeActorItemDTOs`
+  - `DecodeRelationDTOs`
+  - `StatusFromDTO`, `ActionFromDTO`, `ProcedureFromDTO`
 - 대응 패키지:
-  - `internal/domain/entityjson`
+  - `internal/pipeline/llm`
+  - `internal/pipeline/resolve`
 - 확인:
-  - parser direct import는 `entityjson`에만 격리
-  - `internal/pipeline` parser direct import 0건
-  - typed status/action 결과를 domain 값으로 변환
+  - LLM output -> DTO -> Entity 흐름
+  - parser direct import는 pipeline helper에 격리
+  - local entityjson codec 제거
 
 ## 3. SourceEntity / SourceEntityRepository
 
@@ -68,9 +74,8 @@
   - `sqlite.TableExists`
   - `sqlite.EnsureRenamedColumn`
 - 대응 패키지:
-  - `internal/store`
+  - `internal/store/core`
   - `internal/store/solve`
-  - `internal/store/option`
   - `internal/store/benchmark`
 - 확인:
   - `*sql.DB`/`*sql.Tx` executor 호환
@@ -93,13 +98,11 @@
   - `StatusKind`, `ActionKind`, `ActorKind`, `ProcedureKind`
   - `InfuseRoute`
 - 대응 패키지:
-  - `internal/store/entity.go`
-  - `internal/store/entity_id.go`
-  - `internal/store/entity_link.go`
-  - `internal/store/entity_read.go`
-  - `internal/store/option/*`
+  - `internal/store/core`
+  - `internal/store/entity`
+  - `internal/store/read`
 - 확인:
-  - v0.11.1 pain schema 반영 (`symptom_pain`, `symptom_other`)
+  - v0.12.1 pain schema 반영 (`symptom_pain`, `symptom_other`)
   - `EPain.Site` + `[]IPainAspect`
   - `repo.ErrNotFound` 사용
   - `ActionsResultingInStatus`, `StatusesCausingAction`, `ActorsCausingAction` 기반 cause tracing

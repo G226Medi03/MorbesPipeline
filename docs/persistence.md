@@ -1,293 +1,87 @@
-# 영속성 구조
+# Persistence
 
-## 두 계층
+## 구조
 
-| 계층 | 패키지 | 역할 |
-| --- | --- | --- |
-| 포트 | `ports` | 파이프라인이 요구하는 저장소 인터페이스 |
-| 어댑터 | `store` | SQLite 구현, 스키마 초기화, 트랜잭션, 확장 조회 |
-
-파이프라인은 `ports.Store`만 알고, 실제 DB는 `store.Store`가 담당한다.
-웹/CLI 계층은 `ports.Store`보다 넓은 `store.Store` API를 직접 사용할 수 있다.
-
-## `ports.Store`
-
-`ports/store.go`의 인터페이스는 다음 그룹으로 나눌 수 있다.
-
-### case
-
-- `Get(id) (domain.Case, bool, error)`
-- `SetStage`, `SetRunning`, `SetFailed`, `SetAnswer`, `SetQuestionType`, `SetSource`
-- `ResetCaseForReplay(id, mode, fromNode, keepCalls)`
-
-### step
-
-- `StartStep(caseID, node, promptVersion) (SolveStepID, error)`
-- `FinishStep(id, state, outputJSON, message, callID)`
-- `GetStep(caseID, node) (Step, bool, error)`
-- `ResetSteps(caseID)`
-- `MarkDownstreamStale(caseID, fromNode)`
-
-### LLM
-
-- `AppendLLMCall`, `ListLLMCalls`, `DeleteLLMCallsByStage`
-- `FindLlmResponse`
-- `GetOrInsertLlmResponse`
-- `RefreshLlmResponse`
-
-### 의료 엔티티 저장
-
-- `SaveAction`
-- `SaveDevice`
-- `SaveUnknownActor`
-- `SaveMedicalProcedureOption`
-- `LinkStatusAction`
-- `LinkActionResultStatus`
-- `SaveDisease`, `SaveIndex`, `SaveSymptom`, `SaveStatus`
-- `SaveProcedureWithTraits`
-
-### 프롬프트
-
-- `GetPrompt(stage) (template string, version int, error)`
-
-### 인과 링크
-
-- `LinkStatusActionValues`, `DeleteStatusActionValues`
-- `LinkActionResultStatusValues`, `DeleteActionResultStatusValues`
-- `AuditPostprocessStatus`, `AuditPostprocessAction`
-- `AuditPostprocessStatusAction`, `AuditPostprocessActionResultStatus`
-
-원인 추적은 `MedicalEntityRepository/repo.Store`의 다음 reverse API를 사용한다.
-
-- `ActionsResultingInStatus`
-- `StatusesCausingAction`
-- `ActorsCausingAction`
-
-## `store.Store`
-
-### 구성
-
-```go
-type Store struct {
-    ctx context.Context
-    db  *sql.DB
-    tx  *sql.Tx
-    mu  *sync.Mutex
-
-    sourceDB *sql.DB
-    sourceTx *sql.Tx
-    solveDB  *sql.DB
-    solveTx  *sql.Tx
-
-    StatusRepository    medicalentity.StatusRepository
-    ActionRepository    medicalentity.ActionRepository
-    ActorRepository     medicalentity.ActorRepository
-    DiseaseRepository   medicalentity.DiseaseRepository
-    IndexRepository     medicalentity.IndexRepository
-    SymptomRepository   medicalentity.SymptomRepository
-    ProcedureRepository medicalentity.ProcedureRepository
-
-    OptionRepository      medicalprocedureoption.Repository
-    SourceRepository      storesource.Repository
-    SolveRepository       storesolve.Repository
-    PostprocessRepository postprocess.Repository
-}
+```text
+internal/store/
+  core/
+  entity/
+  read/
+  source/
+  solve/
+  benchmark/
+  postprocess/
+  migration/
 ```
 
-- `New(ctx, db)`: medical/source/solve를 한 DB로 사용
-- `NewWithDBs(ctx, medicalDB, sourceDB, solveDB)`: DB 분리
-- `bind()`: 모든 repository를 현재 executor에 연결
-- `WithTx`, `WithSourceTx`, `WithSolveTx`: 트랜잭션 복제본 생성
-- `lockWrite()`: 애플리케이션 쓰기를 직렬화. LLM 호출처럼 긴 작업은 락 밖에 둔다.
+## StoreContainer
 
-### 스키마 초기화
-
-`InitSchema()` 순서:
-
-1. `migrateLegacyMedicalSchema`: 레거시 테이블/컬럼 이름 변경
-2. `medicalentity.InitSchema`: MedicalEntity 엔티티/연결 테이블
-3. `OptionRepository.Init`: 선택지 테이블
-4. `SourceRepository.Init`: source/LLM 응답 테이블
-5. `SolveRepository.Init`: solve 테이블
-6. `ensure_llm_problem_results`: 벤치마크 결과 테이블
-7. `ensure_status_other_name`: 상태 다른 이름 테이블
-8. `ensure_entity_sources`: 일반 엔티티-source 매핑
-9. `ensure_solve_id_columns`: solve 테이블의 `id` → `*_id` 컬럼명 변경
-10. `validateKindPtr`: kind/ptr 무결성 검사
-
-### 주요 테이블
-
-#### MedicalEntity 계층
-
-`medicalentity.InitSchema`가 관리한다.
-
-- 엔티티: `eactor`, `estatus`, `eaction`, `emedical_procedure`,
-  `edisease`, `eindex`, `esymptom`
-- 관계: `status_actions`, `action_result_statuses`, `actor_actions`
-- source: `status_sources`, `action_sources`, `actor_sources`,
-  `procedure_sources`, `disease_sources`, `index_sources`, `symptom_sources`
-- 하위 타입: `status_*`, `action_*`, `actor_*`, `procedure_*`
-  (kind/ptr이 가리키는 실제 값 테이블)
-
-`validateKindPtr`는 kind와 ptr이 올바른 하위 타입 행을 가리키는지 검사한다.
-예: `estatus.kind='increased_index'`이면 `status_increased_index.id = estatus.ptr`.
-
-#### 선택지
-
-`store/medicalprocedureoption`:
-
-- `medical_procedure_options`
-  - `medical_procedure_option_id`, `emedical_procedure_id`, `category`,
-    `traits_json`, `context_traits_json`, `semantic_key`
-  - `semantic_key`는 procedure/category/traits/indications 조합으로 중복 저장을 막는다.
-- `medical_procedure_option_indications`
-- `medical_procedure_option_expected_effects`
-- `medical_procedure_option_sources`
-
-#### solve
-
-`store/solve`:
-
-| 테이블 | 내용 |
-| --- | --- |
-| `solve_cases` | 문제/정답/해설, 상태, stage, question type, source, replay 메타 |
-| `solve_steps` | node별 체크포인트, `output_json`, `prompt_version`, 상태 |
-| `solve_llm_calls` | LLM 호출/응답, stage, seq, source/resp, duration |
-| `solve_prompt_versions` | stage별 프롬프트 템플릿/버전 |
-| `solve_answer_checks` | 답안 검증 결과 |
-
-`SolveRepository`는 `Case`, `Step`, `Call`, `Prompt`, `AnswerCheck` 테이블을 묶는다.
-
-#### 보조
-
-- `llm_problem_results`: 벤치마크 결과. `store/benchmarkresult`
-- `entity_sources`: `(entity_kind, entity_id, source_id)` 일반 매핑
-- `status_other_name`: 상태 엔티티의 다른 이름/별칭
-
-#### source
-
-`SourceEntityRepository`가 source와 LLM 응답 테이블을 관리한다.
-`store/source.go`가 다음을 감싼다.
-
-- `GetSource`, `EnsureSource`
-- `GetLlmResponseRow`
-- `FindLlmResponse`
-- `GetOrInsertLlmResponse`
-- `RefreshLlmResponse`
-- `TraceSource`
-
-## 쓰기 경로
-
-### status
-
-`SaveStatus`:
-
-1. `Status.Validate()` (variant + source)
-2. 레거시 값 → MedicalEntity status 변환
-3. `StatusRepository.Insert`
-4. `validateKindPtr("estatus")`
-5. 저장된 status를 로컬 DTO로 변환
-
-### action
-
-`SaveAction`:
-
-- `cause_status`는 status ID를 분리해 `action_cause_status`와 연결한다.
-- 그 외 action은 MedicalEntity action repository에 저장한다.
-- 저장 후 source와 결과 상태 링크를 관리한다.
-
-### actor
-
-- `SaveDevice` → `eactor(kind=device)` + device 하위 테이블
-- `SaveUnknownActor` → `eactor(kind=unknown_actor)` + unknown 하위 테이블
-- `AddActorOtherName`, `LinkActorAction`으로 별칭/행동 연결
-
-### procedure
-
-- `CanonicalizeProcedure`가 만든 payload를 `SaveProcedureWithTraits`로 저장
-- intrinsic trait는 `emedical_procedure.traits_json`에 저장
-- transplant target이 unknown이면 `unresolved.go`의 조회/해결 API로 보정 가능
-
-### medical procedure option
-
-- `Validate`: procedure ID와 source 필수
-- category 정규화
-- `semantic_key` 기준 upsert/중복 방지
-- indication/expected effect/source를 별도 테이블에 교체 저장
-
-## 인과 링크 조회
-
-인메모리 그래프 컨테이너는 제거되었다.
-
-- postprocess는 현재 case의 typed status/action을 입력으로 사용한다.
-- cause tracing은 `repo.Store`의 reverse API를 직접 호출한다.
-  - `ActionsResultingInStatus(status)`
-  - `StatusesCausingAction(action)`
-  - `ActorsCausingAction(action)`
-- 링크 변경은 `internal/store/entity_link.go`의 typed helper를 사용한다.
-- postprocess audit은 `morbes_postprocesses`에 기록된다.
-
-## 트랜잭션과 동시성
-
-- 단일 `Store` 인스턴스는 `sync.Mutex`로 쓰기를 직렬화한다.
-- `WithTx`는 이미 트랜잭션 안이면 같은 트랜잭션을 그대로 전달한다.
-- `WithSourceTx`, `WithSolveTx`는 분리된 DB를 사용할 때 각각의 executor를 바꾼다.
-- `ExecContext`, `QueryContext`, `QueryRowContext`는 tx가 있으면 tx를 사용한다.
-- `RecoverInterrupted`는 `running` 상태로 남은 case/step을 실패로 정리한다.
-
-## 레거시 마이그레이션
-
-`migrateLegacyMedicalSchema`는 다음 이름을 새 스키마로 바꾼다.
-
-| 이전 | 이후 |
-| --- | --- |
-| `e_statuses` | `estatus` |
-| `e_actions` | `eaction` |
-| `actors` | `eactor` |
-| `eprocedure` | `emedical_procedure` |
-| `status_id` 컬럼 | `estatus_id` |
-| `action_id` 컬럼 | `eaction_id` |
-| `actor_id` 컬럼 | `eactor_id` |
-| `procedure_id` 컬럼 | `emedical_procedure_id` |
-
-또한 레거시 `medical_procedure_options`에 `indication_status_ids_json` 컬럼이
-있으면 `medical_procedure_options_legacy`로 이름을 바꿔 보존하고, 새 정규화
-테이블을 만든다.
-
-## 배선 예시
-
-```go
-db, err := sql.Open("sqlite", "morbes.db")
-if err != nil {
-    return err
-}
-st := store.New(ctx, db)
-if err := st.InitSchema(); err != nil {
-    return err
-}
-
-svc, err := csolve.New_Service(ctx, csolve.Dependencies{
-    Store:         st,
-    Solver:        solverLLM,
-    ExtractLLM:    extractLLM,
-    QuestionStore: questionStore,
-})
-if err != nil {
-    return err
-}
-
-if err := svc.Run(ctx, caseID); err != nil {
-    return err
-}
+```text
+internal/store/core/store.go
+  ctx
+  medical db/tx
+  source db/tx
+  solve db/tx
+  Medical *repo.Store
+  Source storesource.Repository
+  Solve storesolve.Repository
+  Postprocess storepostprocess.Repository
 ```
 
-- `store.New`은 테스트/CLI용 단일 DB 구성이다.
-- 서버에서 medical/source/solve를 분리하려면 `store.NewWithDBs`를 사용한다.
+## 주요 구성
 
-## 주의 지점
+```text
+core
+  InitSchema
+  transaction
+  entity ID/link/read SQL
+  solve/source access
 
-- `store/entity_neighbors.go`의 테이블 매핑은 `actors`, `e_actions`,
-  `e_statuses`, `eprocedure` 같은 레거시 이름을 사용한다. 초기 마이그레이션이
-  이 이름들을 바꾸므로, 이 API를 사용할 때는 실제 스키마와 매핑이 일치하는지
-  확인해야 한다.
-- 루트 `doc.go`는 초기 placeholder 문구를 그대로 담고 있다.
+entity
+  actor/trait helper
+
+read
+  read model types
+
+source
+  source/response trace
+
+solve
+  solve_cases, solve_steps, solve_llm_calls, answer checks
+
+benchmark
+  llm_problem_results
+
+postprocess
+  morbes_postprocesses
+
+migration
+  legacy schema rename
+```
+
+## 인과 링크
+
+```text
+ActionsResultingInStatus
+StatusesCausingAction
+ActorsCausingAction
+```
+
+## Postprocess audit
+
+```text
+morbes_postprocesses
+  postprocessor_name
+  operation
+  entity_type
+  entity_id
+  target_entity_type
+  target_entity_id
+  finished_at
+```
+
+## 관련 문서
+
+- [project-structure.md](project-structure.md)
+- [pipeline.md](pipeline.md)
+- [domain-model.md](domain-model.md)
