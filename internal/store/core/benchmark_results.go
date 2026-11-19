@@ -8,7 +8,6 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
 	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
-	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 type (
@@ -25,7 +24,7 @@ func (s *StoreContainer) GetProblemResultByID(ctx context.Context, id int64) (Pr
 	if err != nil || !found {
 		return ProblemResultRow{}, found, err
 	}
-	responses, err := storesource.LlmResponseTable{}.GetMany(
+	responses, err := s.Source.GetLlmResponses(
 		ctx, s.sourceExecutor(), []sourcedomain.RespId{sourcedomain.RespId(row.LLMResponseID)},
 	)
 	if err != nil {
@@ -147,7 +146,7 @@ func (s *StoreContainer) problem_result_response_ids(ctx context.Context, filter
 	var modelIDs []sourcedomain.RespId
 	if model != "" {
 		var err error
-		modelIDs, err = storesource.LlmResponseTable{}.IDsByModel(ctx, s.sourceExecutor(), model)
+		modelIDs, err = s.Source.LlmResponseIDsByModel(ctx, s.sourceExecutor(), model)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +154,7 @@ func (s *StoreContainer) problem_result_response_ids(ctx context.Context, filter
 	var errorIDs []sourcedomain.RespId
 	if filter.Error != nil {
 		var err error
-		errorIDs, err = storesource.LlmResponseTable{}.IDsByError(ctx, s.sourceExecutor(), *filter.Error)
+		errorIDs, err = s.Source.LlmResponseIDsByError(ctx, s.sourceExecutor(), *filter.Error)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +202,7 @@ func (s *StoreContainer) problem_result_responses(ctx context.Context, rows []be
 		seen[row.LLMResponseID] = struct{}{}
 		ids = append(ids, sourcedomain.RespId(row.LLMResponseID))
 	}
-	return storesource.LlmResponseTable{}.GetMany(ctx, s.sourceExecutor(), ids)
+	return s.Source.GetLlmResponses(ctx, s.sourceExecutor(), ids)
 }
 
 func (s *StoreContainer) problem_result_response_ids_map(ctx context.Context, ids []sourcedomain.RespId) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
@@ -211,7 +210,7 @@ func (s *StoreContainer) problem_result_response_ids_map(ctx context.Context, id
 	for _, id := range ids {
 		respIDs = append(respIDs, sourcedomain.RespId(id))
 	}
-	return storesource.LlmResponseTable{}.GetMany(ctx, s.sourceExecutor(), respIDs)
+	return s.Source.GetLlmResponses(ctx, s.sourceExecutor(), respIDs)
 }
 
 func composeProblemResult(row benchmarkresult.Row, response sourcedomain.LlmResponseRow) ProblemResultRow {

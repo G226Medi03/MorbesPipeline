@@ -16,6 +16,9 @@ func (s *StoreContainer) InitSchema() error {
 	if err := s.Postprocess.Init(); err != nil {
 		return err
 	}
+	if err := s.Source.Init(s.ctx, s.sourceExecutor()); err != nil {
+		return err
+	}
 	responseStore, err := responsestore.NewStore(s.ctx, s.sourceExecutor())
 	if err != nil {
 		return err

@@ -7,7 +7,6 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
-	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 // RecordPostprocess writes one postprocess audit row and returns the source
@@ -144,7 +143,7 @@ func (s *StoreContainer) AddPostprocessSource(
 	if !ok {
 		return fmt.Errorf("unsupported postprocess entity type: %s", entityType)
 	}
-	return storesource.AddSourceIDs(
+	return s.Source.AddSourceIDs(
 		s.ctx,
 		s.sourceExecutor(),
 		table,
