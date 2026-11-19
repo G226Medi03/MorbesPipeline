@@ -1,11 +1,8 @@
 package csolve
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	clog "github.com/G226Medi03/log-sqlite"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/prompt"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/trace"
 )
 
 const (
@@ -25,72 +22,18 @@ const (
 	seqCause                  = 60
 )
 
-type promptSet struct {
-	present  map[string]bool
-	versions map[string]int
-}
-
-func (self *Service) load_prompts() (promptSet, error) {
-	result := promptSet{
-		present:  make(map[string]bool, len(PromptStages())),
-		versions: make(map[string]int, len(PromptStages())),
-	}
-	for _, stage := range PromptStages() {
-		template, version, found, err := self.store.Prompt(stage)
-		if err != nil {
-			if stage == PromptActor || stage == PromptOtherNames || stage == PromptPatientDescription || stage == PromptQuestionType {
-				continue
-			}
-			return promptSet{}, err
-		}
-		if !found {
-			if stage == PromptActor || stage == PromptOtherNames || stage == PromptPatientDescription || stage == PromptQuestionType {
-				continue
-			}
-			return promptSet{}, fmt.Errorf("prompt %q is not configured", stage)
-		}
-		result.present[stage] = strings.TrimSpace(template) != ""
-		result.versions[stage] = version
-	}
-	return result, nil
+func (self *Service) load_prompts() (prompt.Set, error) {
+	return trace.LoadPrompts(self.store)
 }
 
 func (self *Service) record_call(call LLMCallInput) {
-	if call.State == "" {
-		call.State = "ok"
-	}
-	// cause_trace is deterministic graph work, not an LLM call. Replays should
-	// replace the previous trace record instead of accumulating one panel per run.
-	if call.Stage == "cause_trace" {
-		if err := self.store.DeleteLLMCallsByStage(call.CaseID, call.Stage); err != nil {
-			clog.Warn("solve llm call 이전 trace 삭제 실패",
-				clog.AttrOf("case", call.CaseID),
-				clog.AttrOf("stage", call.Stage),
-				clog.AttrOf("error", err))
-		}
-	}
-	if _, err := self.store.AppendLLMCall(call); err != nil {
-		clog.Warn("solve llm call 저장 실패",
-			clog.AttrOf("case", call.CaseID),
-			clog.AttrOf("stage", call.Stage),
-			clog.AttrOf("error", err))
-	}
+	trace.RecordCall(self.store, call)
 }
 
 func marshal_json(value any) string {
-	if value == nil {
-		return ""
-	}
-	encoded, err := json.Marshal(value)
-	if err != nil {
-		return ""
-	}
-	return string(encoded)
+	return trace.MarshalJSON(value)
 }
 
 func error_text(err error) string {
-	if err == nil {
-		return ""
-	}
-	return err.Error()
+	return trace.ErrorText(err)
 }

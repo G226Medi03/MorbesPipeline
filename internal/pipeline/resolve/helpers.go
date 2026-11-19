@@ -5,7 +5,7 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityParser/llmdto"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	store "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/store"
 	source "github.com/G226Medi03/SourceEntity"
 )
 

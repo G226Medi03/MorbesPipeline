@@ -1,4 +1,4 @@
-package csolve
+package state
 
 import (
 	"github.com/G226Medi03/MedicalEntityParser/llmdto"

@@ -1,4 +1,4 @@
-package facade
+package store
 
 import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
@@ -6,7 +6,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/store/internal/repository/schema"
 )
 
-func (s *StoreContainer) InitSchema() error {
+func (s *Store) InitSchema() error {
 	if err := migration.ApplyMigration(s.Context(), s); err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (s *StoreContainer) InitSchema() error {
 	if err := s.Solve.Init(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
-	if err := s.ensure_llm_problem_results(); err != nil {
+	if err := s.Benchmark.Init(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}
 	if err := schema.EnsureStatusOtherName(s.Context(), s); err != nil {

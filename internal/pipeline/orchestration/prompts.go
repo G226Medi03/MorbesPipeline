@@ -1,35 +1,32 @@
 package csolve
 
-import (
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
-)
+import "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration/prompt"
 
-type PromptVersion = model.PromptVersion
+type PromptVersion = prompt.PromptVersion
 
 const (
-	PromptExplain                = domain.PromptExplain
-	PromptQuestionType           = domain.PromptQuestionType
-	PromptCaseExtraction         = domain.PromptCaseExtraction
-	PromptActor                  = domain.PromptActor
-	PromptOtherNames             = domain.PromptOtherNames
-	PromptStatus                 = domain.PromptStatus
-	PromptAction                 = domain.PromptAction
-	PromptActorAction            = domain.PromptActorAction
-	PromptPatientDescription     = domain.PromptPatientDescription
-	PromptMedicalProcedureOption = domain.PromptMedicalProcedureOption
-	PromptRelation               = domain.PromptRelation
-	PromptSituation              = domain.PromptSituation
+	PromptExplain                = prompt.PromptExplain
+	PromptQuestionType           = prompt.PromptQuestionType
+	PromptCaseExtraction         = prompt.PromptCaseExtraction
+	PromptActor                  = prompt.PromptActor
+	PromptOtherNames             = prompt.PromptOtherNames
+	PromptStatus                 = prompt.PromptStatus
+	PromptAction                 = prompt.PromptAction
+	PromptActorAction            = prompt.PromptActorAction
+	PromptPatientDescription     = prompt.PromptPatientDescription
+	PromptMedicalProcedureOption = prompt.PromptMedicalProcedureOption
+	PromptRelation               = prompt.PromptRelation
+	PromptSituation              = prompt.PromptSituation
 )
 
 func PromptStages() []string {
-	return domain.PromptStages()
+	return prompt.PromptStages()
 }
 
 func PromptPlaceholders(stage string) []string {
-	return domain.PromptPlaceholders(stage)
+	return prompt.PromptPlaceholders(stage)
 }
 
 func RenderPrompt(template string, values map[string]string) string {
-	return domain.RenderPrompt(template, values)
+	return prompt.RenderPrompt(template, values)
 }

@@ -5,6 +5,7 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	domain "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/input"
 	pllm "github.com/G226Medi03/MorbesPipeline/internal/pipeline/llm"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -20,7 +21,7 @@ func (self *Service) runLLMExtraction(ctx context.Context, id domain.CaseID, sta
 	request := morbesllm.ExtractionRequest{
 		CaseID:                     string(id),
 		Problem:                    state.Case.Problem,
-		ProblemStem:                problem_stem(state.Case.Problem),
+		ProblemStem:                input.Stem(state.Case.Problem),
 		Answer:                     state.Case.Answer,
 		Explanation:                state.Explanation,
 		SourceID:                   extraction_refered_source(state),
