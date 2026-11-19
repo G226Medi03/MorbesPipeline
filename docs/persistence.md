@@ -5,12 +5,7 @@
 ```text
 internal/store/
   core/
-  entity/
-  read/
-  solve/
-  benchmark/
-  postprocess/
-  migration/
+  repository/
 ```
 
 ## StoreContainer
@@ -23,8 +18,9 @@ internal/store/core/store.go
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  Solve storesolve.Repository
-  Postprocess storepostprocess.Repository
+  Solve storerepo.SolveRepository
+  Benchmark storerepo.BenchmarkRepository
+  Postprocess storerepo.PostprocessRepository
 ```
 
 ## 주요 구성
@@ -37,24 +33,11 @@ core
   entity read는 MedicalEntityRepository facade 위임
   solve/source access
 
-entity
-  actor/trait helper
-
-read
-  benchmark/result read model types
-
-solve
-  solve_cases, solve_steps, solve_llm_calls, answer checks
-
-benchmark
-  llm_problem_results
-
-postprocess
-  table: morbes_postprocesses schema/CRUD
-  repository: validation and record mapping
-
-migration
-  legacy schema rename
+repository
+  entity helper
+  benchmark/solve/postprocess table과 repository
+  ProblemResultRow, ExamQuestionDataCounts
+  legacy schema migration
 ```
 
 ## 인과 링크

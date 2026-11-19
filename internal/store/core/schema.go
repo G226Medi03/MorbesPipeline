@@ -2,12 +2,12 @@ package store
 
 import (
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/migration"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
 func (s *StoreContainer) InitSchema() error {
-	if err := migration.Apply(s.ctx, s); err != nil {
+	if err := storerepo.ApplyMigration(s.ctx, s); err != nil {
 		return err
 	}
 	if _, err := s.entities(); err != nil {

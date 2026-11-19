@@ -5,22 +5,21 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 )
 
 type (
-	ProblemResultFilter = read.ProblemResultFilter
-	ProblemResultRow    = read.ProblemResultRow
+	ProblemResultFilter = storerepo.ProblemResultFilter
+	ProblemResultRow    = storerepo.ProblemResultRow
 )
 
 func (s *StoreContainer) ensure_llm_problem_results() error {
-	return benchmarkresult.Table{}.Init(s.ctx, s.solveExecutor())
+	return s.Benchmark.Init(s.ctx, s.solveExecutor())
 }
 
 func (s *StoreContainer) GetProblemResultByID(ctx context.Context, id int64) (ProblemResultRow, bool, error) {
-	row, found, err := benchmarkresult.Table{}.GetByID(ctx, s.solveExecutor(), id)
+	row, found, err := s.Benchmark.GetByID(ctx, s.solveExecutor(), id)
 	if err != nil || !found {
 		return ProblemResultRow{}, found, err
 	}
@@ -45,7 +44,7 @@ func (s *StoreContainer) ListProblemResults(ctx context.Context, filter ProblemR
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return []ProblemResultRow{}, nil
 	}
-	rows, err := benchmarkresult.Table{}.List(ctx, s.solveExecutor(), benchmarkresult.Filter{
+	rows, err := s.Benchmark.List(ctx, s.solveExecutor(), storerepo.BenchmarkFilter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 		Order:       filter.Order,
@@ -78,7 +77,7 @@ func (s *StoreContainer) CountProblemResults(ctx context.Context, filter Problem
 	if has_problem_result_response_filter(filter) && len(responseIDs) == 0 {
 		return 0, nil
 	}
-	return benchmarkresult.Table{}.Count(ctx, s.solveExecutor(), benchmarkresult.Filter{
+	return s.Benchmark.Count(ctx, s.solveExecutor(), storerepo.BenchmarkFilter{
 		Correct:     filter.Correct,
 		ResponseIDs: responseIDs,
 	})
@@ -118,7 +117,7 @@ func (s *StoreContainer) ProblemResult(ctx context.Context, id int64) (ProblemRe
 }
 
 func (s *StoreContainer) ListProblemResultModels(ctx context.Context) ([]string, error) {
-	responseIDs, err := benchmarkresult.Table{}.ListResponseIDs(ctx, s.solveExecutor())
+	responseIDs, err := s.Benchmark.ListResponseIDs(ctx, s.solveExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +191,7 @@ func has_problem_result_response_filter(filter ProblemResultFilter) bool {
 	return strings.TrimSpace(filter.Model) != "" || filter.Error != nil
 }
 
-func (s *StoreContainer) problem_result_responses(ctx context.Context, rows []benchmarkresult.Row) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
+func (s *StoreContainer) problem_result_responses(ctx context.Context, rows []storerepo.BenchmarkRow) (map[sourcedomain.RespId]sourcedomain.LlmResponseRow, error) {
 	ids := make([]sourcedomain.RespId, 0, len(rows))
 	seen := make(map[sourcedomain.RespId]struct{}, len(rows))
 	for _, row := range rows {
@@ -213,7 +212,7 @@ func (s *StoreContainer) problem_result_response_ids_map(ctx context.Context, id
 	return s.Source.GetLlmResponses(ctx, s.sourceExecutor(), respIDs)
 }
 
-func composeProblemResult(row benchmarkresult.Row, response sourcedomain.LlmResponseRow) ProblemResultRow {
+func composeProblemResult(row storerepo.BenchmarkRow, response sourcedomain.LlmResponseRow) ProblemResultRow {
 	createdAt := row.CreatedAt
 	if !response.CreatedAt.IsZero() {
 		createdAt = response.CreatedAt.Format("2006-01-02 15:04:05")

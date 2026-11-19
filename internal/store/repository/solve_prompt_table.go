@@ -1,4 +1,4 @@
-package solve
+package repository
 
 import (
 	"context"
@@ -13,9 +13,9 @@ import (
 // ErrPromptNotFound reports a missing prompt stage.
 var ErrPromptNotFound = errors.New("prompt not found in DB")
 
-type PromptTable struct{}
+type SolvePromptTable struct{}
 
-func (PromptTable) init(ctx context.Context, db sqlutil.Executor) error {
+func (SolvePromptTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_prompt_versions (
 		stage TEXT PRIMARY KEY,
 		template TEXT NOT NULL,
@@ -28,7 +28,7 @@ func (PromptTable) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (PromptTable) Get(ctx context.Context, db sqlutil.Executor, stage string) (string, int, error) {
+func (SolvePromptTable) Get(ctx context.Context, db sqlutil.Executor, stage string) (string, int, error) {
 	var template string
 	var version int
 	err := db.QueryRowContext(ctx, `SELECT template, version FROM solve_prompt_versions WHERE stage = ?`, stage).
@@ -42,7 +42,7 @@ func (PromptTable) Get(ctx context.Context, db sqlutil.Executor, stage string) (
 	return template, version, nil
 }
 
-func (PromptTable) Save(ctx context.Context, db sqlutil.Executor, stage, template string) (int, error) {
+func (SolvePromptTable) Save(ctx context.Context, db sqlutil.Executor, stage, template string) (int, error) {
 	if err := domain.ValidatePromptTemplate(stage, template); err != nil {
 		return 0, err
 	}

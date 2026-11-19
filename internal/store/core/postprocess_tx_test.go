@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
 )
 
@@ -27,8 +27,8 @@ func TestWithPostprocessTxRollback(t *testing.T) {
 	err = value.WithPostprocessTx(ctx, func(tx *StoreContainer) error {
 		if _, err := tx.RecordPostprocess(
 			"tx_test",
-			postprocess.OperationObserved,
-			postprocess.EntityStatus,
+			storerepo.PostprocessOperationObserved,
+			storerepo.PostprocessEntityStatus,
 			1,
 			"",
 			0,
@@ -41,7 +41,7 @@ func TestWithPostprocessTxRollback(t *testing.T) {
 		t.Fatalf("WithPostprocessTx error = %v", err)
 	}
 
-	records, err := value.Postprocess.ListByEntity(ctx, value, postprocess.EntityStatus, 1)
+	records, err := value.Postprocess.ListByEntity(ctx, value, storerepo.PostprocessEntityStatus, 1)
 	if err != nil {
 		t.Fatalf("ListByEntity: %v", err)
 	}

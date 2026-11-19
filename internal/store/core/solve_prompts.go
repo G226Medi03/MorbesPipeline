@@ -3,7 +3,7 @@ package store
 import (
 	"errors"
 
-	solvesql "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 )
 
 func (s *StoreContainer) GetPrompt(stage string) (string, int, error) {
@@ -14,7 +14,7 @@ func (s *StoreContainer) GetPrompt(stage string) (string, int, error) {
 func (s *StoreContainer) Prompt(stage string) (string, int, bool, error) {
 	template, version, err := s.GetPrompt(stage)
 	if err != nil {
-		if errors.Is(err, solvesql.ErrPromptNotFound) {
+		if errors.Is(err, storerepo.ErrPromptNotFound) {
 			return "", 0, false, nil
 		}
 		return "", 0, false, err

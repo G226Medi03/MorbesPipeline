@@ -1,4 +1,4 @@
-package postprocess
+package repository
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 )
 
 // table owns the SQL surface for morbes_postprocesses.
-type table struct{}
+type postprocessTable struct{}
 
-func (table) init(ctx context.Context, db sqlutil.Executor) error {
+func (postprocessTable) init(ctx context.Context, db sqlutil.Executor) error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS morbes_postprocesses (
 			postprocess_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +35,7 @@ func (table) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (table) insert(ctx context.Context, db sqlutil.Executor, record Record) (int64, error) {
+func (postprocessTable) insert(ctx context.Context, db sqlutil.Executor, record PostprocessRecord) (int64, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO morbes_postprocesses (
 			postprocessor_name, operation, entity_type, entity_id,
@@ -59,12 +59,12 @@ func (table) insert(ctx context.Context, db sqlutil.Executor, record Record) (in
 	return id, nil
 }
 
-func (table) listByEntity(
+func (postprocessTable) listByEntity(
 	ctx context.Context,
 	db sqlutil.Executor,
-	entityType EntityType,
+	entityType PostprocessEntityType,
 	entityID int64,
-) ([]Record, error) {
+) ([]PostprocessRecord, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT postprocess_id, postprocessor_name, operation, entity_type, entity_id,
 		       target_entity_type, target_entity_id, finished_at
@@ -77,9 +77,9 @@ func (table) listByEntity(
 		return nil, fmt.Errorf("postprocess record list failed: %w", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	var result []Record
+	var result []PostprocessRecord
 	for rows.Next() {
-		var record Record
+		var record PostprocessRecord
 		var operation, entityTypeValue, targetType string
 		if err := rows.Scan(
 			&record.PostprocessID,
@@ -93,9 +93,9 @@ func (table) listByEntity(
 		); err != nil {
 			return nil, err
 		}
-		record.Operation = Operation(operation)
-		record.EntityType = EntityType(entityTypeValue)
-		record.TargetEntityType = EntityType(targetType)
+		record.Operation = PostprocessOperation(operation)
+		record.EntityType = PostprocessEntityType(entityTypeValue)
+		record.TargetEntityType = PostprocessEntityType(targetType)
 		result = append(result, record)
 	}
 	return result, rows.Err()

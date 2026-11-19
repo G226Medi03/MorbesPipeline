@@ -2,10 +2,10 @@ package store
 
 import (
 	"fmt"
-	"github.com/G226Medi03/SourceEntity"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	solve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	"github.com/G226Medi03/SourceEntity"
 )
 
 func (s *StoreContainer) ResetCaseForReplay(id domain.CaseID, mode, fromNode string, keepCalls bool) error {
@@ -77,7 +77,7 @@ func (s *StoreContainer) CountFailedCases() (int, error) {
 	return s.Solve.Case.CountFailed(s.ctx, s.solveExecutor())
 }
 
-func (s *StoreContainer) ListFailedCases(limit int) ([]solve.FailedCase, error) {
+func (s *StoreContainer) ListFailedCases(limit int) ([]storerepo.FailedCase, error) {
 	return s.Solve.Case.ListFailed(s.ctx, s.solveExecutor(), limit)
 }
 
@@ -172,6 +172,6 @@ func (s *StoreContainer) SetFailed(id domain.CaseID, ce error) error {
 	return s.Solve.Case.SetFailed(s.ctx, s.solveExecutor(), id, message)
 }
 
-func (s *StoreContainer) ExamQuestionCaseStats(ids []int64) (map[int64]solve.ExamQuestionCaseStats, error) {
+func (s *StoreContainer) ExamQuestionCaseStats(ids []int64) (map[int64]storerepo.ExamQuestionCaseStats, error) {
 	return s.Solve.Case.StatsByExamQuestionIDs(s.ctx, s.solveExecutor(), ids)
 }

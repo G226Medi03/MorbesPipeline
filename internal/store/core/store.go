@@ -9,8 +9,8 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
-	storepostprocess "github.com/G226Medi03/MorbesPipeline/internal/store/postprocess"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
@@ -32,8 +32,9 @@ type StoreContainer struct {
 	Response *responsestore.Store
 
 	Source      storesource.Repository
-	Solve       storesolve.Repository
-	Postprocess storepostprocess.Repository
+	Solve       storerepo.SolveRepository
+	Benchmark   storerepo.BenchmarkRepository
+	Postprocess storerepo.PostprocessRepository
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -64,7 +65,9 @@ func NewWithDBs(ctx context.Context, medicalDB, sourceDB, solveDB *sql.DB) *Stor
 func (s *StoreContainer) bind() {
 	s.Medical = nil
 	s.Response = nil
-	s.Postprocess = storepostprocess.NewRepository()
+	s.Solve = storerepo.NewSolveRepository()
+	s.Benchmark = storerepo.BenchmarkRepository{}
+	s.Postprocess = storerepo.NewPostprocessRepository()
 }
 
 func (s *StoreContainer) responseStoreWithExecutor() *responsestore.Store {

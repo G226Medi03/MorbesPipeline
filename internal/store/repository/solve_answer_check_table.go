@@ -1,4 +1,4 @@
-package solve
+package repository
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-type AnswerCheckTable struct{}
+type SolveAnswerCheckTable struct{}
 
-func (AnswerCheckTable) init(ctx context.Context, db sqlutil.Executor) error {
+func (SolveAnswerCheckTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_answer_checks (
 		case_id INTEGER PRIMARY KEY,
 		resp_id INTEGER NOT NULL DEFAULT 0,
@@ -121,7 +121,7 @@ func ensure_analysis_column(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value domain.AnswerCheck) error {
+func (SolveAnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value domain.AnswerCheck) error {
 	contains := 0
 	if value.ContainsAnswer {
 		contains = 1
@@ -172,7 +172,7 @@ func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value d
 	return nil
 }
 
-func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) (domain.AnswerCheck, bool, error) {
+func (SolveAnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) (domain.AnswerCheck, bool, error) {
 	var value domain.AnswerCheck
 	var caseIDValue string
 	var respID int64
@@ -199,14 +199,14 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID dom
 	return value, true, nil
 }
 
-func (AnswerCheckTable) Delete(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
+func (SolveAnswerCheckTable) Delete(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_answer_checks WHERE case_id = ?`, string(caseID)); err != nil {
 		return fmt.Errorf("answer check 삭제 실패: %w", err)
 	}
 	return nil
 }
 
-func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
+func (SolveAnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
 	if len(caseIDs) == 0 {
 		return nil
 	}
@@ -224,7 +224,7 @@ func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor
 	return nil
 }
 
-func (AnswerCheckTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
+func (SolveAnswerCheckTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
 	if _, err := db.ExecContext(ctx, `
 		DELETE FROM solve_answer_checks
 		WHERE case_id IN (SELECT case_id FROM solve_cases WHERE exam_question_id = ?)`, ExamQuestionID); err != nil {

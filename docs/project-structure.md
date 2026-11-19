@@ -85,12 +85,8 @@ selection
 ```text
 internal/store/
   core/            # StoreContainer, schema, transaction, core SQL
-  entity/          # entity helper
-  read/            # read model types
-  solve/           # solve table repository
-  benchmark/       # benchmark table repository
-  postprocess/     # postprocess audit table/repository
-  migration/       # legacy schema migration
+  repository/      # merged entity helper, solve/benchmark/postprocess tables,
+                   # read models, migration
 ```
 
 역할:
@@ -101,25 +97,13 @@ core
   transaction executor, entity/solve/source 조립
   entity ID lookup, link/delete, read API
 
-entity
-  actor value helper, MedicalEntity trait conversion
-
-read
-  ProblemResultRow, ExamQuestionDataCounts
-  entity read model은 MedicalEntityRepository facade 사용
-
-solve
+repository
+  entity helper
   solve_cases, solve_steps, solve_llm_calls, answer checks
-
-benchmark
   llm_problem_results
-
-postprocess
-  table: morbes_postprocesses schema/CRUD
-  repository: validation and record mapping
-
-migration
-  legacy table/column rename
+  morbes_postprocesses audit
+  ProblemResultRow, ExamQuestionDataCounts
+  legacy schema migration
 ```
 
 ## internal/domain

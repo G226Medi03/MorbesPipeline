@@ -6,7 +6,7 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	storeentity "github.com/G226Medi03/MorbesPipeline/internal/store/entity"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -20,7 +20,7 @@ func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []tr
 	if err != nil {
 		return 0, err
 	}
-	if _, err := entityStore.InsertProcedure(value, nil, storeentity.MedicalEntityTraits(traits), sourceIDs(sources)); err != nil {
+	if _, err := entityStore.InsertProcedure(value, nil, storerepo.MedicalEntityTraits(traits), sourceIDs(sources)); err != nil {
 		return 0, err
 	}
 	return s.procedureIDForValue(value)

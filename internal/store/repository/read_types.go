@@ -1,4 +1,4 @@
-package read
+package repository
 
 import (
 	source "github.com/G226Medi03/SourceEntity"

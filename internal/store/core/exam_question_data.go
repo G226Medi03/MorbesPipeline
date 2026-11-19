@@ -3,27 +3,26 @@ package store
 import (
 	"context"
 
-	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
-	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
-	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
+	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 // ExamQuestionDataCounts summarizes data linked to one exam question.
-type ExamQuestionDataCounts = read.ExamQuestionDataCounts
+type ExamQuestionDataCounts = storerepo.ExamQuestionDataCounts
 
 func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestionID int64) (ExamQuestionDataCounts, error) {
 	var result ExamQuestionDataCounts
 	executor := s.solveExecutor()
-	llmResultCount, err := (benchmarkresult.Table{}).CountByExamQuestionID(ctx, executor, examQuestionID)
+	llmResultCount, err := s.Benchmark.CountByExamQuestionID(ctx, executor, examQuestionID)
 	if err != nil {
 		return result, err
 	}
-	responseIDs, err := (benchmarkresult.Table{}).ListResponseIDsByExamQuestionID(ctx, executor, examQuestionID)
+	responseIDs, err := s.Benchmark.ListResponseIDsByExamQuestionID(ctx, executor, examQuestionID)
 	if err != nil {
 		return result, err
 	}
-	solveCaseCount, err := (storesolve.CaseTable{}).CountByExamQuestionID(ctx, executor, examQuestionID)
+	solveCaseCount, err := s.Solve.Case.CountByExamQuestionID(ctx, executor, examQuestionID)
 	if err != nil {
 		return result, err
 	}
@@ -38,29 +37,29 @@ func (s *StoreContainer) DeleteExamQuestionData(ctx context.Context, examQuestio
 	responseIDs := []source.RespId{}
 	err := s.WithSolveTx(ctx, func(tx *StoreContainer) error {
 		executor := tx.solveExecutor()
-		caseIDs, err := (storesolve.CaseTable{}).ListIDsByExamQuestionID(ctx, executor, examQuestionID)
+		caseIDs, err := s.Solve.Case.ListIDsByExamQuestionID(ctx, executor, examQuestionID)
 		if err != nil {
 			return err
 		}
 		if len(caseIDs) > 0 {
-			if err := (storesolve.AnswerCheckTable{}).DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
+			if err := s.Solve.AnswerCheck.DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
 				return err
 			}
-			if err := (storesolve.StepTable{}).DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
+			if err := s.Solve.Step.DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
 				return err
 			}
-			if err := (storesolve.CallTable{}).DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
+			if err := s.Solve.Call.DeleteByCaseIDs(ctx, executor, caseIDs); err != nil {
 				return err
 			}
-			if err := (storesolve.CaseTable{}).DeleteByIDs(ctx, executor, caseIDs); err != nil {
+			if err := s.Solve.Case.DeleteByIDs(ctx, executor, caseIDs); err != nil {
 				return err
 			}
 		}
-		responseIDs, err = (benchmarkresult.Table{}).ListResponseIDsByExamQuestionID(ctx, executor, examQuestionID)
+		responseIDs, err = s.Benchmark.ListResponseIDsByExamQuestionID(ctx, executor, examQuestionID)
 		if err != nil {
 			return err
 		}
-		return (benchmarkresult.Table{}).DeleteByExamQuestionID(ctx, executor, examQuestionID)
+		return s.Benchmark.DeleteByExamQuestionID(ctx, executor, examQuestionID)
 	})
 	if err != nil {
 		return err
