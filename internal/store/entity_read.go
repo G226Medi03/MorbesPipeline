@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/G226Medi03/MedicalEntityParser/llmdto"
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 	"strings"
 )
 
@@ -147,7 +148,11 @@ func (s *StoreContainer) symptomValueByID(id int64) (repo.IESymptom, error) {
 		}
 		aspects := make([]repo.IPainAspect, 0, len(rawAspects))
 		for _, raw := range rawAspects {
-			aspect, err := entityjson.DecodeAspect(raw)
+			var aspectDTO llmdto.Aspect
+			if err := json.Unmarshal(raw, &aspectDTO); err != nil {
+				return nil, err
+			}
+			aspect, err := llmparser.AspectFromDTO(aspectDTO)
 			if err != nil {
 				return nil, err
 			}
