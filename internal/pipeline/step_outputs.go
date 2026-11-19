@@ -1,6 +1,6 @@
 package csolve
 
-import ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing/cause"
+import ccause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 
 type caseExtractionStepOutput struct {
 	QuestionType   string         `json:"questionType"`

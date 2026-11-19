@@ -195,11 +195,6 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID dom
 	value.ContainsAnswer = contains != 0
 	value.AnswerPresent = answer_present.Valid && answer_present.Int64 != 0
 	value.AnswerSatisfied = answer_satisfied.Valid && answer_satisfied.Int64 != 0
-	// Legacy rows predate answer_satisfied. Keep their old contains_answer
-	// behavior until they are rechecked.
-	if !answer_satisfied.Valid {
-		value.AnswerSatisfied = value.ContainsAnswer
-	}
 	value.EffectMatched = effect_matched.Valid && effect_matched.Int64 != 0
 	return value, true, nil
 }

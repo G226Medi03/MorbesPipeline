@@ -15,17 +15,6 @@ import (
 type CaseTable struct{}
 
 func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
-	legacy, err := has_legacy_case_schema(ctx, db)
-	if err != nil {
-		return err
-	}
-	if legacy {
-		_, _ = db.ExecContext(ctx, `DELETE FROM solve_steps`)
-		_, _ = db.ExecContext(ctx, `DELETE FROM solve_llm_calls`)
-		if _, err := db.ExecContext(ctx, `DROP TABLE solve_cases`); err != nil {
-			return fmt.Errorf("legacy solve_cases 삭제 실패: %w", err)
-		}
-	}
 	query := `CREATE TABLE IF NOT EXISTS solve_cases (
 		case_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		exam_question_id INTEGER NOT NULL,
@@ -50,9 +39,6 @@ func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 		return fmt.Errorf("solve_cases exam_question index 생성 실패: %w", err)
 	}
 	if err := ensure_question_type_column(ctx, db); err != nil {
-		return err
-	}
-	if err := drop_legacy_processed_column(ctx, db); err != nil {
 		return err
 	}
 	return nil
@@ -86,39 +72,6 @@ func ensure_question_type_column(ctx context.Context, db sqlutil.Executor) error
 	}
 	if _, err := db.ExecContext(ctx, `ALTER TABLE solve_cases ADD COLUMN question_type TEXT NOT NULL DEFAULT ''`); err != nil {
 		return fmt.Errorf("solve_cases question_type 컬럼 추가 실패: %w", err)
-	}
-	return nil
-}
-
-func drop_legacy_processed_column(ctx context.Context, db sqlutil.Executor) error {
-	rows, err := db.QueryContext(ctx, `PRAGMA table_info(solve_cases)`)
-	if err != nil {
-		return fmt.Errorf("solve_cases schema 조회 실패: %w", err)
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	has_processed := false
-	for rows.Next() {
-		var cid, notnull, pk int
-		var name, column_type string
-		var default_value sql.NullString
-		if err := rows.Scan(&cid, &name, &column_type, &notnull, &default_value, &pk); err != nil {
-			return err
-		}
-		if name == "processed" {
-			has_processed = true
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	if err := rows.Close(); err != nil {
-		return err
-	}
-	if !has_processed {
-		return nil
-	}
-	if _, err := db.ExecContext(ctx, `ALTER TABLE solve_cases DROP COLUMN processed`); err != nil {
-		return fmt.Errorf("solve_cases processed 컬럼 제거 실패: %w", err)
 	}
 	return nil
 }
@@ -458,24 +411,4 @@ func (CaseTable) DeleteByIDs(ctx context.Context, db sqlutil.Executor, ids []dom
 		return fmt.Errorf("solve_cases 삭제 실패: %w", err)
 	}
 	return nil
-}
-
-func has_legacy_case_schema(ctx context.Context, db sqlutil.Executor) (bool, error) {
-	rows, err := db.QueryContext(ctx, `PRAGMA table_info(solve_cases)`)
-	if err != nil {
-		return false, fmt.Errorf("solve_cases schema 조회 실패: %w", err)
-	}
-	defer rows.Close() //nolint:errcheck // deferred close
-	for rows.Next() {
-		var cid, notnull, pk int
-		var name, column_type string
-		var default_value sql.NullString
-		if err := rows.Scan(&cid, &name, &column_type, &notnull, &default_value, &pk); err != nil {
-			return false, err
-		}
-		if name == "problem" || name == "answer" || name == "explanation" {
-			return true, nil
-		}
-	}
-	return false, rows.Err()
 }
