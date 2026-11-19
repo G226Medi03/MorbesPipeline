@@ -6,29 +6,15 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
-type ProblemResultFilter struct {
-	Model   string
-	Correct *bool
-	Error   *bool
-	Order   string
-	Limit   int
-	Offset  int
-}
-
-type ProblemResultRow struct {
-	ID             int64
-	ExamQuestionID int64
-	LLMResponseID  sourcedomain.RespId
-	Model          string
-	Prompt         string
-	Output         string
-	Correct        bool
-	CreatedAt      string
-}
+type (
+	ProblemResultFilter = read.ProblemResultFilter
+	ProblemResultRow    = read.ProblemResultRow
+)
 
 func (s *StoreContainer) ensure_llm_problem_results() error {
 	return benchmarkresult.Table{}.Init(s.ctx, s.solveExecutor())

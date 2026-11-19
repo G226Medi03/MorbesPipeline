@@ -6,60 +6,20 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 // ActorRecord is the name-based read model for an actor row.
-type ActorRecord struct {
-	Key        string
-	Value      repo.IEActor
-	OtherNames []string
-	Sources    []source.Source
-	Actions    []ActorActionLink
-}
-
-// ActorActionLink connects an actor to one action.
-type ActorActionLink struct {
-	Action   ActionRecord
-	SourceID source.SourceId
-}
-
-// ActionRecord is the value-based read model for an action row.
-type ActionRecord struct {
-	Key            string
-	Value          repo.IEAction
-	Sources        []source.Source
-	ResultStatuses []ActionResultStatusLink
-}
-
-// ActionResultStatusLink connects an action to one result status.
-type ActionResultStatusLink struct {
-	Status   StatusRecord
-	SourceID source.SourceId
-}
-
-// StatusRecord is the key-based read model for a status row.
-type StatusRecord struct {
-	Key     string
-	Value   repo.IEStatus
-	Sources []source.Source
-	Actions []StatusActionLink
-}
-
-// StatusActionLink connects a status to one action.
-type StatusActionLink struct {
-	Action   ActionRecord
-	SourceID source.SourceId
-}
-
-// ProcedureRecord is the value-based read model for a procedure row.
-type ProcedureRecord struct {
-	Key        string
-	Value      repo.IMedicalProcedure
-	OtherNames []string
-	Traits     []repo.Trait
-	Sources    []source.Source
-}
+type (
+	ActorRecord            = read.ActorRecord
+	ActorActionLink        = read.ActorActionLink
+	ActionRecord           = read.ActionRecord
+	ActionResultStatusLink = read.ActionResultStatusLink
+	StatusRecord           = read.StatusRecord
+	StatusActionLink       = read.StatusActionLink
+	ProcedureRecord        = read.ProcedureRecord
+)
 
 func (s *StoreContainer) sourceRefsFor(table, column string, id int64) ([]source.Source, error) {
 	rows, err := s.QueryContext(s.ctx,
