@@ -77,7 +77,7 @@ func (self *Service) record_call(call LLMCallInput) {
 	}
 }
 
-func encode_json(value any) string {
+func marshal_json(value any) string {
 	if value == nil {
 		return ""
 	}

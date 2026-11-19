@@ -50,7 +50,7 @@ func (self *Service) record_provided_explanation(id domain.CaseID, state *pipeli
 	return self.store.FinishStep(
 		step_id,
 		"succeeded",
-		encode_json(explainStepOutput{Explanation: state.Explanation}),
+		marshal_json(explainStepOutput{Explanation: state.Explanation}),
 		"",
 		0,
 	)
@@ -90,7 +90,7 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 		PromptVersion: prompt_version,
 		Prompt:        prompt,
 		RawOutput:     raw,
-		ParsedOutput:  encode_json(map[string]string{"explanation": explanation}),
+		ParsedOutput:  marshal_json(map[string]string{"explanation": explanation}),
 		State:         state_text(err),
 		Error:         error_text(err),
 	})
@@ -111,7 +111,7 @@ func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, sta
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	return self.store.FinishStep(step_id, "succeeded", encode_json(explainStepOutput{Explanation: explanation}), "", 0)
+	return self.store.FinishStep(step_id, "succeeded", marshal_json(explainStepOutput{Explanation: explanation}), "", 0)
 }
 
 func looks_like_patient_description(problem string) bool {
@@ -173,7 +173,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 	candidates, err := cause_service.TraceContext(cause_ctx, statuses, cause_trace_max_depth)
 	self.record_call(LLMCallInput{
 		CaseID: id, Seq: seqCause, Stage: "cause_trace", Role: "trace",
-		ParsedOutput: encode_json(candidates), State: state_text(err), Error: error_text(err),
+		ParsedOutput: marshal_json(candidates), State: state_text(err), Error: error_text(err),
 	})
 	if err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
@@ -188,7 +188,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 	if len(candidates) == 0 {
 		result.Missing = []string{"저장된 인과 관계에서 원인 후보를 찾지 못했습니다"}
 	}
-	encoded := encode_json(result)
+	encoded := marshal_json(result)
 	if err := self.store.SetAnswer(id, encoded); err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err

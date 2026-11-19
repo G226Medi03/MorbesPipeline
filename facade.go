@@ -187,21 +187,6 @@ func SelectMedicalProcedureOption(options []MedicalProcedureOptionGraphItem, pro
 	return pipeline.SelectMedicalProcedureOption(options, problem)
 }
 
-// MarshalAction encodes a typed action value.
-func MarshalAction(value IEAction) ([]byte, error) {
-	return json.Marshal(llmparser.ActionToDTO(value))
-}
-
-// MarshalProcedure encodes a typed medical procedure value.
-func MarshalProcedure(value IMedicalProcedure) ([]byte, error) {
-	return json.Marshal(llmparser.ProcedureToDTO(value))
-}
-
-// MarshalStatus encodes a typed status value.
-func MarshalStatus(value IEStatus) ([]byte, error) {
-	return json.Marshal(llmparser.StatusToDTO(value))
-}
-
 // IsStatusKind reports whether kind is a persisted status variant.
 func IsStatusKind(kind string) bool {
 	switch strings.TrimSpace(kind) {
