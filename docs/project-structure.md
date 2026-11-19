@@ -106,8 +106,8 @@ entity
   actor value helper, MedicalEntity trait conversion
 
 read
-  ActorRecord, ActionRecord, StatusRecord, ProcedureRecord,
   ProblemResultRow, ExamQuestionDataCounts
+  entity read model은 MedicalEntityRepository facade 사용
 
 source
   SourceEntityRepository 기반 source/response trace

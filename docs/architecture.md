@@ -56,7 +56,7 @@ App
 | pipeline/selection | procedure option 선택 |
 | store/core | StoreContainer, schema, transaction |
 | store/entity | entity helper |
-| store/read | read model |
+| store/read | benchmark/result read model |
 | store/source | source trace |
 | store/solve | solve table |
 | store/postprocess | postprocess audit |

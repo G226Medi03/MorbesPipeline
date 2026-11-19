@@ -34,14 +34,15 @@ internal/store/core/store.go
 core
   InitSchema
   transaction
-  entity ID/link/read SQL
+  entity ID/link SQL
+  entity read는 MedicalEntityRepository facade 위임
   solve/source access
 
 entity
   actor/trait helper
 
 read
-  read model types
+  benchmark/result read model types
 
 source
   source/response trace
