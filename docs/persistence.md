@@ -7,7 +7,6 @@ internal/store/
   core/
   entity/
   read/
-  source/
   solve/
   benchmark/
   postprocess/
@@ -43,9 +42,6 @@ entity
 
 read
   benchmark/result read model types
-
-source
-  source/response trace
 
 solve
   solve_cases, solve_steps, solve_llm_calls, answer checks

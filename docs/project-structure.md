@@ -87,7 +87,6 @@ internal/store/
   core/            # StoreContainer, schema, transaction, core SQL
   entity/          # entity helper
   read/            # read model types
-  source/          # source/LLM response trace
   solve/           # solve table repository
   benchmark/       # benchmark table repository
   postprocess/     # postprocess audit repository
@@ -108,9 +107,6 @@ entity
 read
   ProblemResultRow, ExamQuestionDataCounts
   entity read model은 MedicalEntityRepository facade 사용
-
-source
-  SourceEntityRepository 기반 source/response trace
 
 solve
   solve_cases, solve_steps, solve_llm_calls, answer checks

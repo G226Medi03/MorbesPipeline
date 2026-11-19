@@ -57,7 +57,6 @@ App
 | store/core | StoreContainer, schema, transaction |
 | store/entity | entity helper |
 | store/read | benchmark/result read model |
-| store/source | source trace |
 | store/solve | solve table |
 | store/postprocess | postprocess audit |
 | tracing | reverse link cause trace |
