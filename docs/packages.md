@@ -14,7 +14,7 @@ import morbes "github.com/G226Medi03/MorbesPipeline"
 | `solve.go` | `Service`, `Dependencies`, `Run`, replay, prompt, option 선택 |
 | `store.go` | `Store`, `New`, `NewWithDBs`, read model |
 | `support.go` | IDs, logs, label, sliceutil |
-| `tracing.go` | `Container`, `Candidate`, `TraceNode`, cause service |
+| `facade.go` | `Candidate`, `TraceNode`, cause service aliases |
 
 공개 facade는 내부 구현을 **type alias + 얇은 wrapper**로 노출한다.
 root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` alias를 권장한다.
@@ -25,11 +25,10 @@ root package 선언은 `package morbes_pipeline`이며, 외부 앱은 `morbes` a
 | --- | --- | --- |
 | `internal/pipeline/` | `csolve` | solve 오케스트레이션, extraction, resolve, replay |
 | `internal/store/` | `store` | SQLite 저장소, schema, transaction |
-| `internal/store/graph/` | `graph` | 그래프 row loader |
 | `internal/store/solve/` | `solve` | solve 테이블 |
 | `internal/store/option/` | `medicalprocedureoption` | option 테이블 repository |
 | `internal/store/benchmark/` | `benchmarkresult` | benchmark 테이블 |
-| `internal/tracing/graph/` | `cgraph` | 인메모리 상태/행동 그래프 |
+| `internal/store/postprocess/` | `postprocess` | postprocess audit 테이블 |
 | `internal/tracing/cause/` | `ccause` | 원인 추적 |
 | `internal/domain/entityjson/` | `entityjson` | typed medical entity JSON codec |
 | `internal/domain/entitykey/` | `entitykey` | typed entity identity key |
@@ -78,9 +77,9 @@ type StoreContainer struct {
     Medical  *repo.Store
     Response *responsestore.Store
     Option   option.Repository
-    Source   storesource.Repository
-    Solve    storesolve.Repository
-    Graph    graph.Repository
+    Source      storesource.Repository
+    Solve       storesolve.Repository
+    Postprocess postprocess.Repository
 }
 ```
 
