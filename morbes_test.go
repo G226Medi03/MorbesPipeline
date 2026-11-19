@@ -7,15 +7,12 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	source "github.com/G226Medi03/SourceEntity"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
-	graph "github.com/G226Medi03/MorbesPipeline/internal/tracing/graph"
 )
 
 type testQuestionStore struct{}
 
-func (testQuestionStore) GetQuestion(context.Context, ids.ExamQuestionID) (QuestionInput, bool, error) {
+func (testQuestionStore) GetQuestion(context.Context, int64) (QuestionInput, bool, error) {
 	return QuestionInput{}, false, nil
 }
 
@@ -31,13 +28,13 @@ func TestPublicFacade(t *testing.T) {
 	if err := store.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	container := graph.New_Container()
-	status := HaveSymptom{Symptom: EOtherSymptom{Name: "고혈압"}}
-	if _, err := store.EnsureStatusIn(container, status, source.NewSourceId(1)); err != nil {
-		t.Fatalf("EnsureStatusIn: %v", err)
+	entityStore, err := store.Entities()
+	if err != nil {
+		t.Fatalf("Entities: %v", err)
 	}
-	if _, err := store.LoadGraph(); err != nil {
-		t.Fatalf("LoadGraph: %v", err)
+	status := HaveSymptom{Symptom: EOtherSymptom{Name: "고혈압"}}
+	if _, err := entityStore.InsertStatus(status, []source.SourceId{source.NewSourceId(1)}); err != nil {
+		t.Fatalf("InsertStatus: %v", err)
 	}
 	if _, err := NewService(ctx, Dependencies{}); err == nil {
 		t.Fatal("NewService accepted missing dependencies")

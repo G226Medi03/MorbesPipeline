@@ -8,7 +8,6 @@ import (
 	entityjson "github.com/G226Medi03/MorbesPipeline/internal/domain/entityjson"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
-	medicalprocedureoption "github.com/G226Medi03/MorbesPipeline/internal/domain/procedureoption"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 )
 
@@ -17,7 +16,7 @@ type ResolvedCaseExtraction struct {
 	Statuses                map[string]repo.IEStatus                        `json:"statuses,omitempty"`
 	Actions                 map[string]repo.IEAction                        `json:"actions,omitempty"`
 	Relations               []RelationDraft                                 `json:"relations,omitempty"`
-	MedicalProcedureOptions []medicalprocedureoption.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
+	MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
 	PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
 }
 
@@ -43,7 +42,7 @@ func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 		Statuses                map[string]json.RawMessage                      `json:"statuses,omitempty"`
 		Actions                 map[string]json.RawMessage                      `json:"actions,omitempty"`
 		Relations               []RelationDraft                                 `json:"relations,omitempty"`
-		MedicalProcedureOptions []medicalprocedureoption.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
+		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
 		PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
 	}{value.Actors, statuses, actions, value.Relations, value.MedicalProcedureOptions, value.PatientDescriptions})
 }
@@ -54,7 +53,7 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 		Statuses                map[string]json.RawMessage                      `json:"statuses,omitempty"`
 		Actions                 map[string]json.RawMessage                      `json:"actions,omitempty"`
 		Relations               []RelationDraft                                 `json:"relations,omitempty"`
-		MedicalProcedureOptions []medicalprocedureoption.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
+		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
 		PatientDescriptions     []patient.PatientDescription                    `json:"patientDescriptions,omitempty"`
 	}{}
 	if err := json.Unmarshal(data, &aux); err != nil {

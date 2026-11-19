@@ -4,12 +4,11 @@ import (
 	"time"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	"github.com/G226Medi03/SourceEntity"
 )
 
 type LLMCall struct {
-	ID                 ids.LLMCallID   `json:"id"`
+	ID                 int64   `json:"id"`
 	CaseID             domain.CaseID   `json:"caseId"`
 	Seq                int             `json:"seq"`
 	Stage              string          `json:"stage"`

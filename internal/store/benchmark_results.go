@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sourcedomain "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
@@ -21,8 +20,8 @@ type ProblemResultFilter struct {
 }
 
 type ProblemResultRow struct {
-	ID             ids.LLMProblemResultID
-	ExamQuestionID ids.ExamQuestionID
+	ID             int64
+	ExamQuestionID int64
 	LLMResponseID  sourcedomain.RespId
 	Model          string
 	Prompt         string
@@ -35,7 +34,7 @@ func (s *StoreContainer) ensure_llm_problem_results() error {
 	return benchmarkresult.Table{}.Init(s.ctx, s.solveExecutor())
 }
 
-func (s *StoreContainer) GetProblemResultByID(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
+func (s *StoreContainer) GetProblemResultByID(ctx context.Context, id int64) (ProblemResultRow, bool, error) {
 	row, found, err := benchmarkresult.Table{}.GetByID(ctx, s.solveExecutor(), id)
 	if err != nil || !found {
 		return ProblemResultRow{}, found, err
@@ -122,7 +121,7 @@ func (s *StoreContainer) ProblemResults(ctx context.Context, filter ProblemResul
 }
 
 // ProblemResult returns one composed result row.
-func (s *StoreContainer) ProblemResult(ctx context.Context, id ids.LLMProblemResultID) (ProblemResultRow, bool, error) {
+func (s *StoreContainer) ProblemResult(ctx context.Context, id int64) (ProblemResultRow, bool, error) {
 	var row ProblemResultRow
 	var found bool
 	err := s.WithTx(ctx, func(tx *StoreContainer) error {

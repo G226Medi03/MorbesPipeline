@@ -111,8 +111,8 @@ resolve 순서:
 3. `coverageObservedStatuses`로 문제 본문에 명시된 소견을 보강한다
    (정답/해설은 evidence에서 제외).
 4. 90초 타임아웃 컨텍스트를 만든다(`cause_trace_timeout`).
-5. `service.Postprocess`로 그래프를 로드하고 후처리 규칙을 적용한다.
-6. `cause.Service.TraceContext(ctx, statuses, 100)`로 원인 후보를 추적한다.
+5. `Postprocess`로 현재 case의 typed status/action에 후처리 규칙을 적용한다.
+6. `cause.Service.TraceContext(ctx, statuses, 100)`가 reverse link API로 원인 후보를 추적한다.
 7. 결과를 `causeStepOutput`으로 만들어 `SetAnswer(caseID, JSON)`에 저장한다.
 
 ```json
@@ -120,11 +120,10 @@ resolve 순서:
   "observed": ["혈압 증가"],
   "candidates": [
     {
-      "causeStatusId": 12,
       "causeKind": "increased_index",
       "causeKey": "increased_index:혈압",
       "causeLabel": "혈압 증가",
-      "viaActionID": 3,
+      "viaActionKey": "cause_status:혈압 증가",
       "viaActionKind": "cause_status",
       "depth": 1,
       "sourceIds": [1],
@@ -136,7 +135,7 @@ resolve 순서:
 }
 ```
 
-후보가 없으면 `missing`에 그래프에서 원인을 찾지 못했다는 메시지를 넣는다.
+후보가 없으면 `missing`에 저장된 인과 링크에서 원인을 찾지 못했다는 메시지를 넣는다.
 `cause_trace`는 LLM 호출이 아니지만 재현 패널을 위해 `solve_llm_calls`에
 `stage="cause_trace"`로 기록된다. 같은 stage의 이전 기록은 먼저 삭제된다.
 

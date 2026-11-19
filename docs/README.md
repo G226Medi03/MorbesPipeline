@@ -2,7 +2,7 @@
 
 MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go 모듈이다.
 문제에서 임상 소견을 추출하고 `MedicalEntityRepository`로 저장한 뒤,
-상태/행동 그래프에서 원인 후보를 계산해 `solve_cases.answer_json`에 답을 남긴다.
+저장된 상태/행동 인과 링크에서 원인 후보를 계산해 `solve_cases.answer_json`에 답을 남긴다.
 
 ## 문서 지도
 
@@ -16,7 +16,7 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
 | [pipeline.md](pipeline.md) | solve 노드, checkpoint, replay |
 | [extraction-llm.md](extraction-llm.md) | 프롬프트, LLM 캐시, 추출 단계 |
 | [domain-model.md](domain-model.md) | Case/Step/LLMCall, typed entity, trait |
-| [persistence.md](persistence.md) | SQLite 스키마와 그래프 로딩 |
+| [persistence.md](persistence.md) | SQLite 스키마와 인과 링크 |
 
 > `architecture.md`, `pipeline.md`, `extraction-llm.md`, `domain-model.md`,
 > `persistence.md`는 리팩터링 이전의 세부 설명을 일부 포함한다. 최신 패키지
@@ -28,31 +28,29 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
 2. `morbes.NewStore(ctx, db)`로 저장소를 만들고 `InitSchema()`를 호출한다.
 3. `morbes.NewService(ctx, morbes.Dependencies{...})`로 solve 서비스를 만든다.
 4. `Service.Run(ctx, caseID)`가 solve 파이프라인을 실행한다.
-5. draft는 typed MedicalEntity로 저장되고, graph 후처리 후 원인 후보를 추적한다.
+5. typed draft는 MedicalEntity로 저장되고, postprocess 후 reverse link로 원인 후보를 추적한다.
 6. 결과는 `solve_cases.answer_json`에 저장된다.
 
 ## 패키지 구조
 
 ```text
 .
-├── doc.go, solve.go, store.go   # 공개 facade (package morbes)
-├── domain.go, entity.go
-├── tracing.go, support.go
+├── facade.go                  # 공개 facade (package morbes_pipeline)
 │
 └── internal/
-    ├── pipeline/                # solve 오케스트레이션 (package csolve)
-    ├── persistence/             # SQLite 저장소 (package store)
-    │   ├── graph/
+    ├── pipeline/              # solve 오케스트레이션 (package csolve)
+    ├── store/                 # SQLite 저장소 (package store)
     │   ├── solve/
     │   ├── option/
-    │   └── benchmark/
+    │   ├── benchmark/
+    │   └── postprocess/
     ├── tracing/
-    │   ├── graph/               # 인메모리 그래프 (package cgraph)
-    │   └── cause/               # 원인 추적 (package ccause)
-    ├── llm/                     # LLM 캐시/relation/postprocess (package cservice)
+    │   └── cause/             # 원인 추적 (package ccause)
     ├── domain/
-    │   ├── solve/               # Case/Step/Stage/Question (package domain)
+    │   ├── solve/             # Case/Step/Stage/Question (package domain)
     │   │   └── model/
+    │   ├── entityjson/
+    │   ├── entitykey/
     │   ├── procedureoption/
     │   ├── patient/
     │   ├── situation/
@@ -60,7 +58,7 @@ MorbesPipeline은 Morbes 의학 문제 풀이 파이프라인을 담당하는 Go
     │   └── trait/
     ├── support/
     │   ├── ids/
-    │   ├── logs/
+    │   ├── logconfig/
     │   └── sliceutil/
     └── testdb/
 

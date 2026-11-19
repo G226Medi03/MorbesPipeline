@@ -3,10 +3,9 @@ package store
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 )
 
-func (s *StoreContainer) AppendLLMCall(call model.LLMCallInput) (ids.LLMCallID, error) {
+func (s *StoreContainer) AppendLLMCall(call model.LLMCallInput) (int64, error) {
 	unlock := s.lockWrite()
 	defer unlock()
 	return s.Solve.Call.Append(s.ctx, s.solveExecutor(), call)

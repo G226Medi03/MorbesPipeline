@@ -50,12 +50,18 @@
 
 - `GetPrompt(stage) (template string, version int, error)`
 
-### 그래프
+### 인과 링크
 
-- `LoadGraph() (*cgraph.Container, error)`
-- `EnsureStatusIn`, `EnsureActionIn`
-- `LinkStatusActionIn`, `LinkActionResultStatusIn`
-- `DeleteStatusAction`, `DeleteActionResultStatus`
+- `LinkStatusActionValues`, `DeleteStatusActionValues`
+- `LinkActionResultStatusValues`, `DeleteActionResultStatusValues`
+- `AuditPostprocessStatus`, `AuditPostprocessAction`
+- `AuditPostprocessStatusAction`, `AuditPostprocessActionResultStatus`
+
+원인 추적은 `MedicalEntityRepository/repo.Store`의 다음 reverse API를 사용한다.
+
+- `ActionsResultingInStatus`
+- `StatusesCausingAction`
+- `ActorsCausingAction`
 
 ## `store.Store`
 
@@ -81,10 +87,10 @@ type Store struct {
     SymptomRepository   medicalentity.SymptomRepository
     ProcedureRepository medicalentity.ProcedureRepository
 
-    OptionRepository medicalprocedureoption.Repository
-    SourceRepository storesource.Repository
-    SolveRepository  storesolve.Repository
-    GraphRepository  storegraph.Repository
+    OptionRepository      medicalprocedureoption.Repository
+    SourceRepository      storesource.Repository
+    SolveRepository       storesolve.Repository
+    PostprocessRepository postprocess.Repository
 }
 ```
 
@@ -209,21 +215,17 @@ type Store struct {
 - `semantic_key` 기준 upsert/중복 방지
 - indication/expected effect/source를 별도 테이블에 교체 저장
 
-## 그래프 로딩
+## 인과 링크 조회
 
-`LoadGraph()`:
+인메모리 그래프 컨테이너는 제거되었다.
 
-1. `validateKindPtr()`로 무결성 검사
-2. `GraphRepository.Load()`로 row 로드
-   - actor/status/action/procedure/option
-   - status_actions / action_result_statuses / actor_actions
-   - 각 source 테이블
-3. MedicalEntity repository로 실제 값을 hydrate
-4. procedure trait와 option trait를 병합
-5. 선택지를 `MedicalProcedureOptions[statusID]`에 인덱싱
-6. source/actor/action/status 링크를 `graph.Container`에 채움
-
-이 컨테이너가 `service.Postprocess`와 `cause.TraceContext`의 입력이 된다.
+- postprocess는 현재 case의 typed status/action을 입력으로 사용한다.
+- cause tracing은 `repo.Store`의 reverse API를 직접 호출한다.
+  - `ActionsResultingInStatus(status)`
+  - `StatusesCausingAction(action)`
+  - `ActorsCausingAction(action)`
+- 링크 변경은 `internal/store/entity_link.go`의 typed helper를 사용한다.
+- postprocess audit은 `morbes_postprocesses`에 기록된다.
 
 ## 트랜잭션과 동시성
 

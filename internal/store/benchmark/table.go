@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/support/ids"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -20,8 +18,8 @@ type Filter struct {
 }
 
 type Row struct {
-	ID             ids.LLMProblemResultID
-	ExamQuestionID ids.ExamQuestionID
+	ID             int64
+	ExamQuestionID int64
 	LLMResponseID  source.RespId
 	Correct        bool
 	CreatedAt      string
@@ -81,13 +79,13 @@ func (Table) Init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (Table) GetByID(ctx context.Context, db sqlutil.Executor, id ids.LLMProblemResultID) (Row, bool, error) {
+func (Table) GetByID(ctx context.Context, db sqlutil.Executor, id int64) (Row, bool, error) {
 	var row Row
 	var correct int
 	err := db.QueryRowContext(ctx, `
 		SELECT llm_problem_result_id, exam_question_id, llm_response_id, correct, created_at
 		FROM llm_problem_results
-		WHERE llm_problem_result_id = ?`, id.ToI64()).
+		WHERE llm_problem_result_id = ?`, id).
 		Scan(&row.ID, &row.ExamQuestionID, &row.LLMResponseID, &correct, &row.CreatedAt)
 	if err == sql.ErrNoRows {
 		return Row{}, false, nil
@@ -158,23 +156,23 @@ func (Table) Count(ctx context.Context, db sqlutil.Executor, filter Filter) (int
 	return count, nil
 }
 
-func (Table) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) (int, error) {
+func (Table) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) (int, error) {
 	var count int
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM llm_problem_results
-		WHERE exam_question_id = ?`, examQuestionID.ToI64()).Scan(&count); err != nil {
+		WHERE exam_question_id = ?`, ExamQuestionID).Scan(&count); err != nil {
 		return 0, fmt.Errorf("llm_problem_results 문제별 개수 조회 실패: %w", err)
 	}
 	return count, nil
 }
 
-func (Table) ListResponseIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) ([]source.RespId, error) {
+func (Table) ListResponseIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]source.RespId, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT DISTINCT llm_response_id
 		FROM llm_problem_results
 		WHERE exam_question_id = ?
-		ORDER BY llm_response_id`, examQuestionID.ToI64())
+		ORDER BY llm_response_id`, ExamQuestionID)
 	if err != nil {
 		return nil, fmt.Errorf("llm_problem_results response id 조회 실패: %w", err)
 	}
@@ -190,10 +188,10 @@ func (Table) ListResponseIDsByExamQuestionID(ctx context.Context, db sqlutil.Exe
 	return result, rows.Err()
 }
 
-func (Table) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, examQuestionID ids.ExamQuestionID) error {
+func (Table) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
 	if _, err := db.ExecContext(ctx, `
 		DELETE FROM llm_problem_results
-		WHERE exam_question_id = ?`, examQuestionID.ToI64()); err != nil {
+		WHERE exam_question_id = ?`, ExamQuestionID); err != nil {
 		return fmt.Errorf("llm_problem_results 문제별 삭제 실패: %w", err)
 	}
 	return nil
