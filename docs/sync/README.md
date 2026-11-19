@@ -9,10 +9,10 @@
 | --- | --- | --- | --- | --- |
 | 1 | `MedicalEntity` | `v0.17.0` | `MedicalEntityRepository/repo` facade 경유 | option ename 추가 |
 | 2 | `MedicalEntityParser` | `v0.6.1` | `internal/pipeline/llm`, `internal/pipeline/resolve` | DTO decode + Entity 변환 |
-| 3 | `SourceEntity` | `v0.4.1` | `internal/store/core` | 동기화 완료 |
-| 4 | `SourceEntityRepository` | `v0.4.0` | `internal/store/core` | Repository-only API |
-| 5 | `SQLCore` | `v0.2.0` | `internal/store/core`, `internal/store/*` | 동기화 완료 |
-| 6 | `MedicalEntityRepository` | `v0.14.0` | `repo` facade + `internal/store/core`, `internal/store/repository` | entity read alias |
+| 3 | `SourceEntity` | `v0.4.1` | `internal/store/facade` | 동기화 완료 |
+| 4 | `SourceEntityRepository` | `v0.4.0` | `internal/store/facade` | Repository-only API |
+| 5 | `SQLCore` | `v0.2.0` | `internal/store/facade`, `internal/store/*` | 동기화 완료 |
+| 6 | `MedicalEntityRepository` | `v0.14.0` | `repo` facade + `internal/store/facade`, `internal/store/internal/repository/*` | entity read alias |
 | 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/pipeline/orchestration` | 동기화 완료 |
 | 8 | `llm-client` | `v0.5.0` | `internal/pipeline/orchestration` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logconfig` + direct import | 동기화 완료 |
@@ -60,7 +60,7 @@
   - `SourceId`, `RespId`, `SourceRef`, `LlmResponse`
   - source row / llm response row
 - 대응 패키지:
-  - `internal/store/core`
+  - `internal/store/facade`
 - 확인:
   - `SourceId`/`RespId`는 `SourceEntity.NewSourceId` / `NewRespId` 직접 사용
   - `SourceEntityRepository.Repository` facade만 사용
@@ -74,8 +74,8 @@
   - `sqlite.TableExists`
   - `sqlite.EnsureRenamedColumn`
 - 대응 패키지:
-  - `internal/store/core`
-  - `internal/store/repository`
+  - `internal/store/facade`
+  - `internal/store/internal/repository/*`
 - 확인:
   - `*sql.DB`/`*sql.Tx` executor 호환
   - `v0.2.0` 사용
@@ -96,14 +96,14 @@
   - `StatusKind`, `ActionKind`, `ActorKind`, `ProcedureKind`
   - `InfuseRoute`
 - 대응 패키지:
-  - `internal/store/core`
-  - `internal/store/repository`
+  - `internal/store/facade`
+  - `internal/store/internal/repository/*`
 - 확인:
   - actor/action/status/procedure read는 facade entity 반환
   - link 타입은 facade에서 export하지 않음
   - `repo.ErrNotFound` 사용
   - `ActionsResultingInStatus`, `StatusesCausingAction`, `ActorsCausingAction` 기반 cause tracing
-  - numerical ID는 `internal/store/repository/entity_id.go`에서만 SQL로 조회
+  - numerical ID는 `internal/store/internal/repository/entity/table_id.go`에서만 SQL로 조회
 
 ## 6. PipeLineCore
 

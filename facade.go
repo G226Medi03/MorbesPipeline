@@ -17,8 +17,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
 	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
-	persistence "github.com/G226Medi03/MorbesPipeline/internal/store/core"
-	storerepo "github.com/G226Medi03/MorbesPipeline/internal/store/repository"
+	persistence "github.com/G226Medi03/MorbesPipeline/internal/store/facade"
 	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
 )
@@ -83,7 +82,7 @@ type (
 	Status                 = repo.Status
 	Procedure              = repo.Procedure
 	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
-	ExamQuestionCaseStats  = storerepo.ExamQuestionCaseStats
+	ExamQuestionCaseStats  = persistence.ExamQuestionCaseStats
 )
 
 type (

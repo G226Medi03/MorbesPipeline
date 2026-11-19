@@ -4,44 +4,60 @@
 
 ```text
 internal/store/
-  core/
-    internal/
-      store/
-      service/
+  facade/
+    store.go
+    schema.go
+    benchmark_tx.go
+    aliases.go
+    postprocess_aliases.go
+  internal/
+    store/
+      store.go
+    service/
+    repository/
+      benchmark/
+      entity/
+      solve/
+      postprocess/
       schema/
-  repository/
+      migration/
 ```
 
 ## StoreContainer
 
 ```text
-internal/store/core/store.go
+internal/store/facade/store.go
+  Store *store.Store
+  Entity/Solve/Source/Benchmark/Postprocess service
+
+internal/store/internal/store/store.go
   ctx
   medical db/tx
   source db/tx
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  Solve storerepo.SolveRepository
-  Benchmark storerepo.BenchmarkRepository
-  Postprocess storerepo.PostprocessRepository
+  Entity entity.Repository
+  Solve solve.Repository
+  Benchmark benchmark.Repository
+  Postprocess postprocess.Repository
 ```
 
 ## 주요 구성
 
 ```text
-core
-  InitSchema
-  transaction
-  core/internal/store: ctx/db + repositories
-  core/internal/service: application services
+internal/store/facade
+  StoreContainer, InitSchema, transaction wrappers
+  필요한 public alias만 노출
 
-repository
-  Table + Repository
-  entity ID/link/read/save
-  benchmark/solve/postprocess table과 repository
-  ProblemResultRow, ExamQuestionDataCounts
-  legacy schema migration
+internal/store/internal/store
+  ctx/db + repositories
+
+internal/store/internal/service
+  Entity/Solve/Source/Benchmark/Postprocess services
+
+internal/store/internal/repository/*
+  benchmark/entity/solve/postprocess/schema/migration
 ```
 
 ## 인과 링크

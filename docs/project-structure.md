@@ -84,30 +84,48 @@ selection
 
 ```text
 internal/store/
-  core/            # StoreContainer, transaction, schema facade
-    internal/
-      store/       # Store: ctx/db + repositories
-      service/     # Entity/Solve/Source/Benchmark/Postprocess services
-      schema/      # schema ensure helpers
-  repository/      # Table + Repository layer
-                   # entity/solve/benchmark/postprocess/read/migration
+  facade/          # public StoreContainer
+  internal/
+    store/         # Store: ctx/db + repositories
+    service/       # application services
+    repository/    # repository별 하위 패키지
+      benchmark/
+      entity/
+      solve/
+      postprocess/
+      schema/
+      migration/
 ```
 
 역할:
 
 ```text
-core
+internal/store/facade
   StoreContainer, New/NewWithDBs, InitSchema
-  core/internal/store: ctx/db + repositories
-  core/internal/service: application services
+  유일한 public store package
 
-repository
-  Table + Repository
+internal/store/internal/store
+  Store: ctx/db + repositories + transaction
+
+internal/store/internal/service
+  Entity/Solve/Source/Benchmark/Postprocess application services
+
+internal/store/internal/repository/benchmark
+  llm_problem_results, ProblemResult, ExamQuestionDataCounts
+
+repository/entity
   entity ID/link/read/save
+
+repository/solve
   solve_cases, solve_steps, solve_llm_calls, answer checks
-  llm_problem_results
+
+repository/postprocess
   morbes_postprocesses audit
-  ProblemResultRow, ExamQuestionDataCounts
+
+repository/schema
+  schema ensure helpers
+
+repository/migration
   legacy schema migration
 ```
 
