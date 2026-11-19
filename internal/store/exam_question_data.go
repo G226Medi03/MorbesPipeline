@@ -4,17 +4,14 @@ import (
 	"context"
 
 	benchmarkresult "github.com/G226Medi03/MorbesPipeline/internal/store/benchmark"
+	"github.com/G226Medi03/MorbesPipeline/internal/store/read"
 	storesolve "github.com/G226Medi03/MorbesPipeline/internal/store/solve"
 	source "github.com/G226Medi03/SourceEntity"
 	storesource "github.com/G226Medi03/SourceEntityRepository"
 )
 
 // ExamQuestionDataCounts summarizes data linked to one exam question.
-type ExamQuestionDataCounts struct {
-	LLMResultCount   int
-	LLMResponseCount int
-	SolveCaseCount   int
-}
+type ExamQuestionDataCounts = read.ExamQuestionDataCounts
 
 func (s *StoreContainer) CountExamQuestionData(ctx context.Context, examQuestionID int64) (ExamQuestionDataCounts, error) {
 	var result ExamQuestionDataCounts
