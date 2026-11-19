@@ -26,7 +26,7 @@ func (self *Service) run_case_extraction_node(ctx context.Context, id domain.Cas
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	if err := self.extractionPipeline(ctx, id, state); err != nil {
+	if err := self.runLLMExtraction(ctx, id, state); err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
