@@ -4,96 +4,12 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/G226Medi03/MedicalEntityParser/llmdto"
-	"github.com/G226Medi03/MedicalEntityParser/llmparser"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/pipeline/checkpoint"
 )
 
-type ResolvedCaseExtraction struct {
-	Actors                  []ActorDraft                  `json:"actors,omitempty"`
-	Statuses                map[string]repo.IEStatus      `json:"statuses,omitempty"`
-	Actions                 map[string]repo.IEAction      `json:"actions,omitempty"`
-	Relations               []RelationDraft               `json:"relations,omitempty"`
-	MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-	PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
-}
+type ResolvedCaseExtraction = checkpoint.ResolvedCaseExtraction
 
-func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
-	statuses := make(map[string]json.RawMessage, len(value.Statuses))
-	for key, status := range value.Statuses {
-		encoded, err := json.Marshal(llmparser.StatusToDTO(status))
-		if err != nil {
-			return nil, err
-		}
-		statuses[key] = encoded
-	}
-	actions := make(map[string]json.RawMessage, len(value.Actions))
-	for key, action := range value.Actions {
-		encoded, err := json.Marshal(llmparser.ActionToDTO(action))
-		if err != nil {
-			return nil, err
-		}
-		actions[key] = encoded
-	}
-	return json.Marshal(struct {
-		Actors                  []ActorDraft                  `json:"actors,omitempty"`
-		Statuses                map[string]json.RawMessage    `json:"statuses,omitempty"`
-		Actions                 map[string]json.RawMessage    `json:"actions,omitempty"`
-		Relations               []RelationDraft               `json:"relations,omitempty"`
-		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-		PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
-	}{value.Actors, statuses, actions, value.Relations, value.MedicalProcedureOptions, value.PatientDescriptions})
-}
-
-func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
-	aux := struct {
-		Actors                  []ActorDraft                  `json:"actors,omitempty"`
-		Statuses                map[string]json.RawMessage    `json:"statuses,omitempty"`
-		Actions                 map[string]json.RawMessage    `json:"actions,omitempty"`
-		Relations               []RelationDraft               `json:"relations,omitempty"`
-		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
-		PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
-	}{}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	value.Actors = aux.Actors
-	value.Relations = aux.Relations
-	value.MedicalProcedureOptions = aux.MedicalProcedureOptions
-	value.PatientDescriptions = aux.PatientDescriptions
-	value.Statuses = make(map[string]repo.IEStatus, len(aux.Statuses))
-	for key, raw := range aux.Statuses {
-		var statusDTO llmdto.Status
-		if err := json.Unmarshal(raw, &statusDTO); err != nil {
-			return err
-		}
-		status, err := llmparser.StatusFromDTO(statusDTO)
-		if err != nil {
-			return err
-		}
-		value.Statuses[key] = status
-	}
-	value.Actions = make(map[string]repo.IEAction, len(aux.Actions))
-	for key, raw := range aux.Actions {
-		var actionDTO llmdto.Action
-		if err := json.Unmarshal(raw, &actionDTO); err != nil {
-			return err
-		}
-		action, err := llmparser.ActionFromDTO(actionDTO)
-		if err != nil {
-			return err
-		}
-		value.Actions[key] = action
-	}
-	return nil
-}
-
-// LoadResolvedCaseExtraction returns the persisted resolve-stage output for a
-// case. It lets application code read options and patient descriptions without
-// depending on the internal step JSON shape.
 func (self *Service) LoadResolvedCaseExtraction(id solve.CaseID) (ResolvedCaseExtraction, bool, error) {
 	step, found, err := self.store.GetStep(id, NodeResolve)
 	if err != nil {
@@ -102,7 +18,7 @@ func (self *Service) LoadResolvedCaseExtraction(id solve.CaseID) (ResolvedCaseEx
 	if !found || step.State != "succeeded" || strings.TrimSpace(step.Meta.OutputJSON) == "" {
 		return ResolvedCaseExtraction{}, false, nil
 	}
-	var output resolveStepOutput
+	var output checkpoint.ResolveStepOutput
 	if err := json.Unmarshal([]byte(step.Meta.OutputJSON), &output); err != nil {
 		return ResolvedCaseExtraction{}, false, err
 	}
