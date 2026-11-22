@@ -1,5 +1,5 @@
-// Package csituation parses and converts structured medical situations.
-package csituation
+// Package situation parses and converts structured medical situations.
+package situation
 
 import (
 	"fmt"

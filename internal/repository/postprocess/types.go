@@ -38,8 +38,8 @@ type Record struct {
 	PostprocessorName string
 	Operation         Operation
 	EntityType        EntityType
-	EntityID          int64
+	EntityKey         string
 	TargetEntityType  EntityType
-	TargetEntityID    int64
+	TargetEntityKey   string
 	FinishedAt        time.Time
 }

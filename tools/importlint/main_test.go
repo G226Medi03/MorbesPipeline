@@ -12,6 +12,7 @@ func TestCheckPackageRejectsForbiddenImport(t *testing.T) {
 		pkg,
 		nil,
 		[]string{"github.com/G226Medi03/MedicalEntity"},
+		nil,
 	)
 	if len(violations) != 1 || !violations[0].Forbidden {
 		t.Fatalf("violations = %+v, want one forbidden violation", violations)
@@ -28,6 +29,7 @@ func TestCheckPackageRejectsForbiddenTestImport(t *testing.T) {
 		pkg,
 		nil,
 		[]string{"github.com/G226Medi03/MedicalEntity"},
+		nil,
 	)
 	if len(violations) != 1 || !violations[0].Forbidden {
 		t.Fatalf("violations = %+v, want one forbidden violation", violations)
@@ -48,6 +50,7 @@ func TestCheckPackageAllowsAdapterImport(t *testing.T) {
 		repoConfig{Path: ".", Enforce: true},
 		pkg,
 		[]adapterConfig{adapter},
+		nil,
 		nil,
 	)
 	if len(violations) != 0 {
@@ -70,8 +73,30 @@ func TestCheckPackageRejectsAdapterBypass(t *testing.T) {
 		pkg,
 		[]adapterConfig{adapter},
 		nil,
+		nil,
 	)
 	if len(violations) != 1 || violations[0].Forbidden {
 		t.Fatalf("violations = %+v, want one adapter violation", violations)
+	}
+}
+
+func TestCheckPackageRejectsBoundaryViolation(t *testing.T) {
+	pkg := packageInfo{
+		ImportPath: "github.com/G226Medi03/MorbesPipeline/internal/repository/store",
+		Imports:    []string{"github.com/G226Medi03/MorbesPipeline/internal/service/store"},
+	}
+	violations := checkPackage(
+		repoConfig{Path: ".", Enforce: true},
+		pkg,
+		nil,
+		nil,
+		[]boundaryConfig{{
+			Name: "repository-no-service",
+			From: "github.com/G226Medi03/MorbesPipeline/internal/repository",
+			To:   []string{"github.com/G226Medi03/MorbesPipeline/internal/service"},
+		}},
+	)
+	if len(violations) != 1 || violations[0].Rule != "repository-no-service" {
+		t.Fatalf("violations = %+v, want one boundary violation", violations)
 	}
 }

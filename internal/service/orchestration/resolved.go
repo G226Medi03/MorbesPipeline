@@ -1,11 +1,11 @@
-package csolve
+package orchestration
 
 import (
 	"encoding/json"
 	"strings"
 
-	solve "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/checkpoint"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/checkpoint"
 )
 
 func (self *Service) LoadResolvedCaseExtraction(id solve.CaseID) (ResolvedCaseExtraction, bool, error) {

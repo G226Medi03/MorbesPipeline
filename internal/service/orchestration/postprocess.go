@@ -1,10 +1,10 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 
 	adapter "github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/adapters/postprocess"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 )
 
 const RejectionStatusName = adapter.RejectionStatusName

@@ -1,13 +1,13 @@
-package service
+package store
 
 import corestore "github.com/G226Medi03/MorbesPipeline/internal/repository/store"
 
-type EntityService struct {
+type MedicalEntityService struct {
 	store *corestore.Store
 }
 
-func NewEntity(store *corestore.Store) *EntityService {
-	return &EntityService{store: store}
+func NewMedicalEntity(store *corestore.Store) *MedicalEntityService {
+	return &MedicalEntityService{store: store}
 }
 
 type SolveService struct {
@@ -35,10 +35,9 @@ func NewBenchmark(store *corestore.Store) *BenchmarkService {
 }
 
 type PostprocessService struct {
-	store  *corestore.Store
-	entity *EntityService
+	store *corestore.Store
 }
 
-func NewPostprocess(store *corestore.Store, entity *EntityService) *PostprocessService {
-	return &PostprocessService{store: store, entity: entity}
+func NewPostprocess(store *corestore.Store) *PostprocessService {
+	return &PostprocessService{store: store}
 }

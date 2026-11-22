@@ -1,11 +1,11 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	domain "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/input"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/input"
 	pllm "github.com/G226Medi03/MorbesPipeline/internal/service/llm"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -17,7 +17,7 @@ func extraction_refered_source(state *pipelineState) source.SourceId {
 	return state.Case.SourceID
 }
 
-func (self *Service) runLLMExtraction(ctx context.Context, id domain.CaseID, state *pipelineState) error {
+func (self *Service) runLLMExtraction(ctx context.Context, id solve.CaseID, state *pipelineState) error {
 	request := morbesllm.ExtractionRequest{
 		CaseID:                     string(id),
 		Problem:                    state.Case.Problem,

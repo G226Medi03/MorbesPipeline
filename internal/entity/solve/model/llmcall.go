@@ -3,13 +3,13 @@ package model
 import (
 	"time"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	"github.com/G226Medi03/SourceEntity"
 )
 
 type LLMCall struct {
-	ID                 int64   `json:"id"`
-	CaseID             domain.CaseID   `json:"caseId"`
+	ID                 int64           `json:"id"`
+	CaseID             solve.CaseID    `json:"caseId"`
 	Seq                int             `json:"seq"`
 	Stage              string          `json:"stage"`
 	Role               string          `json:"role"`

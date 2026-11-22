@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -18,7 +18,7 @@ func Run(ctx context.Context, st *store.StoreContainer, state State) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	entityStore, err := st.Entities()
+	entityStore, err := st.MedicalEntities()
 	if err != nil {
 		return err
 	}

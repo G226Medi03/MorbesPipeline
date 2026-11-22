@@ -1,4 +1,4 @@
-package centitylabel
+package label
 
 import (
 	"testing"

@@ -1,9 +1,8 @@
-package service
+package store
 
 import (
-	"fmt"
-
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -14,17 +13,17 @@ func (s *PostprocessService) RecordPostprocess(
 	name string,
 	operation postprocessrepo.Operation,
 	entityType postprocessrepo.EntityType,
-	entityID int64,
+	entityKey string,
 	targetType postprocessrepo.EntityType,
-	targetID int64,
+	targetKey string,
 ) (source.SourceId, error) {
 	postprocessID, err := s.store.PostprocessRepo().Append(s.store.Context(), s.store.MainExecutor(), postprocessrepo.Record{
 		PostprocessorName: name,
 		Operation:         operation,
 		EntityType:        entityType,
-		EntityID:          entityID,
+		EntityKey:         entityKey,
 		TargetEntityType:  targetType,
-		TargetEntityID:    targetID,
+		TargetEntityKey:   targetKey,
 	})
 	if err != nil {
 		return source.SourceId{}, err
@@ -34,50 +33,34 @@ func (s *PostprocessService) RecordPostprocess(
 
 // AuditPostprocessStatus records one status observation.
 func (s *PostprocessService) AuditPostprocessStatus(name string, operation postprocessrepo.Operation, value repo.IEStatus) error {
-	id, err := s.entity.StatusIDForValue(value)
-	if err != nil {
-		return err
-	}
-	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, id, "", 0)
+	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
 	return err
 }
 
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	id, err := s.entity.StatusIDForValue(value)
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, id, "", 0)
-	if err != nil {
-		return err
-	}
-	return s.AddPostprocessSource(postprocessrepo.EntityStatus, id, sourceID)
+	return s.AddStatusSource(value, sourceID)
 }
 
 // AuditPostprocessAction records one action observation.
 func (s *PostprocessService) AuditPostprocessAction(name string, operation postprocessrepo.Operation, value repo.IEAction) error {
-	id, err := s.entity.ActionIDForValue(value)
-	if err != nil {
-		return err
-	}
-	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, id, "", 0)
+	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
 	return err
 }
 
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	id, err := s.entity.ActionIDForValue(value)
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, id, "", 0)
-	if err != nil {
-		return err
-	}
-	return s.AddPostprocessSource(postprocessrepo.EntityAction, id, sourceID)
+	return s.AddActionSource(value, sourceID)
 }
 
 // AuditPostprocessStatusAction records one status-action link operation.
@@ -87,21 +70,13 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 	status repo.IEStatus,
 	action repo.IEAction,
 ) error {
-	statusID, err := s.entity.StatusIDForValue(status)
-	if err != nil {
-		return err
-	}
-	actionID, err := s.entity.ActionIDForValue(action)
-	if err != nil {
-		return err
-	}
-	_, err = s.RecordPostprocess(
+	_, err := s.RecordPostprocess(
 		name,
 		operation,
 		postprocessrepo.EntityStatus,
-		statusID,
+		entitykey.Status(status),
 		postprocessrepo.EntityAction,
-		actionID,
+		entitykey.Action(action),
 	)
 	return err
 }
@@ -113,58 +88,53 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 	action repo.IEAction,
 	status repo.IEStatus,
 ) error {
-	actionID, err := s.entity.ActionIDForValue(action)
-	if err != nil {
-		return err
-	}
-	statusID, err := s.entity.StatusIDForValue(status)
-	if err != nil {
-		return err
-	}
-	_, err = s.RecordPostprocess(
+	_, err := s.RecordPostprocess(
 		name,
 		operation,
 		postprocessrepo.EntityAction,
-		actionID,
+		entitykey.Action(action),
 		postprocessrepo.EntityStatus,
-		statusID,
+		entitykey.Status(status),
 	)
 	return err
 }
 
-// AddPostprocessSource links a postprocess source to an entity row.
-func (s *PostprocessService) AddPostprocessSource(
-	entityType postprocessrepo.EntityType,
-	entityID int64,
-	sourceID source.SourceId,
-) error {
-	table, column, ok := postprocessSourceTable(entityType)
-	if !ok {
-		return fmt.Errorf("unsupported postprocess entity type: %s", entityType)
+// AddStatusSource attaches a postprocess source to a status.
+func (s *PostprocessService) AddStatusSource(value repo.IEStatus, sourceID source.SourceId) error {
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return err
 	}
-	return s.store.SourceRepo().AddSourceIDs(
-		s.store.Context(),
-		s.store.SourceExecutor(),
-		table,
-		column,
-		entityID,
-		[]source.SourceId{sourceID},
-	)
+	status, err := entities.GetStatus(value)
+	if err != nil {
+		return err
+	}
+	status.Sources = appendSource(status.Sources, sourceID)
+	return entities.SaveStatus(status)
 }
 
-func postprocessSourceTable(entityType postprocessrepo.EntityType) (string, string, bool) {
-	switch entityType {
-	case postprocessrepo.EntityStatus:
-		return "status_sources", "estatus_id", true
-	case postprocessrepo.EntityAction:
-		return "action_sources", "eaction_id", true
-	case postprocessrepo.EntityActor:
-		return "actor_sources", "eactor_id", true
-	case postprocessrepo.EntityProcedure:
-		return "procedure_sources", "emedical_procedure_id", true
-	case postprocessrepo.EntityOption:
-		return "medical_procedure_option_sources", "medical_procedure_option_id", true
-	default:
-		return "", "", false
+// AddActionSource attaches a postprocess source to an action.
+func (s *PostprocessService) AddActionSource(value repo.IEAction, sourceID source.SourceId) error {
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return err
 	}
+	action, err := entities.GetAction(value)
+	if err != nil {
+		return err
+	}
+	action.Sources = appendSource(action.Sources, sourceID)
+	return entities.SaveAction(action)
+}
+
+func appendSource(sources []source.Source, sourceID source.SourceId) []source.Source {
+	if sourceID.ToI64() <= 0 {
+		return sources
+	}
+	for _, item := range sources {
+		if item.SourceID == sourceID {
+			return sources
+		}
+	}
+	return append(sources, source.Source{SourceID: sourceID})
 }

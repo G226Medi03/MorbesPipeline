@@ -1,12 +1,12 @@
 package model
 
 import (
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	"github.com/G226Medi03/SourceEntity"
 )
 
 type LLMCallInput struct {
-	CaseID             domain.CaseID
+	CaseID             solve.CaseID
 	Seq                int
 	Stage              string
 	Role               string

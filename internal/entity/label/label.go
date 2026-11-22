@@ -1,5 +1,5 @@
-// Package centitylabel builds short, human-readable labels for typed entity values.
-package centitylabel
+// Package label builds short, human-readable labels for typed entity values.
+package label
 
 import (
 	"strings"

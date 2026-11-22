@@ -66,6 +66,9 @@ func ApplyMigration(ctx context.Context, s sqlutil.Executor) error {
 			}
 		}
 	}
+	if _, err := s.ExecContext(ctx, `DROP TABLE IF EXISTS entity_sources`); err != nil {
+		return fmt.Errorf("legacy entity_sources drop failed: %w", err)
+	}
 	return nil
 }
 

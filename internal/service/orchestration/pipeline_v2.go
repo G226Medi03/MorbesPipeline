@@ -1,4 +1,4 @@
-package csolve
+package orchestration
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	presolve "github.com/G226Medi03/MorbesPipeline/internal/service/resolve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
 	source "github.com/G226Medi03/SourceEntity"
 	clog "github.com/G226Medi03/log-sqlite"
 )
 
-func (self *Service) run_v2_from(ctx context.Context, id domain.CaseID, from_node string) error {
+func (self *Service) run_v2_from(ctx context.Context, id solve.CaseID, from_node string) error {
 	return self.runPipelineNodes(ctx, id, from_node)
 }
 
-func (self *Service) run_case_extraction_node(ctx context.Context, id domain.CaseID, state *pipelineState) error {
+func (self *Service) run_case_extraction_node(ctx context.Context, id solve.CaseID, state *pipelineState) error {
 	step_id, err := self.store.StartStep(id, NodeCaseExtraction, 0)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (self *Service) run_case_extraction_node(ctx context.Context, id domain.Cas
 	return self.store.FinishStep(step_id, "succeeded", marshal_json(output), "", 0)
 }
 
-func (self *Service) run_resolve_node(ctx context.Context, id domain.CaseID, state *pipelineState) (err error) {
+func (self *Service) run_resolve_node(ctx context.Context, id solve.CaseID, state *pipelineState) (err error) {
 	step_id, err := self.store.StartStep(id, NodeResolve, 0)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		Relations:           state.Extraction.Relations,
 		PatientDescriptions: []patient.PatientDescription{},
 	}
-	entityStore, err := self.store.Entities()
+	entityStore, err := self.store.MedicalEntities()
 	if err != nil {
 		return resolved, err
 	}
@@ -287,20 +287,20 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 	return resolved, nil
 }
 
-func (self *Service) load_case_extraction(id domain.CaseID, state *pipelineState) error {
+func (self *Service) load_case_extraction(id solve.CaseID, state *pipelineState) error {
 	var output caseExtractionStepOutput
 	if err := self.load_step_output(id, NodeCaseExtraction, &output); err != nil {
 		return err
 	}
 	state.Extraction = output.CaseExtraction
-	state.QuestionType = domain.NormalizeQuestionType(output.QuestionType)
+	state.QuestionType = solve.NormalizeQuestionType(output.QuestionType)
 	if state.QuestionType == "" {
-		state.QuestionType = domain.NormalizeQuestionType(state.Case.QuestionType)
+		state.QuestionType = solve.NormalizeQuestionType(state.Case.QuestionType)
 	}
 	return nil
 }
 
-func (self *Service) load_resolve(id domain.CaseID, state *pipelineState) error {
+func (self *Service) load_resolve(id solve.CaseID, state *pipelineState) error {
 	var output resolveStepOutput
 	if err := self.load_step_output(id, NodeResolve, &output); err != nil {
 		return err

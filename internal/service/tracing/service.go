@@ -1,4 +1,4 @@
-package ccause
+package tracing
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
+	label "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 	source_entity "github.com/G226Medi03/SourceEntity"
 )
 
@@ -231,7 +231,7 @@ func status_node(status repo.IEStatus) TraceNode {
 	return TraceNode{
 		Type:  "status",
 		Key:   statusDisplayKey(status),
-		Label: centitylabel.StatusLabelValue(status),
+		Label: label.StatusLabelValue(status),
 	}
 }
 
@@ -239,7 +239,7 @@ func statusDisplayKey(status repo.IEStatus) string {
 	if status == nil {
 		return ""
 	}
-	return status.Kind() + "|" + centitylabel.StatusLabelValue(status)
+	return status.Kind() + "|" + label.StatusLabelValue(status)
 }
 
 func actionDisplayKey(action repo.IEAction) string {
@@ -261,7 +261,7 @@ func action_label(action repo.IEAction) string {
 		if cause.Status == nil {
 			return "원인 상태 정보 없음"
 		}
-		label := centitylabel.StatusLabelValue(cause.Status)
+		label := label.StatusLabelValue(cause.Status)
 		switch cause.Status.Kind() {
 		case "increased_index", "decreased_index":
 			name := strings.TrimSpace(strings.TrimSuffix(strings.TrimSuffix(label, " 증가"), " 감소"))
@@ -270,7 +270,7 @@ func action_label(action repo.IEAction) string {
 			return "cause_status: " + label
 		}
 	}
-	return action.Kind() + ":" + centitylabel.ActionLabelValue(action)
+	return action.Kind() + ":" + label.ActionLabelValue(action)
 }
 
 func actor_node(actor repo.IEActor) (TraceNode, bool) {

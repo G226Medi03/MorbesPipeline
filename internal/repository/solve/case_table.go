@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -76,7 +76,7 @@ func ensure_question_type_column(ctx context.Context, db sqlutil.Executor) error
 	return nil
 }
 
-func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, sourceID source.SourceId) (domain.CaseID, error) {
+func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, sourceID source.SourceId) (solve.CaseID, error) {
 	if sourceID.ToI64() <= 0 {
 		return "", fmt.Errorf("solve case source가 필요합니다")
 	}
@@ -90,10 +90,10 @@ func (CaseTable) CreateForExamQuestion(ctx context.Context, db sqlutil.Executor,
 	if err != nil {
 		return "", fmt.Errorf("solve case id 조회 실패: %w", err)
 	}
-	return domain.CaseID(strconv.FormatInt(id, 10)), nil
+	return solve.CaseID(strconv.FormatInt(id, 10)), nil
 }
 
-func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, replayOf domain.CaseID, mode, fromNode string) (domain.CaseID, error) {
+func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64, replayOf solve.CaseID, mode, fromNode string) (solve.CaseID, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO solve_cases (
 			exam_question_id, source_id, state, stage,
@@ -107,10 +107,10 @@ func (CaseTable) CreateReplay(ctx context.Context, db sqlutil.Executor, ExamQues
 	if err != nil {
 		return "", fmt.Errorf("solve replay case id 조회 실패: %w", err)
 	}
-	return domain.CaseID(strconv.FormatInt(id, 10)), nil
+	return solve.CaseID(strconv.FormatInt(id, 10)), nil
 }
 
-func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]domain.Case, error) {
+func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]solve.Case, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -125,7 +125,7 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]do
 		return nil, fmt.Errorf("solve case 목록 조회 실패: %w", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	result := make([]domain.Case, 0)
+	result := make([]solve.Case, 0)
 	for rows.Next() {
 		item, err := scan_case(rows.Scan)
 		if err != nil {
@@ -136,7 +136,7 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]do
 	return result, rows.Err()
 }
 
-func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id domain.CaseID) (domain.Case, bool, error) {
+func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id solve.CaseID) (solve.Case, bool, error) {
 	row := db.QueryRowContext(ctx, `
 		SELECT case_id, exam_question_id, situation_json, answer_json,
 		       state, stage, question_type, error, source_id, situation_source_id,
@@ -144,32 +144,32 @@ func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id domain.CaseID)
 		FROM solve_cases WHERE case_id = ?`, id)
 	item, err := scan_case(row.Scan)
 	if err == sql.ErrNoRows {
-		return domain.Case{}, false, nil
+		return solve.Case{}, false, nil
 	}
 	if err != nil {
-		return domain.Case{}, false, fmt.Errorf("solve case 조회 실패: %w", err)
+		return solve.Case{}, false, fmt.Errorf("solve case 조회 실패: %w", err)
 	}
 	return item, true, nil
 }
 
-func scan_case(scan func(...any) error) (domain.Case, error) {
-	var item domain.Case
+func scan_case(scan func(...any) error) (solve.Case, error) {
+	var item solve.Case
 	var id int64
 	var replayOf int64
 	if err := scan(&id, &item.ExamQuestionID, &item.SituationJSON,
 		&item.AnswerJSON, &item.State, &item.Stage, &item.QuestionType, &item.Error, &item.SourceID,
 		&item.SituationSourceID, &replayOf, &item.ReplayMode, &item.ReplayFromNode,
 		&item.CreatedAt, &item.UpdatedAt); err != nil {
-		return domain.Case{}, err
+		return solve.Case{}, err
 	}
-	item.ID = domain.CaseID(strconv.FormatInt(id, 10))
+	item.ID = solve.CaseID(strconv.FormatInt(id, 10))
 	if replayOf > 0 {
-		item.ReplayOf = domain.CaseID(strconv.FormatInt(replayOf, 10))
+		item.ReplayOf = solve.CaseID(strconv.FormatInt(replayOf, 10))
 	}
 	return item, nil
 }
 
-func (CaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id domain.CaseID, mode, fromNode string) error {
+func (CaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id solve.CaseID, mode, fromNode string) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_cases
 		SET state = 'pending', stage = 'queued', error = '',
@@ -195,39 +195,39 @@ func (CaseTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error
 	return nil
 }
 
-func (CaseTable) SetRunning(ctx context.Context, db sqlutil.Executor, id domain.CaseID) error {
+func (CaseTable) SetRunning(ctx context.Context, db sqlutil.Executor, id solve.CaseID) error {
 	return (CaseTable{}).set(ctx, db, id, `state = 'running', error = '', updated_at = CURRENT_TIMESTAMP`, nil)
 }
 
-func (CaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id domain.CaseID, stage string) error {
+func (CaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id solve.CaseID, stage string) error {
 	return (CaseTable{}).set(ctx, db, id, `stage = ?, updated_at = CURRENT_TIMESTAMP`, []any{stage})
 }
 
-func (CaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id domain.CaseID, questionType string) error {
+func (CaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id solve.CaseID, questionType string) error {
 	return (CaseTable{}).set(ctx, db, id, `question_type = ?, updated_at = CURRENT_TIMESTAMP`, []any{questionType})
 }
 
-func (CaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id domain.CaseID, situation string) error {
+func (CaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id solve.CaseID, situation string) error {
 	return (CaseTable{}).set(ctx, db, id, `situation_json = ?, updated_at = CURRENT_TIMESTAMP`, []any{situation})
 }
 
-func (CaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
+func (CaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id solve.CaseID, sourceID source.SourceId) error {
 	return (CaseTable{}).set(ctx, db, id, `source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
 }
 
-func (CaseTable) SetSituationSource(ctx context.Context, db sqlutil.Executor, id domain.CaseID, sourceID source.SourceId) error {
+func (CaseTable) SetSituationSource(ctx context.Context, db sqlutil.Executor, id solve.CaseID, sourceID source.SourceId) error {
 	return (CaseTable{}).set(ctx, db, id, `situation_source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
 }
 
-func (CaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id domain.CaseID, answerJSON string) error {
+func (CaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id solve.CaseID, answerJSON string) error {
 	return (CaseTable{}).set(ctx, db, id, `answer_json = ?, state = 'done', stage = 'done', error = '', updated_at = CURRENT_TIMESTAMP`, []any{answerJSON})
 }
 
-func (CaseTable) SetFailed(ctx context.Context, db sqlutil.Executor, id domain.CaseID, message string) error {
+func (CaseTable) SetFailed(ctx context.Context, db sqlutil.Executor, id solve.CaseID, message string) error {
 	return (CaseTable{}).set(ctx, db, id, `state = 'failed', error = ?, updated_at = CURRENT_TIMESTAMP`, []any{message})
 }
 
-func (CaseTable) set(ctx context.Context, db sqlutil.Executor, id domain.CaseID, assignment string, args []any) error {
+func (CaseTable) set(ctx context.Context, db sqlutil.Executor, id solve.CaseID, assignment string, args []any) error {
 	query := `UPDATE solve_cases SET ` + assignment + ` WHERE case_id = ?`
 	args = append(args, string(id))
 	if _, err := db.ExecContext(ctx, query, args...); err != nil {
@@ -237,7 +237,7 @@ func (CaseTable) set(ctx context.Context, db sqlutil.Executor, id domain.CaseID,
 }
 
 type FailedCase struct {
-	ID             domain.CaseID
+	ID             solve.CaseID
 	ExamQuestionID int64
 	State          string
 	Stage          string
@@ -303,14 +303,14 @@ func (CaseTable) ListFailed(ctx context.Context, db sqlutil.Executor, limit int)
 		if err := rows.Scan(&caseID, &item.ExamQuestionID, &item.State, &item.Stage, &item.Error); err != nil {
 			return nil, err
 		}
-		item.ID = domain.CaseID(caseID)
+		item.ID = solve.CaseID(caseID)
 		result = append(result, item)
 	}
 	return result, rows.Err()
 }
 
 type ExamQuestionCaseStats struct {
-	LatestCaseID domain.CaseID
+	LatestCaseID solve.CaseID
 	LatestState  string
 	Processed    bool
 	Attempts     int
@@ -351,7 +351,7 @@ func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor
 		}
 		stats := result[questionID]
 		if stats.LatestCaseID == "" {
-			stats.LatestCaseID = domain.CaseID(caseID)
+			stats.LatestCaseID = solve.CaseID(caseID)
 			stats.LatestState = state
 		}
 		stats.Attempts++
@@ -374,7 +374,7 @@ func (CaseTable) CountByExamQuestionID(ctx context.Context, db sqlutil.Executor,
 	return count, nil
 }
 
-func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]domain.CaseID, error) {
+func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) ([]solve.CaseID, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT case_id
 		FROM solve_cases
@@ -384,18 +384,18 @@ func (CaseTable) ListIDsByExamQuestionID(ctx context.Context, db sqlutil.Executo
 		return nil, fmt.Errorf("solve_cases 문제별 id 조회 실패: %w", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	result := make([]domain.CaseID, 0)
+	result := make([]solve.CaseID, 0)
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		result = append(result, domain.CaseID(strconv.FormatInt(id, 10)))
+		result = append(result, solve.CaseID(strconv.FormatInt(id, 10)))
 	}
 	return result, rows.Err()
 }
 
-func (CaseTable) DeleteByIDs(ctx context.Context, db sqlutil.Executor, ids []domain.CaseID) error {
+func (CaseTable) DeleteByIDs(ctx context.Context, db sqlutil.Executor, ids []solve.CaseID) error {
 	if len(ids) == 0 {
 		return nil
 	}

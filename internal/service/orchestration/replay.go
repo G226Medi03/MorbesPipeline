@@ -1,22 +1,22 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	core "github.com/G226Medi03/PipeLineCore"
 )
 
-type ReplayMode = domain.ReplayMode
+type ReplayMode = solve.ReplayMode
 
 const (
-	ReplayModeLLM  = domain.ReplayModeLLM
-	ReplayModeCode = domain.ReplayModeCode
+	ReplayModeLLM  = solve.ReplayModeLLM
+	ReplayModeCode = solve.ReplayModeCode
 )
 
 // PrepareReplay resets the source case so replay overwrites the same case.
-func (self *Service) PrepareReplay(_ context.Context, sourceID domain.CaseID, mode ReplayMode, fromNode string) (domain.CaseID, error) {
+func (self *Service) PrepareReplay(_ context.Context, sourceID solve.CaseID, mode ReplayMode, fromNode string) (solve.CaseID, error) {
 	if mode != ReplayModeLLM && mode != ReplayModeCode {
 		return "", fmt.Errorf("알 수 없는 replay mode 입니다: %s", mode)
 	}
@@ -39,7 +39,7 @@ func (self *Service) PrepareReplay(_ context.Context, sourceID domain.CaseID, mo
 
 // RunReplay executes the reset case. useCache is ignored for code replay,
 // which always bypasses the shared LLM response cache.
-func (self *Service) RunReplay(ctx context.Context, sourceID domain.CaseID, mode ReplayMode, fromNode string, useCache bool) error {
+func (self *Service) RunReplay(ctx context.Context, sourceID solve.CaseID, mode ReplayMode, fromNode string, useCache bool) error {
 	run := *self
 	run.ctx = ctx
 	if mode == ReplayModeCode {

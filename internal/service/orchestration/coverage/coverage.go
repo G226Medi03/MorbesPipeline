@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/input"
+	entitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/input"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
 )
 
@@ -57,7 +57,7 @@ func coverageEvidence(problem string) string {
 }
 
 func coverageStatusLabel(status repo.IEStatus) string {
-	label := strings.TrimSpace(centitylabel.StatusLabelValue(status))
+	label := strings.TrimSpace(entitylabel.StatusLabelValue(status))
 	if label == "" || label == status.Kind() {
 		return ""
 	}
@@ -72,7 +72,7 @@ func coverageStatusTerms(status repo.IEStatus, label string) []string {
 	case repo.DecreasedIndex:
 		terms = appendTerm(terms, typed.Index.Name)
 	case repo.ReceivedMedicalProcedure:
-		procedureLabel := centitylabel.ProcedureLabel(typed.MedicalProcedure)
+		procedureLabel := entitylabel.ProcedureLabel(typed.MedicalProcedure)
 		terms = appendTerm(terms, procedureLabel)
 		if cleaning, ok := typed.MedicalProcedure.(repo.Cleaning); ok && cleaning.Target != nil {
 			device := strings.TrimSpace(cleaning.Target.ActorName())

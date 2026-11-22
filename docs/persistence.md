@@ -4,26 +4,29 @@
 
 ```text
 internal/repository/
-  facade/
-    facade.go
   store/
     store.go
     schema.go
+  medicalentity/
   benchmark/
-  entity/
   solve/
   postprocess/
   schema/
   migration/
-  testdb/
+
+internal/service/store/
+  container.go
+  medical_entity.go
+  solve.go
+  ...
 ```
 
 ## StoreContainer
 
 ```text
-internal/repository/facade/facade.go
-  Store *store.Store
-  Entity/Solve/Source/Benchmark/Postprocess service
+internal/service/store/container.go
+  Store *repository/store.Store
+  MedicalEntity/Solve/Source/Benchmark/Postprocess service
 
 internal/repository/store/store.go
   ctx
@@ -32,7 +35,7 @@ internal/repository/store/store.go
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  Entity entity.Repository
+  MedicalEntity medicalentity.Repository
   Solve solve.Repository
   Benchmark benchmark.Repository
   Postprocess postprocess.Repository
@@ -41,26 +44,28 @@ internal/repository/store/store.go
 ## 주요 구성
 
 ```text
-internal/repository/facade
+internal/service/store
   StoreContainer, InitSchema, transaction wrappers
-  필요한 public alias만 노출
+  MedicalEntity/Solve/Source/Benchmark/Postprocess application services
 
 internal/repository/store
   ctx/db + repositories
 
-internal/service/store
-  Entity/Solve/Source/Benchmark/Postprocess services
+internal/repository/medicalentity
+  ename-based link/read/save
 
 internal/repository/benchmark
   llm_problem_results
-internal/repository/entity
-  entity ID/link/read/save
+
 internal/repository/solve
   solve_cases, solve_steps, solve_llm_calls, answer checks
+
 internal/repository/postprocess
   morbes_postprocesses audit
+
 internal/repository/schema
   schema ensure helpers
+
 internal/repository/migration
   legacy schema migration
 ```
@@ -80,11 +85,16 @@ morbes_postprocesses
   postprocessor_name
   operation
   entity_type
-  entity_id
+  entity_key
   target_entity_type
-  target_entity_id
+  target_entity_key
   finished_at
 ```
+
+기존 numeric ID 기반 audit table은 migration 시
+`morbes_postprocesses_legacy`로 보존된다.
+
+`entity_sources` legacy table은 더 이상 사용하지 않으며 schema 초기화 시 제거된다.
 
 ## 관련 문서
 

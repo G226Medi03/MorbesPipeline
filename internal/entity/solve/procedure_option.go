@@ -1,6 +1,7 @@
-package domain
+package solve
 
 import (
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -8,14 +9,14 @@ import (
 // choice questions.
 type MedicalProcedureOptionGraph struct {
 	Options                         []MedicalProcedureOptionGraphItem `json:"options"`
-	SelectedOptionID                int64                             `json:"selectedOptionId,omitempty"`
+	SelectedOptionIndex             int                               `json:"selectedOptionIndex,omitempty"`
 	Selected                        *MedicalProcedureOptionGraphItem  `json:"selected,omitempty"`
 	AnswerInMedicalProcedureOptions bool                              `json:"answerInMedicalProcedureOptions"`
 }
 
 type MedicalProcedureOptionGraphItem struct {
-	ID              int64                              `json:"id"`
-	ProcedureID     int64                              `json:"procedureId"`
+	Key             string                             `json:"key,omitempty"`
+	Procedure       repo.IMedicalProcedure             `json:"procedure"`
 	Category        string                             `json:"category"`
 	ProcedureLabel  string                             `json:"procedureLabel"`
 	Action          string                             `json:"action,omitempty"`
@@ -26,14 +27,14 @@ type MedicalProcedureOptionGraphItem struct {
 }
 
 type MedicalProcedureOptionOutcome struct {
-	StatusID int64  `json:"statusId"`
-	Label    string `json:"label"`
-	Kind     string `json:"kind,omitempty"`
+	Status repo.IEStatus `json:"status"`
+	Label  string        `json:"label"`
+	Kind   string        `json:"kind,omitempty"`
 }
 
 type MedicalProcedureOptionIndication struct {
-	StatusID int64  `json:"statusId"`
-	Label    string `json:"label"`
-	Observed bool   `json:"observed"`
-	Cause    bool   `json:"cause,omitempty"`
+	Status   repo.IEStatus `json:"status"`
+	Label    string        `json:"label"`
+	Observed bool          `json:"observed"`
+	Cause    bool          `json:"cause,omitempty"`
 }

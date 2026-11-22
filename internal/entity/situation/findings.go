@@ -1,4 +1,4 @@
-package csituation
+package situation
 
 import "encoding/json"
 

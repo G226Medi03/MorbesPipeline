@@ -1,4 +1,4 @@
-package ccause
+package tracing
 
 type TraceNode struct {
 	Type  string `json:"type"`

@@ -1,5 +1,5 @@
 // Package domain contains the solve pipeline's aggregate model and policies.
-package domain
+package solve
 
 type Stage string
 

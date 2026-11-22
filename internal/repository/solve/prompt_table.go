@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -43,7 +43,7 @@ func (PromptTable) Get(ctx context.Context, db sqlutil.Executor, stage string) (
 }
 
 func (PromptTable) Save(ctx context.Context, db sqlutil.Executor, stage, template string) (int, error) {
-	if err := domain.ValidatePromptTemplate(stage, template); err != nil {
+	if err := solve.ValidatePromptTemplate(stage, template); err != nil {
 		return 0, err
 	}
 	if _, err := db.ExecContext(ctx, `

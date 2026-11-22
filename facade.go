@@ -13,12 +13,12 @@ import (
 	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	label "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
-	persistence "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/model"
 	pipeline "github.com/G226Medi03/MorbesPipeline/internal/service/orchestration"
-	solve "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve/model"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/support/logconfig"
+	appstore "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	cause "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
+	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
 )
 
 type (
@@ -46,9 +46,8 @@ type (
 	QuestionStore = solve.QuestionStore
 	AnswerCheck   = solve.AnswerCheck
 
-	MedicalProcedureOption   = repo.MedicalProcedureOption
-	MedicalProcedureOptionID = int64
-	PatientDescription       = patient.PatientDescription
+	MedicalProcedureOption = repo.MedicalProcedureOption
+	PatientDescription     = patient.PatientDescription
 )
 
 type (
@@ -69,30 +68,24 @@ type (
 )
 
 type (
-	Store          = persistence.StoreContainer
-	StoreContainer = persistence.StoreContainer
+	Store          = appstore.StoreContainer
+	StoreContainer = appstore.StoreContainer
 
-	ProblemResultFilter = persistence.ProblemResultFilter
-	ProblemResultRow    = persistence.ProblemResultRow
+	ProblemResultFilter = appstore.ProblemResultFilter
+	ProblemResultRow    = appstore.ProblemResultRow
 
 	Actor                  = repo.Actor
 	Action                 = repo.Action
 	Status                 = repo.Status
 	Procedure              = repo.Procedure
-	ExamQuestionDataCounts = persistence.ExamQuestionDataCounts
-	ExamQuestionCaseStats  = persistence.ExamQuestionCaseStats
+	ExamQuestionDataCounts = appstore.ExamQuestionDataCounts
+	ExamQuestionCaseStats  = appstore.ExamQuestionCaseStats
 )
 
 type (
-	StatusID           = int64
-	ActionID           = int64
-	ActorID            = int64
-	ProcedureID        = int64
-	DeviceID           = int64
 	ExamQuestionID     = int64
 	LLMProblemResultID = int64
 	LLMCallID          = int64
-	StatusEntityID     = int64
 
 	Attr    = clog.Attr
 	Logger  = clog.Logger
@@ -126,8 +119,8 @@ var (
 	InferQuestionPolicy   = solve.InferQuestionPolicy
 	NormalizeQuestionType = solve.NormalizeQuestionType
 
-	New        = persistence.New
-	NewWithDBs = persistence.NewWithDBs
+	New        = appstore.New
+	NewWithDBs = appstore.NewWithDBs
 
 	Open                = logconfig.Open
 	OptionsFromEnv      = logconfig.OptionsFromEnv

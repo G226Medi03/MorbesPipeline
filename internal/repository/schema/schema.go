@@ -23,28 +23,6 @@ func EnsureSolveIDColumns(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func EnsureEntitySources(ctx context.Context, db sqlutil.Executor) error {
-	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS entity_sources (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		entity_kind TEXT NOT NULL,
-		entity_id INTEGER NOT NULL,
-		source_id INTEGER NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(entity_kind, entity_id, source_id)
-	);`); err != nil {
-		return err
-	}
-	if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_entity_sources_entity
-		ON entity_sources(entity_kind, entity_id);`); err != nil {
-		return err
-	}
-	if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_entity_sources_source
-		ON entity_sources(source_id);`); err != nil {
-		return err
-	}
-	return nil
-}
-
 func EnsureStatusOtherName(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS status_other_name (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
