@@ -26,7 +26,7 @@ func EnsureInfusionOption(st *store.StoreContainer, name string, sources []sourc
 		return nil
 	}
 	procedure := repo.Infuse{Material: repo.NewUnknownActor(name), Route: repo.InfuseRouteUnknown}
-	if _, err := st.SaveProcedure(procedure, nil, sources); err != nil {
+	if err := st.SaveProcedure(procedure, nil, sources); err != nil {
 		return err
 	}
 	_, err := st.SaveMedicalProcedureOptionByValues(procedure, "treatment", nil, nil, nil, nil, sources)

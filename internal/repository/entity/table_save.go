@@ -1,34 +1,11 @@
 package entity
 
 import (
-	"fmt"
-
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/entity/key"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
 	source "github.com/G226Medi03/SourceEntity"
 )
-
-func (s *entityTable) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
-	if value == nil {
-		return 0, fmt.Errorf("procedure value is nil")
-	}
-	if _, err := s.entities.InsertProcedure(value, nil, MedicalEntityTraits(traits), sourceIDs(sources)); err != nil {
-		return 0, err
-	}
-	return s.procedureIDForValue(value)
-}
-
-func (s *entityTable) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
-	sources := make([]source.SourceId, 0, 1)
-	if option.SourceID.ToI64() > 0 {
-		sources = append(sources, option.SourceID)
-	}
-	if err := s.entities.SaveMedicalProcedureOption(option, sources); err != nil {
-		return option, err
-	}
-	return option, nil
-}
 
 func (s *entityTable) SaveMedicalProcedureOptionByValues(
 	procedure repo.IMedicalProcedure,
@@ -51,10 +28,19 @@ func (s *entityTable) SaveMedicalProcedureOptionByValues(
 		Indications:      indications,
 		ExpectedEffects:  effects,
 	}
+	optionSources := make([]source.SourceId, 0, len(sources))
+	for _, item := range sources {
+		if item.SourceID.ToI64() > 0 {
+			optionSources = append(optionSources, item.SourceID)
+		}
+	}
+	if err := s.entities.SaveMedicalProcedureOption(option, optionSources); err != nil {
+		return option, err
+	}
 	if len(sources) > 0 {
 		option.SourceID = sources[0].SourceID
 	}
-	return s.SaveMedicalProcedureOption(option)
+	return option, nil
 }
 
 func traitStrings(values []trait.Trait) []string {

@@ -18,19 +18,6 @@ func (s *entityTable) LinkStatusAction(statusID int64, actionID int64, sourceID 
 	return err
 }
 
-// LinkStatusActionValues resolves typed values and connects them.
-func (s *entityTable) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
-	statusID, err := s.statusIDForValue(status)
-	if err != nil {
-		return err
-	}
-	actionID, err := s.actionIDForValue(action)
-	if err != nil {
-		return err
-	}
-	return s.LinkStatusAction(statusID, actionID, sourceID)
-}
-
 // LinkActionResultStatus connects an action and its result status with one
 // source.
 func (s *entityTable) LinkActionResultStatus(actionID int64, statusID int64, sourceID source.SourceId) error {

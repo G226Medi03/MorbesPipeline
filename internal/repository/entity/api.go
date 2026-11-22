@@ -9,26 +9,6 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (r Repository) SaveProcedure(
-	ctx context.Context,
-	db sqlutil.Executor,
-	entities *repo.Store,
-	value repo.IMedicalProcedure,
-	traits []trait.Trait,
-	sources []source.Source,
-) (int64, error) {
-	return r.table(ctx, db, entities).SaveProcedure(value, traits, sources)
-}
-
-func (r Repository) SaveMedicalProcedureOption(
-	ctx context.Context,
-	db sqlutil.Executor,
-	entities *repo.Store,
-	option repo.MedicalProcedureOption,
-) (repo.MedicalProcedureOption, error) {
-	return r.table(ctx, db, entities).SaveMedicalProcedureOption(option)
-}
-
 func (r Repository) SaveMedicalProcedureOptionByValues(
 	ctx context.Context,
 	db sqlutil.Executor,
@@ -60,16 +40,6 @@ func (r Repository) LinkStatusAction(ctx context.Context, db sqlutil.Executor, s
 	return r.table(ctx, db, nil).LinkStatusAction(statusID, actionID, sourceID)
 }
 
-func (r Repository) LinkStatusActionValues(
-	ctx context.Context,
-	db sqlutil.Executor,
-	status repo.IEStatus,
-	action repo.IEAction,
-	sourceID source.SourceId,
-) error {
-	return r.table(ctx, db, nil).LinkStatusActionValues(status, action, sourceID)
-}
-
 func (r Repository) LinkActionResultStatus(ctx context.Context, db sqlutil.Executor, actionID, statusID int64, sourceID source.SourceId) error {
 	return r.table(ctx, db, nil).LinkActionResultStatus(actionID, statusID, sourceID)
 }
@@ -98,26 +68,6 @@ func (r Repository) DeleteActionResultStatusValues(
 	status repo.IEStatus,
 ) error {
 	return r.table(ctx, db, nil).DeleteActionResultStatusValues(action, status)
-}
-
-func (r Repository) GetActorByName(ctx context.Context, db sqlutil.Executor, entities *repo.Store, name string) (repo.Actor, bool, error) {
-	return r.table(ctx, db, entities).GetActorByName(name)
-}
-
-func (r Repository) GetDeviceByName(ctx context.Context, db sqlutil.Executor, entities *repo.Store, name string) (repo.Actor, bool, error) {
-	return r.table(ctx, db, entities).GetDeviceByName(name)
-}
-
-func (r Repository) GetAction(ctx context.Context, db sqlutil.Executor, entities *repo.Store, value repo.IEAction) (repo.Action, bool, error) {
-	return r.table(ctx, db, entities).GetAction(value)
-}
-
-func (r Repository) GetStatus(ctx context.Context, db sqlutil.Executor, entities *repo.Store, value repo.IEStatus) (repo.Status, bool, error) {
-	return r.table(ctx, db, entities).GetStatus(value)
-}
-
-func (r Repository) GetProcedure(ctx context.Context, db sqlutil.Executor, entities *repo.Store, value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
-	return r.table(ctx, db, entities).GetProcedure(value)
 }
 
 func (r Repository) StatusIDForValue(ctx context.Context, db sqlutil.Executor, value repo.IEStatus) (int64, error) {

@@ -8,9 +8,9 @@ import (
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
 	presolve "github.com/G226Medi03/MorbesPipeline/internal/service/resolve"
+	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
 	source "github.com/G226Medi03/SourceEntity"
 	clog "github.com/G226Medi03/log-sqlite"
 )
@@ -210,7 +210,7 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			continue
 		}
 		optionTraits := trait.NormalizeTraits(draft.Traits)
-		if _, err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources); err != nil {
+		if err := self.store.SaveProcedure(procedure, trait.IntrinsicTraits(optionTraits), option_sources); err != nil {
 			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
 			continue
 		}

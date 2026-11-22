@@ -1,19 +1,28 @@
 package service
 
 import (
+	"errors"
+
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
+	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/entity"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
+func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
 	entities, err := s.store.Entities()
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return s.store.EntityRepo().SaveProcedure(s.store.Context(), s.store.MainExecutor(), entities, value, traits, sources)
+	_, err = entities.InsertProcedure(
+		value,
+		nil,
+		entityrepo.MedicalEntityTraits(traits),
+		sourceIDs(sources),
+	)
+	return err
 }
 
 func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
@@ -23,7 +32,14 @@ func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureO
 	if err != nil {
 		return option, err
 	}
-	return s.store.EntityRepo().SaveMedicalProcedureOption(s.store.Context(), s.store.MainExecutor(), entities, option)
+	sources := make([]source.SourceId, 0, 1)
+	if option.SourceID.ToI64() > 0 {
+		sources = append(sources, option.SourceID)
+	}
+	if err := entities.SaveMedicalProcedureOption(option, sources); err != nil {
+		return option, err
+	}
+	return option, nil
 }
 
 func (s *EntityService) SaveMedicalProcedureOptionByValues(
@@ -62,7 +78,11 @@ func (s *EntityService) LinkStatusAction(statusID int64, actionID int64, sourceI
 func (s *EntityService) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.EntityRepo().LinkStatusActionValues(s.store.Context(), s.store.MainExecutor(), status, action, sourceID)
+	entities, err := s.store.Entities()
+	if err != nil {
+		return err
+	}
+	return entities.LinkStatusAction(status, action, sourceID)
 }
 
 func (s *EntityService) LinkActionResultStatus(actionID int64, statusID int64, sourceID source.SourceId) error {
@@ -100,15 +120,25 @@ func (s *EntityService) GetActorByName(name string) (repo.Actor, bool, error) {
 	if err != nil {
 		return repo.Actor{}, false, err
 	}
-	return s.store.EntityRepo().GetActorByName(s.store.Context(), s.store.MainExecutor(), entities, name)
-}
-
-func (s *EntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
-	entities, err := s.store.Entities()
+	actor, err := entities.GetActorByName(name)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Actor{}, false, nil
+	}
 	if err != nil {
 		return repo.Actor{}, false, err
 	}
-	return s.store.EntityRepo().GetDeviceByName(s.store.Context(), s.store.MainExecutor(), entities, name)
+	return actor, true, nil
+}
+
+func (s *EntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
+	actor, found, err := s.GetActorByName(name)
+	if err != nil || !found {
+		return repo.Actor{}, found, err
+	}
+	if actor.Name().Kind() != string(repo.ActorKindDevice) {
+		return repo.Actor{}, false, nil
+	}
+	return actor, true, nil
 }
 
 func (s *EntityService) GetAction(value repo.IEAction) (repo.Action, bool, error) {
@@ -116,7 +146,14 @@ func (s *EntityService) GetAction(value repo.IEAction) (repo.Action, bool, error
 	if err != nil {
 		return repo.Action{}, false, err
 	}
-	return s.store.EntityRepo().GetAction(s.store.Context(), s.store.MainExecutor(), entities, value)
+	action, err := entities.GetAction(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Action{}, false, nil
+	}
+	if err != nil {
+		return repo.Action{}, false, err
+	}
+	return action, true, nil
 }
 
 func (s *EntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
@@ -124,7 +161,14 @@ func (s *EntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error
 	if err != nil {
 		return repo.Status{}, false, err
 	}
-	return s.store.EntityRepo().GetStatus(s.store.Context(), s.store.MainExecutor(), entities, value)
+	status, err := entities.GetStatus(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Status{}, false, nil
+	}
+	if err != nil {
+		return repo.Status{}, false, err
+	}
+	return status, true, nil
 }
 
 func (s *EntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
@@ -132,7 +176,14 @@ func (s *EntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedu
 	if err != nil {
 		return repo.Procedure{}, false, err
 	}
-	return s.store.EntityRepo().GetProcedure(s.store.Context(), s.store.MainExecutor(), entities, value)
+	procedure, err := entities.GetProcedure(value)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.Procedure{}, false, nil
+	}
+	if err != nil {
+		return repo.Procedure{}, false, err
+	}
+	return procedure, true, nil
 }
 
 func (s *EntityService) StatusIDForValue(value repo.IEStatus) (int64, error) {
