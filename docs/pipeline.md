@@ -3,7 +3,7 @@
 ## 구조
 
 ```text
-internal/pipeline/
+internal/service/
   orchestration/
     service.go
     aliases.go

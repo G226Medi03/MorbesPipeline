@@ -28,18 +28,15 @@ LLM output
 ├── tools/
 │   └── importlint/
 └── internal/
-    ├── pipeline/
-    ├── store/
-    ├── domain/
-    ├── tracing/
-    ├── support/
-    └── testdb/
+    ├── entity/
+    ├── repository/
+    └── service/
 ```
 
-## internal/pipeline
+## internal/service
 
 ```text
-internal/pipeline/
+internal/service/
   orchestration/   # solve 실행, node 구성, replay
     state/         # pipeline state, step output
     prompt/        # prompt constants/helpers
@@ -47,12 +44,16 @@ internal/pipeline/
     coverage/      # coverage helper
     trace/         # LLM call trace
     adapters/postprocess/ # deterministic postprocess adapter
+  solve/           # solve domain DTO
+  store/           # persistence application services
   checkpoint/      # resolve/step checkpoint DTO
   input/           # 문제 stem/choice parsing
   llm/             # LLM extraction adapter + logger
   resolve/         # extraction DTO -> entity resolve helper
   postprocess/     # deterministic postprocess rules
   selection/       # procedure option selection
+  tracing/         # reverse link cause trace
+  support/         # logconfig, sliceutil
 ```
 
 역할:
@@ -86,37 +87,35 @@ selection
   procedure option scoring/selection
 ```
 
-## internal/store
+## internal/repository
 
 ```text
-internal/store/
+internal/repository/
   facade/          # public StoreContainer
-  internal/
-    store/         # Store: ctx/db + repositories
-    service/       # application services
-    repository/    # repository별 하위 패키지
-      benchmark/
-      entity/
-      solve/
-      postprocess/
-      schema/
-      migration/
+  store/           # Store: ctx/db + repositories
+  benchmark/       # llm_problem_results
+  entity/          # entity ID/link/read/save
+  solve/           # solve tables
+  postprocess/     # postprocess audit
+  schema/          # schema ensure helpers
+  migration/       # legacy schema migration
+  testdb/          # test db helper
 ```
 
 역할:
 
 ```text
-internal/store/facade
+internal/repository/facade
   StoreContainer, New/NewWithDBs, InitSchema
   유일한 public store package
 
-internal/store/internal/store
+internal/repository/store
   Store: ctx/db + repositories + transaction
 
-internal/store/internal/service
+internal/service/store
   Entity/Solve/Source/Benchmark/Postprocess application services
 
-internal/store/internal/repository/benchmark
+internal/repository/benchmark
   llm_problem_results, ProblemResult, ExamQuestionDataCounts
 
 repository/entity
@@ -135,24 +134,21 @@ repository/migration
   legacy schema migration
 ```
 
-## internal/domain
+## internal/entity
 
 ```text
-internal/domain/
-  solve/           # Case, Step, Stage, Question, replay
-  solve/model/     # LLMCall, PromptVersion
-  entitykey/       # stable entity identity key
-  label/           # status/action/procedure label
-  patient/         # patient description
-  situation/       # situation -> status
-  procedureoption/ # option DTO
-  trait/           # trait policy
+internal/entity/
+  key/       # stable entity identity key
+  label/     # status/action/procedure label
+  patient/   # patient description
+  situation/ # situation -> status
+  trait/     # trait policy
 ```
 
-## internal/tracing
+## internal/service/tracing
 
 ```text
-internal/tracing/
+internal/service/tracing/
   candidate.go
   cause_trace_result.go
   service.go
@@ -169,10 +165,10 @@ ActorsCausingAction
 기반 cause trace
 ```
 
-## internal/support
+## internal/service/support
 
 ```text
-internal/support/
+internal/service/support/
   logconfig/   # log DB config
   sliceutil/   # slice helper
 ```
@@ -187,28 +183,35 @@ tools/importlint/
 ## dependency direction
 
 ```text
-internal/support <- internal/domain <- internal/store <- root
-internal/support <- internal/domain <- internal/tracing <- root
-MorbesLLMService <- internal/pipeline <- root
-MedicalEntityRepository <- internal/store
-MedicalEntityParser <- internal/pipeline
+internal/entity <- internal/repository/* <- internal/service/* <- root
+internal/entity <- internal/service/tracing <- root
+MorbesLLMService <- internal/service <- root
+MedicalEntityRepository <- internal/repository
+MedicalEntityParser <- internal/service
+```
+
+예외:
+
+```text
+internal/repository/facade -> internal/service/store
+internal/repository/solve  -> internal/service/solve
 ```
 
 금지:
 
 ```text
-internal/domain -> store / pipeline / tracing
-internal/store -> pipeline
-internal/tracing -> store
+internal/entity -> internal/repository
+internal/entity -> internal/service
+internal/service -> root
 MedicalEntity direct import
 ```
 
 ## 실행 흐름
 
 ```text
-1. root facade가 StoreContainer와 pipeline Service를 조립
+1. root facade가 StoreContainer와 service orchestration를 조립
 2. StoreContainer.InitSchema
-3. pipeline.orchestration이 case를 load
+3. service.orchestration이 case를 load
 4. explain LLM 호출
 5. llm adapter가 extraction runner 실행
 6. resolve helper가 DTO를 Entity로 변환
