@@ -142,7 +142,6 @@ internal/entity/
   label/     # status/action/procedure label
   patient/   # patient description
   situation/ # situation -> status
-  trait/     # trait policy
 ```
 
 ## internal/service/tracing

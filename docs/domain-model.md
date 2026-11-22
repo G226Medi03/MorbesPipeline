@@ -45,14 +45,6 @@ llmdto.Actor
 llmdto.Relation
 ```
 
-## Trait
-
-```text
-trait.Trait
-IntrinsicTraits
-ContextTraits
-```
-
 ## 관련 문서
 
 - [extraction-llm.md](extraction-llm.md)
