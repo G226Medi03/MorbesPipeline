@@ -7,20 +7,23 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-// LinkStatusAction connects a status and an action with one source.
-func (s *entityTable) LinkStatusAction(statusID int64, actionID int64, sourceID source.SourceId) error {
-	if sourceID.ToI64() <= 0 {
-		return fmt.Errorf("status-action source가 필요합니다")
+// LinkActionResultStatusValues connects an action and its result status using
+// typed ename values.
+func (s *entityTable) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
+	actionID, err := s.actionRowIDForValue(action)
+	if err != nil {
+		return err
 	}
-	_, err := s.db.ExecContext(s.ctx,
-		`INSERT OR IGNORE INTO status_actions (estatus_id, eaction_id, source_id) VALUES (?, ?, ?)`,
-		statusID, actionID, sourceID.ToI64())
-	return err
+	statusID, err := s.statusRowIDForValue(status)
+	if err != nil {
+		return err
+	}
+	return s.linkActionResultStatusRowIDs(actionID, statusID, sourceID)
 }
 
-// LinkActionResultStatus connects an action and its result status with one
-// source.
-func (s *entityTable) LinkActionResultStatus(actionID int64, statusID int64, sourceID source.SourceId) error {
+// linkActionResultStatusRowIDs connects an action and its result status with
+// one source. Row identifiers stay private to this repository.
+func (s *entityTable) linkActionResultStatusRowIDs(actionID int64, statusID int64, sourceID source.SourceId) error {
 	if sourceID.ToI64() <= 0 {
 		return fmt.Errorf("action-result source가 필요합니다")
 	}
@@ -30,44 +33,48 @@ func (s *entityTable) LinkActionResultStatus(actionID int64, statusID int64, sou
 	return err
 }
 
-// DeleteStatusAction removes one status-action edge.
-func (s *entityTable) DeleteStatusAction(statusID int64, actionID int64) error {
+// DeleteStatusActionValues removes one status-action edge using typed ename
+// values.
+func (s *entityTable) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
+	statusID, err := s.statusRowIDForValue(status)
+	if err != nil {
+		return err
+	}
+	actionID, err := s.actionRowIDForValue(action)
+	if err != nil {
+		return err
+	}
+	return s.deleteStatusActionRowIDs(statusID, actionID)
+}
+
+// deleteStatusActionRowIDs removes one status-action edge. Row identifiers
+// stay private to this repository.
+func (s *entityTable) deleteStatusActionRowIDs(statusID int64, actionID int64) error {
 	_, err := s.db.ExecContext(s.ctx,
 		`DELETE FROM status_actions WHERE estatus_id = ? AND eaction_id = ?`,
 		statusID, actionID)
 	return err
 }
 
-// DeleteStatusActionValues resolves typed values and removes one edge.
-func (s *entityTable) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
-	statusID, err := s.statusIDForValue(status)
+// DeleteActionResultStatusValues removes one action-result edge using typed
+// ename values.
+func (s *entityTable) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
+	actionID, err := s.actionRowIDForValue(action)
 	if err != nil {
 		return err
 	}
-	actionID, err := s.actionIDForValue(action)
+	statusID, err := s.statusRowIDForValue(status)
 	if err != nil {
 		return err
 	}
-	return s.DeleteStatusAction(statusID, actionID)
+	return s.deleteActionResultStatusRowIDs(actionID, statusID)
 }
 
-// DeleteActionResultStatus removes one action-result edge.
-func (s *entityTable) DeleteActionResultStatus(actionID int64, statusID int64) error {
+// deleteActionResultStatusRowIDs removes one action-result edge. Row
+// identifiers stay private to this repository.
+func (s *entityTable) deleteActionResultStatusRowIDs(actionID int64, statusID int64) error {
 	_, err := s.db.ExecContext(s.ctx,
 		`DELETE FROM action_result_statuses WHERE eaction_id = ? AND estatus_id = ?`,
 		actionID, statusID)
 	return err
-}
-
-// DeleteActionResultStatusValues resolves typed values and removes one edge.
-func (s *entityTable) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
-	actionID, err := s.actionIDForValue(action)
-	if err != nil {
-		return err
-	}
-	statusID, err := s.statusIDForValue(status)
-	if err != nil {
-		return err
-	}
-	return s.DeleteActionResultStatus(actionID, statusID)
 }

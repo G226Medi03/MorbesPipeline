@@ -119,13 +119,13 @@ internal/repository/benchmark
   llm_problem_results, ProblemResult, ExamQuestionDataCounts
 
 repository/entity
-  entity ID/link/read/save
+  ename-based link/read/save
 
 repository/solve
   solve_cases, solve_steps, solve_llm_calls, answer checks
 
 repository/postprocess
-  morbes_postprocesses audit
+  morbes_postprocesses ename-key audit
 
 repository/schema
   schema ensure helpers
@@ -138,7 +138,7 @@ repository/migration
 
 ```text
 internal/entity/
-  key/       # stable entity identity key
+  entitykey/ # stable storage key for audit/option persistence
   label/     # status/action/procedure label
   patient/   # patient description
   situation/ # situation -> status

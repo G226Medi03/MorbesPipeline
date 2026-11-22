@@ -66,7 +66,7 @@ App
 | repository/store | Store: ctx/db + repositories |
 | repository/* | benchmark/entity/solve/postprocess table과 repository |
 | service/tracing | reverse link cause trace |
-| entity | solve domain/entity key/label |
+| entity | solve domain/entitykey/label |
 
 ## 관련 문서
 

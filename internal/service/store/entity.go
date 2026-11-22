@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -53,10 +54,7 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	if err != nil {
 		return repo.MedicalProcedureOption{}, err
 	}
-	key := procedureOptionKey(procedure) + "|" + category
-	for _, indication := range indications {
-		key += "|" + statusOptionKey(indication)
-	}
+	key := entitykey.OptionKey(procedure, category, indications)
 	option := repo.MedicalProcedureOption{
 		Key:              key,
 		Category:         category,
@@ -85,12 +83,6 @@ func (s *EntityService) LinkActionResultStatusValues(action repo.IEAction, statu
 	return s.store.EntityRepo().LinkActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status, sourceID)
 }
 
-func (s *EntityService) LinkStatusAction(statusID int64, actionID int64, sourceID source.SourceId) error {
-	unlock := s.store.LockWrite()
-	defer unlock()
-	return s.store.EntityRepo().LinkStatusAction(s.store.Context(), s.store.MainExecutor(), statusID, actionID, sourceID)
-}
-
 func (s *EntityService) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
@@ -101,28 +93,10 @@ func (s *EntityService) LinkStatusActionValues(status repo.IEStatus, action repo
 	return entities.LinkStatusAction(status, action, sourceID)
 }
 
-func (s *EntityService) LinkActionResultStatus(actionID int64, statusID int64, sourceID source.SourceId) error {
-	unlock := s.store.LockWrite()
-	defer unlock()
-	return s.store.EntityRepo().LinkActionResultStatus(s.store.Context(), s.store.MainExecutor(), actionID, statusID, sourceID)
-}
-
-func (s *EntityService) DeleteStatusAction(statusID int64, actionID int64) error {
-	unlock := s.store.LockWrite()
-	defer unlock()
-	return s.store.EntityRepo().DeleteStatusAction(s.store.Context(), s.store.MainExecutor(), statusID, actionID)
-}
-
 func (s *EntityService) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
 	return s.store.EntityRepo().DeleteStatusActionValues(s.store.Context(), s.store.MainExecutor(), status, action)
-}
-
-func (s *EntityService) DeleteActionResultStatus(actionID int64, statusID int64) error {
-	unlock := s.store.LockWrite()
-	defer unlock()
-	return s.store.EntityRepo().DeleteActionResultStatus(s.store.Context(), s.store.MainExecutor(), actionID, statusID)
 }
 
 func (s *EntityService) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
@@ -200,12 +174,4 @@ func (s *EntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedu
 		return repo.Procedure{}, false, err
 	}
 	return procedure, true, nil
-}
-
-func (s *EntityService) StatusIDForValue(value repo.IEStatus) (int64, error) {
-	return s.store.EntityRepo().StatusIDForValue(s.store.Context(), s.store.MainExecutor(), value)
-}
-
-func (s *EntityService) ActionIDForValue(value repo.IEAction) (int64, error) {
-	return s.store.EntityRepo().ActionIDForValue(s.store.Context(), s.store.MainExecutor(), value)
 }

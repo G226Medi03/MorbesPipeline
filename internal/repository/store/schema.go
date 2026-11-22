@@ -33,9 +33,6 @@ func (s *Store) InitSchema() error {
 	if err := schema.EnsureStatusOtherName(s.Context(), s); err != nil {
 		return err
 	}
-	if err := schema.EnsureEntitySources(s.Context(), s); err != nil {
-		return err
-	}
 	if err := schema.EnsureSolveIDColumns(s.Context(), s.SolveExecutor()); err != nil {
 		return err
 	}

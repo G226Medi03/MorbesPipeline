@@ -54,7 +54,7 @@ internal/service/store
 internal/repository/benchmark
   llm_problem_results
 internal/repository/entity
-  entity ID/link/read/save
+  ename-based link/read/save
 internal/repository/solve
   solve_cases, solve_steps, solve_llm_calls, answer checks
 internal/repository/postprocess
@@ -80,11 +80,16 @@ morbes_postprocesses
   postprocessor_name
   operation
   entity_type
-  entity_id
+  entity_key
   target_entity_type
-  target_entity_id
+  target_entity_key
   finished_at
 ```
+
+기존 numeric ID 기반 audit table은 migration 시
+`morbes_postprocesses_legacy`로 보존된다.
+
+`entity_sources` legacy table은 더 이상 사용하지 않으며 schema 초기화 시 제거된다.
 
 ## 관련 문서
 

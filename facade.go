@@ -46,9 +46,8 @@ type (
 	QuestionStore = solve.QuestionStore
 	AnswerCheck   = solve.AnswerCheck
 
-	MedicalProcedureOption   = repo.MedicalProcedureOption
-	MedicalProcedureOptionID = int64
-	PatientDescription       = patient.PatientDescription
+	MedicalProcedureOption = repo.MedicalProcedureOption
+	PatientDescription     = patient.PatientDescription
 )
 
 type (
@@ -84,15 +83,9 @@ type (
 )
 
 type (
-	StatusID           = int64
-	ActionID           = int64
-	ActorID            = int64
-	ProcedureID        = int64
-	DeviceID           = int64
 	ExamQuestionID     = int64
 	LLMProblemResultID = int64
 	LLMCallID          = int64
-	StatusEntityID     = int64
 
 	Attr    = clog.Attr
 	Logger  = clog.Logger

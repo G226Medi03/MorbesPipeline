@@ -1,5 +1,8 @@
-// Package entitykey builds stable identity keys for typed medical entity values.
-package service
+// Package entitykey builds stable storage keys for typed medical entity values.
+//
+// These keys are for persistence, audit records, and option identity only.
+// Entity equality must use the ename Equal methods, not these strings.
+package entitykey
 
 import (
 	"fmt"
@@ -9,8 +12,8 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
 
-// Status returns a stable identity key for a status value.
-func statusOptionKey(value repo.IEStatus) string {
+// Status returns a stable storage key for a status value.
+func Status(value repo.IEStatus) string {
 	if value == nil {
 		return ""
 	}
@@ -22,37 +25,37 @@ func statusOptionKey(value repo.IEStatus) string {
 	case repo.HaveDisease:
 		return "have_disease|" + strings.TrimSpace(string(typed.Disease))
 	case repo.HaveSymptom:
-		return "have_symptom|" + symptomOptionKey(typed.Symptom)
+		return "have_symptom|" + Symptom(typed.Symptom)
 	case repo.Damaged:
-		return "damaged|" + actorOptionKey(typed.Actor)
+		return "damaged|" + Actor(typed.Actor)
 	case repo.Inflammation:
-		return "inflammation|" + actorOptionKey(typed.Actor)
+		return "inflammation|" + Actor(typed.Actor)
 	case repo.ReceivedMedicalProcedure:
-		return "received_medical_procedure|" + procedureOptionKey(typed.MedicalProcedure) + "|" + strings.TrimSpace(typed.PostProcedurePeriod)
+		return "received_medical_procedure|" + Procedure(typed.MedicalProcedure) + "|" + strings.TrimSpace(typed.PostProcedurePeriod)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
-// Action returns a stable identity key for an action value.
-func actionOptionKey(value repo.IEAction) string {
+// Action returns a stable storage key for an action value.
+func Action(value repo.IEAction) string {
 	if value == nil {
 		return ""
 	}
 	switch typed := value.(type) {
 	case repo.CauseStatus:
-		return "cause_status|" + statusOptionKey(typed.Status)
+		return "cause_status|" + Status(typed.Status)
 	case repo.Block:
-		return "block|" + actorOptionKey(typed.Actor)
+		return "block|" + Actor(typed.Actor)
 	case repo.Relax:
-		return "relax|" + actorOptionKey(typed.Actor)
+		return "relax|" + Actor(typed.Actor)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
-// Symptom returns a stable identity key for a symptom value.
-func symptomOptionKey(value repo.IESymptom) string {
+// Symptom returns a stable storage key for a symptom value.
+func Symptom(value repo.IESymptom) string {
 	if value == nil {
 		return ""
 	}
@@ -61,9 +64,9 @@ func symptomOptionKey(value repo.IESymptom) string {
 		return "other_symptom|" + strings.TrimSpace(typed.Name)
 	case repo.EPain:
 		items := make([]string, 0, len(typed.Aspects)+1)
-		items = append(items, "site|"+actorOptionKey(typed.Site))
+		items = append(items, "site|"+Actor(typed.Site))
 		for _, aspect := range typed.Aspects {
-			items = append(items, aspectOptionKey(aspect))
+			items = append(items, aspectKey(aspect))
 		}
 		sort.Strings(items)
 		return "pain|" + strings.Join(items, ";")
@@ -72,8 +75,8 @@ func symptomOptionKey(value repo.IESymptom) string {
 	}
 }
 
-// Procedure returns a stable identity key for a procedure value.
-func procedureOptionKey(value repo.IMedicalProcedure) string {
+// Procedure returns a stable storage key for a procedure value.
+func Procedure(value repo.IMedicalProcedure) string {
 	if value == nil {
 		return ""
 	}
@@ -89,27 +92,36 @@ func procedureOptionKey(value repo.IMedicalProcedure) string {
 	case repo.Instruction:
 		return "instruction|" + strings.TrimSpace(typed.Name) + "|" + strings.TrimSpace(typed.Action) + "|" + strings.TrimSpace(typed.Duration) + "|" + strings.TrimSpace(typed.Position)
 	case repo.Insertion:
-		return "insertion|" + actorOptionKey(typed.Device) + "|" + actorOptionKey(typed.Site)
+		return "insertion|" + Actor(typed.Device) + "|" + Actor(typed.Site)
 	case repo.Infuse:
-		return "infuse|" + actorOptionKey(typed.Material) + "|" + string(typed.Route)
+		return "infuse|" + Actor(typed.Material) + "|" + string(typed.Route)
 	case repo.Transplant:
-		return "transplant|" + actorOptionKey(typed.Target)
+		return "transplant|" + Actor(typed.Target)
 	case repo.Cleaning:
-		return "cleaning|" + actorOptionKey(typed.Target)
+		return "cleaning|" + Actor(typed.Target)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
-// Actor returns a stable identity key for an actor value.
-func actorOptionKey(value repo.IEActor) string {
+// Actor returns a stable storage key for an actor value.
+func Actor(value repo.IEActor) string {
 	if value == nil {
 		return "nil"
 	}
 	return strings.TrimSpace(value.Kind()) + "|" + strings.TrimSpace(value.ActorName())
 }
 
-func aspectOptionKey(value repo.IPainAspect) string {
+// OptionKey returns the stable key used for a medical procedure option.
+func OptionKey(procedure repo.IMedicalProcedure, category string, indications []repo.IEStatus) string {
+	key := Procedure(procedure) + "|" + category
+	for _, indication := range indications {
+		key += "|" + Status(indication)
+	}
+	return key
+}
+
+func aspectKey(value repo.IPainAspect) string {
 	if value == nil {
 		return "nil"
 	}

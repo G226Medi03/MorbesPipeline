@@ -31,8 +31,12 @@ IPainAspect
 ```text
 status/action/actor/procedure identity -> ename Equal method
 medical procedure option identity    -> option key
+postprocess audit identity           -> entitykey storage key
 case identity                        -> CaseID string
 ```
+
+Medical entity numeric row identifiers are a SQLite implementation detail.
+They are not exposed in public DTOs, repository APIs, or audit records.
 
 ## DTO
 

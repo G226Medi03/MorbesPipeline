@@ -1,6 +1,9 @@
 package selection
 
-import domain "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+import (
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
+	domain "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+)
 
 func ScoreMedicalProcedureOption(option domain.MedicalProcedureOptionGraphItem) int {
 	score := 0
@@ -50,5 +53,13 @@ func SelectMedicalProcedureOption(options []domain.MedicalProcedureOptionGraphIt
 }
 
 func optionTieLess(left, right domain.MedicalProcedureOptionGraphItem) bool {
-	return left.ID < right.ID
+	leftKey := left.Key
+	if leftKey == "" {
+		leftKey = entitykey.Procedure(left.Procedure)
+	}
+	rightKey := right.Key
+	if rightKey == "" {
+		rightKey = entitykey.Procedure(right.Procedure)
+	}
+	return leftKey < rightKey
 }

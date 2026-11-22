@@ -8,7 +8,7 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-// Repository owns entity ID/link/read operations.
+// Repository owns ename-based entity link/delete operations.
 type Repository struct{}
 
 func (Repository) table(
