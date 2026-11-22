@@ -2,7 +2,6 @@ package entity
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
 )
 
 func ActorValueByKind(kind, name string) (repo.IEActor, error) {
@@ -14,12 +13,4 @@ func ActorValueByKind(kind, name string) (repo.IEActor, error) {
 	default:
 		return repo.NewUnknownActor(name), nil
 	}
-}
-
-func MedicalEntityTraits(values []trait.Trait) []repo.Trait {
-	result := make([]repo.Trait, len(values))
-	for index, value := range values {
-		result[index] = repo.Trait(value)
-	}
-	return result
 }

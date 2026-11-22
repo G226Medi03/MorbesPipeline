@@ -50,11 +50,5 @@ func SelectMedicalProcedureOption(options []domain.MedicalProcedureOptionGraphIt
 }
 
 func optionTieLess(left, right domain.MedicalProcedureOptionGraphItem) bool {
-	if left.TreatOptionPriority > 0 && right.TreatOptionPriority > 0 && left.TreatOptionPriority != right.TreatOptionPriority {
-		return left.TreatOptionPriority < right.TreatOptionPriority
-	}
-	if (left.TreatOptionPriority > 0) != (right.TreatOptionPriority > 0) {
-		return left.TreatOptionPriority > 0
-	}
 	return left.ID < right.ID
 }

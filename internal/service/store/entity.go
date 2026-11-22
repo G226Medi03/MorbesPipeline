@@ -4,12 +4,10 @@ import (
 	"errors"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
-	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/entity"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) error {
+func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, sources []source.Source) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
 	entities, err := s.store.Entities()
@@ -19,7 +17,7 @@ func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, traits []tra
 	_, err = entities.InsertProcedure(
 		value,
 		nil,
-		entityrepo.MedicalEntityTraits(traits),
+		nil,
 		sourceIDs(sources),
 	)
 	return err
@@ -45,8 +43,6 @@ func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureO
 func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	procedure repo.IMedicalProcedure,
 	category string,
-	traits []trait.Trait,
-	_ []trait.Trait,
 	indications []repo.IEStatus,
 	effects []repo.IEStatus,
 	sources []source.Source,
@@ -64,7 +60,6 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	option := repo.MedicalProcedureOption{
 		Key:              key,
 		Category:         category,
-		Traits:           traitStrings(traits),
 		MedicalProcedure: procedure,
 		Indications:      indications,
 		ExpectedEffects:  effects,
@@ -82,14 +77,6 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 		option.SourceID = sources[0].SourceID
 	}
 	return option, nil
-}
-
-func traitStrings(values []trait.Trait) []string {
-	result := make([]string, len(values))
-	for index, value := range values {
-		result[index] = string(value)
-	}
-	return result
 }
 
 func (s *EntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {

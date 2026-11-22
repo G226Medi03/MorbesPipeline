@@ -29,10 +29,8 @@
   - kind types/constants
   - `InfuseRoute`
   - codec
-  - trait constants/helper
 - 확인:
   - aggregate ID 제거 대응
-  - `trait` 패키지 경로 변경 대응
   - `emedical_procedure.InfuseRoute` 변경 대응
   - `importlint` forbidden 규칙 적용
 
