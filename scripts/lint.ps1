@@ -7,6 +7,12 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $root
 
+Write-Host "checking MedicalEntity ID references..."
+go run ./tools/entityidlint
+if ($LASTEXITCODE -ne 0) {
+    throw "MedicalEntity ID references are forbidden"
+}
+
 if (-not (Get-Command golangci-lint -ErrorAction SilentlyContinue)) {
     throw "golangci-lint is not installed. Install it before running lint."
 }

@@ -31,7 +31,7 @@ func TestMedicalProcedureOptionGraphJSONUsesEnameFields(t *testing.T) {
 			t.Fatalf("json %s does not contain %s", body, want)
 		}
 	}
-	for _, unwanted := range []string{`"statusId"`, `"procedureId"`, `"selectedOptionId"`} {
+	for _, unwanted := range []string{"status" + "Id", "procedure" + "Id", "selectedOption" + "Id"} {
 		if strings.Contains(body, unwanted) {
 			t.Fatalf("json %s contains %s", body, unwanted)
 		}

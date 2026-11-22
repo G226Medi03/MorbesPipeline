@@ -61,12 +61,9 @@ service를 import하지 않는다.
 ```text
 internal/repository/
   store/          # Store: ctx/db + repositories + transaction
-  medicalentity/  # medical entity ename link/read/save
-  solve/          # solve tables
+  solve/          # solve tables + legacy column helper
   benchmark/      # llm_problem_results
   postprocess/    # postprocess audit
-  schema/         # schema ensure helpers
-  migration/      # legacy schema migration
 ```
 
 ## internal/service
@@ -133,7 +130,7 @@ internal/support/
 
 ```text
 internal/testutil/
-  testdb/
+  sqlite.go
 ```
 
 ## Dependency direction
@@ -141,7 +138,7 @@ internal/testutil/
 ```text
 internal/entity <- internal/repository/* <- internal/service/* <- root
 MorbesLLMService <- internal/service <- root
-MedicalEntityRepository <- internal/repository/medicalentity
+MedicalEntityRepository <- internal/service/store
 MedicalEntityParser <- internal/service
 ```
 

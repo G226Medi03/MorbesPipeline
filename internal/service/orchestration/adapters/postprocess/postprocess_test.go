@@ -9,13 +9,13 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
 	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
+	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
 func TestPostprocessCreatesTransplantRejection(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "postprocess.db"))
 	if err != nil {
 		t.Fatalf("OpenDB: %v", err)
 	}

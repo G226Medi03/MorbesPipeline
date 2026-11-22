@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
+	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 )
 
 func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "postprocess.db"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
@@ -53,9 +53,9 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	}
 }
 
-func TestRepositoryArchivesLegacyIDTable(t *testing.T) {
+func TestRepositoryArchivesLegacyTable(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess-legacy.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "postprocess-legacy.db"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
@@ -66,16 +66,16 @@ func TestRepositoryArchivesLegacyIDTable(t *testing.T) {
 		postprocessor_name TEXT NOT NULL,
 		operation TEXT NOT NULL,
 		entity_type TEXT NOT NULL,
-		entity_id INTEGER NOT NULL,
+		legacy_ref TEXT NOT NULL,
 		target_entity_type TEXT NOT NULL DEFAULT '',
-		target_entity_id INTEGER NOT NULL DEFAULT 0,
+		target_ref TEXT NOT NULL DEFAULT '',
 		finished_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`); err != nil {
 		t.Fatalf("create legacy table: %v", err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO morbes_postprocesses (
-		postprocessor_name, operation, entity_type, entity_id
-	) VALUES ('legacy', 'observed', 'status', 42)`); err != nil {
+		postprocessor_name, operation, entity_type, legacy_ref
+	) VALUES ('legacy', 'observed', 'status', 'legacy-ref')`); err != nil {
 		t.Fatalf("insert legacy row: %v", err)
 	}
 

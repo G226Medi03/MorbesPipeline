@@ -54,7 +54,7 @@ go-duration is used only through MorbesLLMService or MedicalEntityParser.
 
 `internal/repository/facade` no longer exists.
 `StoreContainer` is owned by `internal/service/store`.
-`internal/repository/medicalentity` is the medical entity persistence adapter.
+MedicalEntity numeric IDs stay inside `MedicalEntityRepository`.
 `internal/persistence` no longer exists. Use `internal/repository`.
 
 `tools/importlint` checks these boundaries. Fix violations before creating a PR.
@@ -103,6 +103,7 @@ go build ./...
 go vet ./...
 go test ./... -count=1
 go run ./tools/importlint --config importlint.json -v
+go run ./tools/entityidlint
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint.ps1
 ```
 
@@ -182,9 +183,10 @@ When upgrading a package:
 6. go test ./... -count=1
 7. go vet ./...
 8. go run ./tools/importlint --config importlint.json -v
-9. scripts/lint.ps1
-10. Update docs/sync/README.md versions/status.
-11. Create PR.
+9. go run ./tools/entityidlint
+10. scripts/lint.ps1
+11. Update docs/sync/README.md versions/status.
+12. Create PR.
 ```
 
 Prefer one dependency stack per PR. Do not mix unrelated dependency upgrades.
@@ -268,6 +270,7 @@ Check dependency direction. Move shared types into `internal/entity`. Assemble o
 [ ] go vet ./...
 [ ] go test ./... -count=1
 [ ] importlint
+[ ] entityidlint
 [ ] scripts/lint.ps1
 [ ] go.sum updated
 [ ] dependency tags exist remotely

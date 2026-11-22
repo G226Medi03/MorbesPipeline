@@ -54,8 +54,6 @@ LLM extraction
 │   │       └── selection/
 │   ├── repository/
 │   │   ├── benchmark/
-│   │   ├── medicalentity/
-│   │   ├── migration/
 │   │   ├── postprocess/
 │   │   ├── schema/
 │   │   ├── solve/
@@ -71,8 +69,9 @@ LLM extraction
 │   │   ├── logconfig/
 │   │   └── sliceutil/
 │   └── testutil/
-│       └── testdb/
+│       └── sqlite.go
 ├── tools/importlint/
+├── tools/entityidlint/
 └── docs/
 ```
 
@@ -85,5 +84,6 @@ go build ./...
 go vet ./...
 go test ./... -count=1
 go run ./tools/importlint --config importlint.json -v
+go run ./tools/entityidlint
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint.ps1
 ```

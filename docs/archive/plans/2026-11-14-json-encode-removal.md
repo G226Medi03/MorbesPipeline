@@ -110,11 +110,11 @@ analysis_json
 정규화 방향:
 
 ```text
-procedure_traits(procedure_id, trait)
-option_traits(option_id, trait)
-option_context_traits(option_id, trait)
-status_symptom_aspects(status_id, aspect_kind, value, measure, name, actor_id)
-medical_procedure_option_indications(option_id, status_id)
+procedure_traits(procedure_ref, trait)
+option_traits(option_ref, trait)
+option_context_traits(option_ref, trait)
+status_symptom_aspects(status_ref, aspect_kind, value, measure, name, actor_ref)
+medical_procedure_option_indications(option_ref, status_ref)
 solve_outputs(case_id, node, field, value)
 ```
 
