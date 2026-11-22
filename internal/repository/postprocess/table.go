@@ -11,22 +11,12 @@ import (
 type table struct{}
 
 func (table) init(ctx context.Context, db sqlutil.Executor) error {
-	if err := (table{}).archiveLegacy(ctx, db); err != nil {
+	if err := (table{}).migrate(ctx, db); err != nil {
 		return err
 	}
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS morbes_postprocesses (
-			postprocess_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			postprocessor_name TEXT NOT NULL,
-			operation TEXT NOT NULL,
-			entity_type TEXT NOT NULL,
-			entity_key TEXT NOT NULL,
-			target_entity_type TEXT NOT NULL DEFAULT '',
-			target_entity_key TEXT NOT NULL DEFAULT '',
-			finished_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		);`,
 		`CREATE INDEX IF NOT EXISTS idx_morbes_postprocesses_entity
-			ON morbes_postprocesses(entity_type, entity_key);`,
+			ON morbes_postprocesses(entity_type);`,
 		`CREATE INDEX IF NOT EXISTS idx_morbes_postprocesses_processor
 			ON morbes_postprocesses(postprocessor_name, finished_at);`,
 	}
@@ -38,15 +28,20 @@ func (table) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-// archiveLegacy preserves a pre-key audit table under an immutable legacy name.
-func (table) archiveLegacy(ctx context.Context, db sqlutil.Executor) error {
+func (table) migrate(ctx context.Context, db sqlutil.Executor) error {
 	exists, err := sqlutil.TableExists(ctx, db, "morbes_postprocesses")
-	if err != nil || !exists {
+	if err != nil {
 		return err
 	}
-	hasEntityKey, err := columnExists(ctx, db, "morbes_postprocesses", "entity_key")
-	if err != nil || hasEntityKey {
+	if !exists {
+		return createTable(ctx, db)
+	}
+	columns, err := tableColumns(ctx, db, "morbes_postprocesses")
+	if err != nil {
 		return err
+	}
+	if columns["entity_json"] && !columns["entity_key"] {
+		return nil
 	}
 	if _, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS morbes_postprocesses_legacy`); err != nil {
 		return fmt.Errorf("postprocess legacy archive cleanup failed: %w", err)
@@ -62,41 +57,56 @@ func (table) archiveLegacy(ctx context.Context, db sqlutil.Executor) error {
 			return fmt.Errorf("postprocess legacy index cleanup failed: %w", err)
 		}
 	}
+	return createTable(ctx, db)
+}
+
+func createTable(ctx context.Context, db sqlutil.Executor) error {
+	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS morbes_postprocesses (
+		postprocess_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		postprocessor_name TEXT NOT NULL,
+		operation TEXT NOT NULL,
+		entity_type TEXT NOT NULL,
+		entity_json TEXT NOT NULL,
+		target_entity_type TEXT NOT NULL DEFAULT '',
+		target_entity_json TEXT NOT NULL DEFAULT '',
+		finished_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);`); err != nil {
+		return fmt.Errorf("postprocess schema init failed: %w", err)
+	}
 	return nil
 }
 
-func columnExists(ctx context.Context, db sqlutil.Executor, table, column string) (bool, error) {
+func tableColumns(ctx context.Context, db sqlutil.Executor, table string) (map[string]bool, error) {
 	rows, err := db.QueryContext(ctx, `PRAGMA table_info(`+table+`)`)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
+	columns := map[string]bool{}
 	for rows.Next() {
 		var cid, notNull, pk int
 		var name, columnType string
 		var defaultValue any
 		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
-			return false, err
+			return nil, err
 		}
-		if name == column {
-			return true, nil
-		}
+		columns[name] = true
 	}
-	return false, rows.Err()
+	return columns, rows.Err()
 }
 
 func (table) insert(ctx context.Context, db sqlutil.Executor, record Record) (int64, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO morbes_postprocesses (
-			postprocessor_name, operation, entity_type, entity_key,
-			target_entity_type, target_entity_key, finished_at
+			postprocessor_name, operation, entity_type, entity_json,
+			target_entity_type, target_entity_json, finished_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		record.PostprocessorName,
 		string(record.Operation),
 		string(record.EntityType),
-		record.EntityKey,
+		record.EntityJSON,
 		string(record.TargetEntityType),
-		record.TargetEntityKey,
+		record.TargetEntityJSON,
 		record.FinishedAt,
 	)
 	if err != nil {
@@ -113,15 +123,15 @@ func (table) listByEntity(
 	ctx context.Context,
 	db sqlutil.Executor,
 	entityType EntityType,
-	entityKey string,
+	entityJSON string,
 ) ([]Record, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT postprocess_id, postprocessor_name, operation, entity_type, entity_key,
-		       target_entity_type, target_entity_key, finished_at
+		SELECT postprocess_id, postprocessor_name, operation, entity_type, entity_json,
+		       target_entity_type, target_entity_json, finished_at
 		FROM morbes_postprocesses
-		WHERE entity_type = ? AND entity_key = ?
+		WHERE entity_type = ? AND entity_json = ?
 		ORDER BY postprocess_id`,
-		string(entityType), entityKey,
+		string(entityType), entityJSON,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("postprocess record list failed: %w", err)
@@ -136,9 +146,9 @@ func (table) listByEntity(
 			&record.PostprocessorName,
 			&operation,
 			&entityTypeValue,
-			&record.EntityKey,
+			&record.EntityJSON,
 			&targetType,
-			&record.TargetEntityKey,
+			&record.TargetEntityJSON,
 			&record.FinishedAt,
 		); err != nil {
 			return nil, err

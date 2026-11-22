@@ -4,8 +4,8 @@ go 1.26.0
 
 require (
 	github.com/G226Medi03/MedicalEntityParser v0.6.1
-	github.com/G226Medi03/MedicalEntityRepository v0.16.1
-	github.com/G226Medi03/MorbesLLMService v0.15.0
+	github.com/G226Medi03/MedicalEntityRepository v0.16.2-0.20261122120951-e75040317dfc
+	github.com/G226Medi03/MorbesLLMService v0.15.1-0.20261122121529-86891f41f406
 	github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1
 	github.com/G226Medi03/SQLCore v0.2.0
 	github.com/G226Medi03/SourceEntity v0.4.1
@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/G226Medi03/MedicalEntity v0.18.0 // indirect
+	github.com/G226Medi03/MedicalEntity v0.19.0 // indirect
 	github.com/G226Medi03/go-duration v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect

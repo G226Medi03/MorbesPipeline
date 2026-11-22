@@ -44,6 +44,9 @@ func TestInitSchemaDropsEntitySources(t *testing.T) {
 			t.Fatalf("scan postprocess column: %v", err)
 		}
 		if columnName == "entity_key" {
+			t.Fatalf("morbes_postprocesses.entity_key must be removed")
+		}
+		if columnName == "entity_json" {
 			found = true
 		}
 	}
@@ -51,6 +54,6 @@ func TestInitSchemaDropsEntitySources(t *testing.T) {
 		t.Fatalf("postprocess columns: %v", err)
 	}
 	if !found {
-		t.Fatal("morbes_postprocesses.entity_key is missing")
+		t.Fatal("morbes_postprocesses.entity_json is missing")
 	}
 }

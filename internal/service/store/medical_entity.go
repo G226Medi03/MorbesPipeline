@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -34,10 +33,7 @@ func (s *MedicalEntityService) SaveMedicalProcedureOption(option repo.MedicalPro
 	if option.SourceID.ToI64() > 0 {
 		sources = append(sources, option.SourceID)
 	}
-	if err := entities.SaveMedicalProcedureOption(option, sources); err != nil {
-		return option, err
-	}
-	return option, nil
+	return entities.GetSertMedicalProcedureOption(option, sources)
 }
 
 func (s *MedicalEntityService) SaveMedicalProcedureOptionByValues(
@@ -53,9 +49,7 @@ func (s *MedicalEntityService) SaveMedicalProcedureOptionByValues(
 	if err != nil {
 		return repo.MedicalProcedureOption{}, err
 	}
-	key := entitykey.OptionKey(procedure, category, indications)
 	option := repo.MedicalProcedureOption{
-		Key:              key,
 		Category:         category,
 		MedicalProcedure: procedure,
 		Indications:      indications,
@@ -67,13 +61,7 @@ func (s *MedicalEntityService) SaveMedicalProcedureOptionByValues(
 			optionSources = append(optionSources, item.SourceID)
 		}
 	}
-	if err := entities.SaveMedicalProcedureOption(option, optionSources); err != nil {
-		return option, err
-	}
-	if len(sources) > 0 {
-		option.SourceID = sources[0].SourceID
-	}
-	return option, nil
+	return entities.GetSertMedicalProcedureOption(option, optionSources)
 }
 
 func (s *MedicalEntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {

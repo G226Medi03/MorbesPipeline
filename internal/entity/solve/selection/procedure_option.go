@@ -1,7 +1,8 @@
 package selection
 
 import (
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 )
 
@@ -55,11 +56,18 @@ func SelectMedicalProcedureOption(options []solve.MedicalProcedureOptionGraphIte
 func optionTieLess(left, right solve.MedicalProcedureOptionGraphItem) bool {
 	leftKey := left.Key
 	if leftKey == "" {
-		leftKey = entitykey.Procedure(left.Procedure)
+		leftKey = procedureTieKey(left.Procedure)
 	}
 	rightKey := right.Key
 	if rightKey == "" {
-		rightKey = entitykey.Procedure(right.Procedure)
+		rightKey = procedureTieKey(right.Procedure)
 	}
 	return leftKey < rightKey
+}
+
+func procedureTieKey(value repo.IMedicalProcedure) string {
+	if value == nil {
+		return ""
+	}
+	return value.Kind() + "|" + label.ProcedureLabel(value)
 }

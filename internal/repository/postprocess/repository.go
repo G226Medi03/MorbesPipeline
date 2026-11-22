@@ -29,7 +29,7 @@ func (r Repository) Append(ctx context.Context, db sqlutil.Executor, record Reco
 	if record.Operation == "" {
 		return 0, fmt.Errorf("postprocess operation is required")
 	}
-	if record.EntityType == "" || record.EntityKey == "" {
+	if record.EntityType == "" || record.EntityJSON == "" {
 		return 0, fmt.Errorf("postprocess entity is required")
 	}
 	if record.FinishedAt.IsZero() {
@@ -38,12 +38,12 @@ func (r Repository) Append(ctx context.Context, db sqlutil.Executor, record Reco
 	return r.table.insert(ctx, db, record)
 }
 
-// ListByEntity returns the audit records for one entity key.
+// ListByEntity returns the audit records for one typed entity payload.
 func (r Repository) ListByEntity(
 	ctx context.Context,
 	db sqlutil.Executor,
 	entityType EntityType,
-	entityKey string,
+	entityJSON string,
 ) ([]Record, error) {
-	return r.table.listByEntity(ctx, db, entityType, entityKey)
+	return r.table.listByEntity(ctx, db, entityType, entityJSON)
 }

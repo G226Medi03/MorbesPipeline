@@ -1,8 +1,9 @@
 package store
 
 import (
+	"encoding/json"
+
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -13,17 +14,25 @@ func (s *PostprocessService) RecordPostprocess(
 	name string,
 	operation postprocessrepo.Operation,
 	entityType postprocessrepo.EntityType,
-	entityKey string,
+	entityValue any,
 	targetType postprocessrepo.EntityType,
-	targetKey string,
+	targetValue any,
 ) (source.SourceId, error) {
+	entityJSON, err := encodePostprocessValue(entityValue)
+	if err != nil {
+		return source.SourceId{}, err
+	}
+	targetJSON, err := encodePostprocessValue(targetValue)
+	if err != nil {
+		return source.SourceId{}, err
+	}
 	postprocessID, err := s.store.PostprocessRepo().Append(s.store.Context(), s.store.MainExecutor(), postprocessrepo.Record{
 		PostprocessorName: name,
 		Operation:         operation,
 		EntityType:        entityType,
-		EntityKey:         entityKey,
+		EntityJSON:        entityJSON,
 		TargetEntityType:  targetType,
-		TargetEntityKey:   targetKey,
+		TargetEntityJSON:  targetJSON,
 	})
 	if err != nil {
 		return source.SourceId{}, err
@@ -31,16 +40,38 @@ func (s *PostprocessService) RecordPostprocess(
 	return s.store.SourceRepo().Ensure(s.store.Context(), s.store.SourceExecutor(), source.SourceKindMorbesPostprocess, postprocessID)
 }
 
+func encodePostprocessValue(value any) (string, error) {
+	if value == nil {
+		return "", nil
+	}
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return "", err
+	}
+	if kinded, ok := value.(interface{ Kind() string }); ok {
+		payload["kind"] = kinded.Kind()
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}
+
 // AuditPostprocessStatus records one status observation.
 func (s *PostprocessService) AuditPostprocessStatus(name string, operation postprocessrepo.Operation, value repo.IEStatus) error {
-	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
+	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, value, "", nil)
 	return err
 }
 
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, value, "", nil)
 	if err != nil {
 		return err
 	}
@@ -49,14 +80,14 @@ func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value re
 
 // AuditPostprocessAction records one action observation.
 func (s *PostprocessService) AuditPostprocessAction(name string, operation postprocessrepo.Operation, value repo.IEAction) error {
-	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
+	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, value, "", nil)
 	return err
 }
 
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, value, "", nil)
 	if err != nil {
 		return err
 	}
@@ -74,9 +105,9 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 		name,
 		operation,
 		postprocessrepo.EntityStatus,
-		entitykey.Status(status),
+		status,
 		postprocessrepo.EntityAction,
-		entitykey.Action(action),
+		action,
 	)
 	return err
 }
@@ -92,9 +123,9 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 		name,
 		operation,
 		postprocessrepo.EntityAction,
-		entitykey.Action(action),
+		action,
 		postprocessrepo.EntityStatus,
-		entitykey.Status(status),
+		status,
 	)
 	return err
 }
