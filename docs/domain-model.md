@@ -29,7 +29,7 @@ IPainAspect
 ## Identity
 
 ```text
-status/action/actor/procedure identity -> entitykey string
+status/action/actor/procedure identity -> ename Equal method
 medical procedure option identity    -> option key
 case identity                        -> CaseID string
 ```

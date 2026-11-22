@@ -1,5 +1,7 @@
 github.com/G226Medi03/MedicalEntity v0.17.0 h1:engOEbey2YVftkjNZLETNIf8waiAjHoAHogsNTIB1OQ=
 github.com/G226Medi03/MedicalEntity v0.17.0/go.mod h1:9jaHIPFCGEqghJxyXv1f3996m4CUhLQpIspobG0XORU=
+github.com/G226Medi03/MedicalEntity v0.17.1-0.20261122084159-2645ec118401 h1:5c2cQqO0XEFM2sj0JigkJIGwSJ9WRw6FoACN6w6easE=
+github.com/G226Medi03/MedicalEntity v0.17.1-0.20261122084159-2645ec118401/go.mod h1:9jaHIPFCGEqghJxyXv1f3996m4CUhLQpIspobG0XORU=
 github.com/G226Medi03/MedicalEntityParser v0.6.1 h1:4MuYkSEevFjixCg8X0RyMwDaOCp8/vErdeRxxuz8P7k=
 github.com/G226Medi03/MedicalEntityParser v0.6.1/go.mod h1:L3tKnojVxlxW9PCqd7lwxODEZ15HHHNcId3/I1yv61Q=
 github.com/G226Medi03/MedicalEntityRepository v0.14.0 h1:dx/+BZN4a+1FnyDTz4VIyO3Kd9tgDphADpJnwslLjRk=

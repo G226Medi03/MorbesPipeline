@@ -57,10 +57,39 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	if err != nil {
 		return repo.MedicalProcedureOption{}, err
 	}
-	return s.store.EntityRepo().SaveMedicalProcedureOptionByValues(
-		s.store.Context(), s.store.MainExecutor(), entities,
-		procedure, category, traits, nil, indications, effects, sources,
-	)
+	key := procedureOptionKey(procedure) + "|" + category
+	for _, indication := range indications {
+		key += "|" + statusOptionKey(indication)
+	}
+	option := repo.MedicalProcedureOption{
+		Key:              key,
+		Category:         category,
+		Traits:           traitStrings(traits),
+		MedicalProcedure: procedure,
+		Indications:      indications,
+		ExpectedEffects:  effects,
+	}
+	optionSources := make([]source.SourceId, 0, len(sources))
+	for _, item := range sources {
+		if item.SourceID.ToI64() > 0 {
+			optionSources = append(optionSources, item.SourceID)
+		}
+	}
+	if err := entities.SaveMedicalProcedureOption(option, optionSources); err != nil {
+		return option, err
+	}
+	if len(sources) > 0 {
+		option.SourceID = sources[0].SourceID
+	}
+	return option, nil
+}
+
+func traitStrings(values []trait.Trait) []string {
+	result := make([]string, len(values))
+	for index, value := range values {
+		result[index] = string(value)
+	}
+	return result
 }
 
 func (s *EntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {

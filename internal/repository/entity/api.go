@@ -4,27 +4,9 @@ import (
 	"context"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
-
-func (r Repository) SaveMedicalProcedureOptionByValues(
-	ctx context.Context,
-	db sqlutil.Executor,
-	entities *repo.Store,
-	procedure repo.IMedicalProcedure,
-	category string,
-	traits []trait.Trait,
-	_ []trait.Trait,
-	indications []repo.IEStatus,
-	effects []repo.IEStatus,
-	sources []source.Source,
-) (repo.MedicalProcedureOption, error) {
-	return r.table(ctx, db, entities).SaveMedicalProcedureOptionByValues(
-		procedure, category, traits, nil, indications, effects, sources,
-	)
-}
 
 func (r Repository) LinkActionResultStatusValues(
 	ctx context.Context,

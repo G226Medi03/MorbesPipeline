@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entitykey "github.com/G226Medi03/MorbesPipeline/internal/entity/key"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/input"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
@@ -21,9 +20,11 @@ func ObservedStatuses(state *state.State, observed []repo.IEStatus) ([]repo.IESt
 	if strings.TrimSpace(evidence) == "" {
 		return observed, nil
 	}
-	seen := make(map[string]struct{}, len(observed))
+	seen := make([]repo.IEStatus, 0, len(observed)+len(state.Statuses))
 	for _, status := range observed {
-		seen[coverageStatusKey(status)] = struct{}{}
+		if !containsStatus(seen, status) {
+			seen = append(seen, status)
+		}
 	}
 	addedLabels := make([]string, 0)
 	for _, status := range state.Statuses {
@@ -31,8 +32,7 @@ func ObservedStatuses(state *state.State, observed []repo.IEStatus) ([]repo.IESt
 		if label == "" {
 			continue
 		}
-		key := coverageStatusKey(status)
-		if _, exists := seen[key]; exists {
+		if containsStatus(seen, status) {
 			continue
 		}
 		matched := false
@@ -46,7 +46,7 @@ func ObservedStatuses(state *state.State, observed []repo.IEStatus) ([]repo.IESt
 			continue
 		}
 		observed = append(observed, status)
-		seen[key] = struct{}{}
+		seen = append(seen, status)
 		addedLabels = append(addedLabels, label)
 	}
 	return observed, addedLabels
@@ -93,6 +93,18 @@ func appendTerm(values []string, add ...string) []string {
 	return values
 }
 
-func coverageStatusKey(status repo.IEStatus) string {
-	return entitykey.Status(status)
+func containsStatus(values []repo.IEStatus, target repo.IEStatus) bool {
+	for _, value := range values {
+		if equalStatus(value, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func equalStatus(a, b repo.IEStatus) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return a.Equal(b)
 }
