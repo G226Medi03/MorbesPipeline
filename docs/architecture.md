@@ -55,7 +55,7 @@ App
 | root facade | public API, 전체 조립 |
 | entity | solve domain, label, patient, situation, storage key |
 | repository/store | Store: ctx/db + repositories |
-| repository/* | benchmark/solve/postprocess/schema |
+| repository/* | benchmark/solve/postprocess |
 | service/store | StoreContainer + persistence application services + MedicalEntityRepository ename APIs |
 | service/orchestration | case 실행, node, checkpoint, replay |
 | service/llm | LLM extraction adapter |

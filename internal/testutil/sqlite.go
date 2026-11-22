@@ -1,5 +1,5 @@
-// Package testdb opens SQLite databases for MorbesPipeline tests.
-package testdb
+// Package testutil provides shared test helpers for MorbesPipeline.
+package testutil
 
 import (
 	"database/sql"
@@ -9,8 +9,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Open opens a SQLite database with the same pragmas used by the application.
-func Open(path string) (*sql.DB, error) {
+// OpenSQLite opens a SQLite database with the same pragmas used by the
+// application.
+func OpenSQLite(path string) (*sql.DB, error) {
 	dsn := path
 	separator := "?"
 	if strings.Contains(dsn, "?") {

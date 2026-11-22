@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
+	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -18,7 +18,7 @@ func (testQuestionStore) GetQuestion(context.Context, int64) (QuestionInput, boo
 
 func TestPublicFacade(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "public-facade.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "public-facade.db"))
 	if err != nil {
 		t.Fatalf("OpenDB: %v", err)
 	}

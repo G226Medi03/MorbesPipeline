@@ -61,10 +61,9 @@ service를 import하지 않는다.
 ```text
 internal/repository/
   store/          # Store: ctx/db + repositories + transaction
-  solve/          # solve tables
+  solve/          # solve tables + legacy column helper
   benchmark/      # llm_problem_results
   postprocess/    # postprocess audit
-  schema/         # schema ensure helpers
 ```
 
 ## internal/service
@@ -131,7 +130,7 @@ internal/support/
 
 ```text
 internal/testutil/
-  testdb/
+  sqlite.go
 ```
 
 ## Dependency direction

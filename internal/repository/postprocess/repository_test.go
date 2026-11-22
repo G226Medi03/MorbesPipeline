@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
+	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 )
 
 func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "postprocess.db"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 
 func TestRepositoryArchivesLegacyTable(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "postprocess-legacy.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "postprocess-legacy.db"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

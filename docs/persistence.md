@@ -10,7 +10,6 @@ internal/repository/
   benchmark/
   solve/
   postprocess/
-  schema/
 
 internal/service/store/
   container.go
@@ -57,9 +56,6 @@ internal/repository/solve
 
 internal/repository/postprocess
   morbes_postprocesses audit
-
-internal/repository/schema
-  schema ensure helpers
 ```
 
 ## MedicalEntity ID

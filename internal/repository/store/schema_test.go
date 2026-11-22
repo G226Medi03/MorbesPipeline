@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
+	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 )
 
 func TestInitSchemaDropsEntitySources(t *testing.T) {
 	ctx := context.Background()
-	db, err := testdb.Open(filepath.Join(t.TempDir(), "schema.db"))
+	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "schema.db"))
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

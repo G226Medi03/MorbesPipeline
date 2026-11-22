@@ -69,7 +69,7 @@ LLM extraction
 │   │   ├── logconfig/
 │   │   └── sliceutil/
 │   └── testutil/
-│       └── testdb/
+│       └── sqlite.go
 ├── tools/importlint/
 ├── tools/entityidlint/
 └── docs/
