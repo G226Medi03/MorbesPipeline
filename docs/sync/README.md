@@ -7,17 +7,17 @@
 
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
-| 1 | `MedicalEntity` | `v0.17.1-0.20261122084159-2645ec118401` | `MedicalEntityRepository/repo` facade 경유 | ename Equal method |
+| 1 | `MedicalEntity` | `v0.18.0` | `MedicalEntityRepository/repo` facade 경유 | ename Equal method |
 | 2 | `MedicalEntityParser` | `v0.6.1` | `internal/service/llm`, `internal/service/resolve` | DTO decode + Entity 변환 |
 | 3 | `SourceEntity` | `v0.4.1` | `internal/service/store` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.4.0` | `internal/service/store` | Repository-only API |
 | 5 | `SQLCore` | `v0.2.0` | `internal/service/store`, `internal/repository/*` | 동기화 완료 |
-| 6 | `MedicalEntityRepository` | `v0.14.0` | `repo` facade + `internal/service/store`, `internal/repository/*` | entity read alias |
+| 6 | `MedicalEntityRepository` | `v0.16.1` | `repo` facade + `internal/service/store` | ename relationship APIs |
 | 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/service/orchestration` | 동기화 완료 |
 | 8 | `llm-client` | `v0.5.0` | `internal/service/orchestration` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/support/logconfig` + direct import | 동기화 완료 |
 | 10 | `go-duration` | `v0.1.0` | `MorbesLLMService` / parser 경유 | 직접 import 제거 |
-| 11 | `MorbesLLMService` | `v0.14.1` | extraction DTO, prompt, cache, replay | 동기화 완료 |
+| 11 | `MorbesLLMService` | `v0.15.0` | extraction DTO, prompt, cache, replay | 동기화 완료 |
 
 ## 1. MedicalEntity
 
@@ -73,7 +73,7 @@
   - `sqlite.EnsureRenamedColumn`
 - 대응 패키지:
   - `internal/service/store`
-  - `internal/repository/internal/repository/*`
+  - `internal/repository/*`
 - 확인:
   - `*sql.DB`/`*sql.Tx` executor 호환
   - `v0.2.0` 사용
@@ -85,6 +85,8 @@
   - `Store.InsertStatus`, `Store.GetStatus`
   - `Store.InsertAction`, `Store.GetAction`
   - `Store.LinkStatusAction`, `Store.LinkActorAction`
+  - `Store.LinkActionResultStatus`, `Store.UnlinkStatusAction`
+  - `Store.UnlinkActionResultStatus`, `Store.UnlinkActorAction`
   - `Store.InsertProcedure`, `Store.GetProcedure`
   - `Store.InsertActor`, `Store.GetActor`, `Store.GetActorByName`
   - facade types/constants/codec
@@ -95,13 +97,13 @@
   - `InfuseRoute`
 - 대응 패키지:
   - `internal/service/store`
-  - `internal/repository/internal/repository/*`
+  - `internal/repository/*`
 - 확인:
   - actor/action/status/procedure read는 facade entity 반환
   - link 타입은 facade에서 export하지 않음
   - `repo.ErrNotFound` 사용
   - `ActionsResultingInStatus`, `StatusesCausingAction`, `ActorsCausingAction` 기반 cause tracing
-  - numerical ID는 `internal/repository/medicalentity/table_id.go`에서만 SQL로 조회
+  - numerical ID는 `MedicalEntityRepository` 내부에서만 사용
 
 ## 6. PipeLineCore
 

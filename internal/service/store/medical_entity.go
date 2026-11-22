@@ -18,7 +18,6 @@ func (s *MedicalEntityService) SaveProcedure(value repo.IMedicalProcedure, sourc
 	_, err = entities.InsertProcedure(
 		value,
 		nil,
-		nil,
 		sourceIDs(sources),
 	)
 	return err
@@ -80,7 +79,11 @@ func (s *MedicalEntityService) SaveMedicalProcedureOptionByValues(
 func (s *MedicalEntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.MedicalEntityRepo().LinkActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status, sourceID)
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return err
+	}
+	return entities.LinkActionResultStatus(action, status, sourceID)
 }
 
 func (s *MedicalEntityService) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
@@ -96,13 +99,21 @@ func (s *MedicalEntityService) LinkStatusActionValues(status repo.IEStatus, acti
 func (s *MedicalEntityService) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.MedicalEntityRepo().DeleteStatusActionValues(s.store.Context(), s.store.MainExecutor(), status, action)
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return err
+	}
+	return entities.UnlinkStatusAction(status, action)
 }
 
 func (s *MedicalEntityService) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.MedicalEntityRepo().DeleteActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status)
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return err
+	}
+	return entities.UnlinkActionResultStatus(action, status)
 }
 
 func (s *MedicalEntityService) GetActorByName(name string) (repo.Actor, bool, error) {

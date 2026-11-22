@@ -21,6 +21,7 @@ go build ./...
 go vet ./...
 go test ./... -count=1
 go run ./tools/importlint --config importlint.json
+go run ./tools/entityidlint
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint.ps1
 
 # 3. 커밋 및 push
@@ -112,6 +113,7 @@ go build ./...
 go vet ./...
 go test ./... -count=1
 go run ./tools/importlint --config importlint.json
+go run ./tools/entityidlint
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint.ps1
 ```
 
@@ -164,6 +166,7 @@ PR 본문에는 최소한 아래 항목을 넣는다.
 - [ ] `go vet ./...`
 - [ ] `go test ./... -count=1`
 - [ ] `go run ./tools/importlint --config importlint.json`
+- [ ] `go run ./tools/entityidlint`
 - [ ] `scripts/lint.ps1`
 
 ## Follow-up

@@ -7,12 +7,10 @@ internal/repository/
   store/
     store.go
     schema.go
-  medicalentity/
   benchmark/
   solve/
   postprocess/
   schema/
-  migration/
 
 internal/service/store/
   container.go
@@ -35,7 +33,6 @@ internal/repository/store/store.go
   solve db/tx
   Medical *repo.Store
   Source storesource.Repository
-  MedicalEntity medicalentity.Repository
   Solve solve.Repository
   Benchmark benchmark.Repository
   Postprocess postprocess.Repository
@@ -47,12 +44,10 @@ internal/repository/store/store.go
 internal/service/store
   StoreContainer, InitSchema, transaction wrappers
   MedicalEntity/Solve/Source/Benchmark/Postprocess application services
+  MedicalEntityRepository ename-only link/unlink APIs
 
 internal/repository/store
   ctx/db + repositories
-
-internal/repository/medicalentity
-  ename-based link/read/save
 
 internal/repository/benchmark
   llm_problem_results
@@ -65,9 +60,18 @@ internal/repository/postprocess
 
 internal/repository/schema
   schema ensure helpers
+```
 
-internal/repository/migration
-  legacy schema migration
+## MedicalEntity ID
+
+MorbesPipeline은 MedicalEntity numeric row ID를 사용하지 않는다.
+
+```text
+status/action/actor/procedure/option write
+  -> MedicalEntityRepository ename API
+
+numeric row ID
+  -> MedicalEntityRepository 내부 구현
 ```
 
 ## 인과 링크
@@ -94,7 +98,7 @@ morbes_postprocesses
 기존 numeric ID 기반 audit table은 migration 시
 `morbes_postprocesses_legacy`로 보존된다.
 
-`entity_sources` legacy table은 더 이상 사용하지 않으며 schema 초기화 시 제거된다.
+`entity_sources`, `status_other_name` legacy table은 schema 초기화 시 제거된다.
 
 ## 관련 문서
 

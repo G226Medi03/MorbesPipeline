@@ -16,7 +16,7 @@ root facade
 ```text
 internal/entity <- internal/repository/* <- internal/service/* <- root
 MorbesLLMService <- internal/service <- root
-MedicalEntityRepository <- internal/repository/medicalentity
+MedicalEntityRepository <- internal/service/store
 MedicalEntityParser <- internal/service
 ```
 
@@ -54,10 +54,9 @@ App
 | --- | --- |
 | root facade | public API, 전체 조립 |
 | entity | solve domain, label, patient, situation, storage key |
-| repository/medicalentity | medical entity persistence adapter |
 | repository/store | Store: ctx/db + repositories |
-| repository/* | benchmark/solve/postprocess/schema/migration |
-| service/store | StoreContainer + persistence application services |
+| repository/* | benchmark/solve/postprocess/schema |
+| service/store | StoreContainer + persistence application services + MedicalEntityRepository ename APIs |
 | service/orchestration | case 실행, node, checkpoint, replay |
 | service/llm | LLM extraction adapter |
 | service/resolve | DTO → Entity helper |

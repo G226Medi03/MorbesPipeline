@@ -1,6 +1,7 @@
 # Import dependency linter
 
 `tools/importlint`는 금지 dependency와 내부 계층 경계를 검사한다.
+`tools/entityidlint`는 MedicalEntity numeric ID 참조를 검사한다.
 
 ```text
 feature package
@@ -17,6 +18,7 @@ internal/repository
 
 ```powershell
 go run ./tools/importlint --config importlint.json
+go run ./tools/entityidlint
 ```
 
 Report only:

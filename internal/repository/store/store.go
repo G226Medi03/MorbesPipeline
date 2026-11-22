@@ -10,7 +10,6 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/benchmark"
-	medicalentityrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/medicalentity"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	srepo "github.com/G226Medi03/MorbesPipeline/internal/repository/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
@@ -34,11 +33,10 @@ type Store struct {
 	Medical  *repo.Store
 	Response *responsestore.Store
 
-	Source        storesource.Repository
-	Solve         srepo.Repository
-	Benchmark     benchmarkrepo.Repository
-	Postprocess   postprocessrepo.Repository
-	MedicalEntity medicalentityrepo.Repository
+	Source      storesource.Repository
+	Solve       srepo.Repository
+	Benchmark   benchmarkrepo.Repository
+	Postprocess postprocessrepo.Repository
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -115,10 +113,6 @@ func (s *Store) BenchmarkRepo() benchmarkrepo.Repository {
 
 func (s *Store) PostprocessRepo() postprocessrepo.Repository {
 	return s.Postprocess
-}
-
-func (s *Store) MedicalEntityRepo() medicalentityrepo.Repository {
-	return s.MedicalEntity
 }
 
 func (s *Store) ResponseStore() *responsestore.Store {

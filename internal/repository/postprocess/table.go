@@ -44,8 +44,8 @@ func (table) archiveLegacy(ctx context.Context, db sqlutil.Executor) error {
 	if err != nil || !exists {
 		return err
 	}
-	hasEntityID, err := columnExists(ctx, db, "morbes_postprocesses", "entity_id")
-	if err != nil || !hasEntityID {
+	hasEntityKey, err := columnExists(ctx, db, "morbes_postprocesses", "entity_key")
+	if err != nil || hasEntityKey {
 		return err
 	}
 	if _, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS morbes_postprocesses_legacy`); err != nil {
