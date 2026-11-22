@@ -92,9 +92,9 @@ private GitHub module이 포함되어 있으므로 Git 인증이 필요하다.
 ## 4. 코드 수정 시 확인할 경계
 
 - 외부 앱은 루트 패키지 `morbes`만 import한다.
-- `internal/domain`은 `store`, `pipeline`, `tracing`을 import하지 않는다.
-- `internal/store`는 `pipeline`을 import하지 않는다.
-- `internal/tracing`은 `store`를 import하지 않는다.
+- `internal/entity`은 `store`, `pipeline`, `tracing`을 import하지 않는다.
+- `internal/repository`는 `pipeline`을 import하지 않는다.
+- `internal/service/tracing`은 `store`를 import하지 않는다.
 - LLM 프롬프트, 호출, 캐시, replay는 `MorbesLLMService`가 소유한다.
 - `MedicalEntity` 직접 import는 금지한다. `MedicalEntityRepository/repo` facade를 사용한다.
 - `go-duration`은 `MorbesLLMService` 또는 `MedicalEntityParser` 경유로만 사용한다.

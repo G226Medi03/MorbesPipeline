@@ -7,7 +7,7 @@ import (
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	source "github.com/G226Medi03/SourceEntity"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/testdb"
+	testdb "github.com/G226Medi03/MorbesPipeline/internal/repository/testdb"
 )
 
 type testQuestionStore struct{}

@@ -34,25 +34,27 @@ Do not reimplement code that an upstream repository already provides.
 ## 2. Package boundaries
 
 ```text
-internal/support <- internal/domain <- internal/store <- root
-internal/support <- internal/domain <- internal/tracing <- root
-MorbesLLMService <- internal/pipeline <- root
+internal/entity <- internal/repository/* <- internal/service/* <- root
+internal/entity <- internal/service/tracing <- root
+MorbesLLMService <- internal/service <- root
 ```
 
 Rules:
 
 ```text
-internal/domain must not import store, pipeline, or tracing.
-internal/store must not import pipeline.
-internal/tracing must not import store.
+internal/entity must not import internal/repository or internal/service.
+internal/repository must not import internal/service, except:
+  internal/repository/facade -> internal/service/store
+  internal/repository/solve  -> internal/service/solve
+internal/service must not import root.
 LLM call, prompt, cache, explain, extraction, replay belong to MorbesLLMService.
-llm-client/call is used directly by internal/pipeline.
+llm-client/call is used directly by internal/service.
 Only root assembles the full application.
 MedicalEntity direct import is forbidden. Use MedicalEntityRepository/repo facade.
 go-duration is used only through MorbesLLMService or MedicalEntityParser.
 ```
 
-`internal/persistence` no longer exists. Use `internal/store`.
+`internal/persistence` no longer exists. Use `internal/repository`.
 
 `tools/importlint` checks these boundaries. Fix violations before creating a PR.
 
@@ -256,7 +258,7 @@ Replace forbidden imports with the proper upstream facade.
 
 ### package boundary violation
 
-Check dependency direction. Move shared types into `internal/domain`. Assemble only at root.
+Check dependency direction. Move shared types into `internal/entity`. Assemble only at root.
 
 ## 11. PR checklist
 

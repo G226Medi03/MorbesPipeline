@@ -11,15 +11,15 @@ import (
 
 	"github.com/G226Medi03/MedicalEntityParser/llmdto"
 	"github.com/G226Medi03/MedicalEntityParser/llmparser"
-	label "github.com/G226Medi03/MorbesPipeline/internal/domain/label"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/patient"
-	solve "github.com/G226Medi03/MorbesPipeline/internal/domain/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/solve/model"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	pipeline "github.com/G226Medi03/MorbesPipeline/internal/pipeline/orchestration"
-	persistence "github.com/G226Medi03/MorbesPipeline/internal/store"
-	"github.com/G226Medi03/MorbesPipeline/internal/support/logconfig"
-	cause "github.com/G226Medi03/MorbesPipeline/internal/tracing"
+	label "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/service/solve/model"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/trait"
+	pipeline "github.com/G226Medi03/MorbesPipeline/internal/service/orchestration"
+	persistence "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	"github.com/G226Medi03/MorbesPipeline/internal/service/support/logconfig"
+	cause "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
 )
 
 type (

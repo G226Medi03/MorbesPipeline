@@ -3,31 +3,29 @@
 ## 구조
 
 ```text
-internal/store/
+internal/repository/
   facade/
     facade.go
-  internal/
-    store/
-      store.go
-      schema.go
-    service/
-    repository/
-      benchmark/
-      entity/
-      solve/
-      postprocess/
-      schema/
-      migration/
+  store/
+    store.go
+    schema.go
+  benchmark/
+  entity/
+  solve/
+  postprocess/
+  schema/
+  migration/
+  testdb/
 ```
 
 ## StoreContainer
 
 ```text
-internal/store/facade/facade.go
+internal/repository/facade/facade.go
   Store *store.Store
   Entity/Solve/Source/Benchmark/Postprocess service
 
-internal/store/internal/store/store.go
+internal/repository/store/store.go
   ctx
   medical db/tx
   source db/tx
@@ -43,18 +41,28 @@ internal/store/internal/store/store.go
 ## 주요 구성
 
 ```text
-internal/store/facade
+internal/repository/facade
   StoreContainer, InitSchema, transaction wrappers
   필요한 public alias만 노출
 
-internal/store/internal/store
+internal/repository/store
   ctx/db + repositories
 
-internal/store/internal/service
+internal/service/store
   Entity/Solve/Source/Benchmark/Postprocess services
 
-internal/store/internal/repository/*
-  benchmark/entity/solve/postprocess/schema/migration
+internal/repository/benchmark
+  llm_problem_results
+internal/repository/entity
+  entity ID/link/read/save
+internal/repository/solve
+  solve_cases, solve_steps, solve_llm_calls, answer checks
+internal/repository/postprocess
+  morbes_postprocesses audit
+internal/repository/schema
+  schema ensure helpers
+internal/repository/migration
+  legacy schema migration
 ```
 
 ## 인과 링크

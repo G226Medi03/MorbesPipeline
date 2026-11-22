@@ -4,28 +4,35 @@
 
 ```text
 root facade
-  -> internal/pipeline/orchestration
-  -> internal/pipeline/* helper packages
-  -> internal/store/facade
-  -> internal/domain
+  -> internal/service/orchestration
+  -> internal/service/* helper packages
+  -> internal/repository/facade
+  -> internal/entity
 ```
 
 ## Dependency direction
 
 ```text
-internal/support <- internal/domain <- internal/store <- root
-internal/support <- internal/domain <- internal/tracing <- root
-MorbesLLMService <- internal/pipeline <- root
-MedicalEntityRepository <- internal/store
-MedicalEntityParser <- internal/pipeline
+internal/entity <- internal/repository/* <- internal/service/* <- root
+internal/entity <- internal/service/tracing <- root
+MorbesLLMService <- internal/service <- root
+MedicalEntityRepository <- internal/repository
+MedicalEntityParser <- internal/service
+```
+
+예외:
+
+```text
+internal/repository/facade -> internal/service/store
+internal/repository/solve  -> internal/service/solve
 ```
 
 금지:
 
 ```text
-internal/domain -> store / pipeline / tracing
-internal/store -> pipeline
-internal/tracing -> store
+internal/entity -> internal/repository
+internal/entity -> internal/service
+internal/service -> root
 MedicalEntity direct import
 ```
 
@@ -49,17 +56,17 @@ App
 | 영역 | 책임 |
 | --- | --- |
 | root facade | public API, 전체 조립 |
-| pipeline/orchestration | case 실행, node, checkpoint, replay |
-| pipeline/llm | LLM extraction adapter |
-| pipeline/resolve | DTO → Entity helper |
-| pipeline/postprocess | deterministic postprocess |
-| pipeline/selection | procedure option 선택 |
-| store/facade | public store package |
-| store/internal/store | Store: ctx/db + repositories |
-| store/internal/service | application services |
-| store/internal/repository | benchmark/entity/solve/postprocess table과 repository |
-| tracing | reverse link cause trace |
-| domain | solve/domain/entity key/label/trait |
+| service/orchestration | case 실행, node, checkpoint, replay |
+| service/llm | LLM extraction adapter |
+| service/resolve | DTO → Entity helper |
+| service/postprocess | deterministic postprocess |
+| service/selection | procedure option 선택 |
+| service/store | persistence application services |
+| repository/facade | public store package |
+| repository/store | Store: ctx/db + repositories |
+| repository/* | benchmark/entity/solve/postprocess table과 repository |
+| service/tracing | reverse link cause trace |
+| entity | solve domain/entity key/label/trait |
 
 ## 관련 문서
 
