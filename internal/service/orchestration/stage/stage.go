@@ -1,20 +1,20 @@
 package stage
 
-import "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+import "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 
 const (
-	NodeExplain        = string(domain.StageExplain)
-	NodeCaseExtraction = string(domain.StageCaseExtraction)
-	NodeResolve        = string(domain.StageResolve)
-	NodeCause          = string(domain.StageCause)
+	NodeExplain        = string(solve.StageExplain)
+	NodeCaseExtraction = string(solve.StageCaseExtraction)
+	NodeResolve        = string(solve.StageResolve)
+	NodeCause          = string(solve.StageCause)
 )
 
-type Step = domain.Step
+type Step = solve.Step
 
-func StepSeq(node string) int { return domain.Sequence(domain.Stage(node)) }
+func StepSeq(node string) int { return solve.Sequence(solve.Stage(node)) }
 
 func PipelineStages() []string {
-	stages := domain.Stages()
+	stages := solve.Stages()
 	result := make([]string, 0, len(stages))
 	for _, stage := range stages {
 		result = append(result, string(stage))
@@ -22,4 +22,4 @@ func PipelineStages() []string {
 	return result
 }
 
-func StageSequence(stage string) int { return domain.Sequence(domain.Stage(stage)) }
+func StageSequence(stage string) int { return solve.Sequence(solve.Stage(stage)) }

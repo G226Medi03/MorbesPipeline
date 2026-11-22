@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/repository/testdb"
+	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
 )
 
 func TestRepositoryAppendAndListByEntity(t *testing.T) {

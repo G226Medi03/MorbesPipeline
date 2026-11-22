@@ -1,4 +1,4 @@
-package csolve
+package orchestration
 
 import "github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/prompt"
 

@@ -9,5 +9,28 @@
   "forbidden": [
     "github.com/G226Medi03/MedicalEntity"
   ],
-  "adapters": []
+  "adapters": [],
+  "boundaries": [
+    {
+      "name": "entity-no-repository",
+      "from": "github.com/G226Medi03/MorbesPipeline/internal/entity",
+      "to": [
+        "github.com/G226Medi03/MorbesPipeline/internal/repository"
+      ]
+    },
+    {
+      "name": "entity-no-service",
+      "from": "github.com/G226Medi03/MorbesPipeline/internal/entity",
+      "to": [
+        "github.com/G226Medi03/MorbesPipeline/internal/service"
+      ]
+    },
+    {
+      "name": "repository-no-service",
+      "from": "github.com/G226Medi03/MorbesPipeline/internal/repository",
+      "to": [
+        "github.com/G226Medi03/MorbesPipeline/internal/service"
+      ]
+    }
+  ]
 }

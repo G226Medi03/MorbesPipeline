@@ -6,7 +6,7 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
 	enginepostprocess "github.com/G226Medi03/MorbesPipeline/internal/service/postprocess"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	source "github.com/G226Medi03/SourceEntity"
 )
 

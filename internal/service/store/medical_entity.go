@@ -1,4 +1,4 @@
-package service
+package store
 
 import (
 	"errors"
@@ -8,10 +8,10 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, sources []source.Source) error {
+func (s *MedicalEntityService) SaveProcedure(value repo.IMedicalProcedure, sources []source.Source) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return err
 	}
@@ -24,10 +24,10 @@ func (s *EntityService) SaveProcedure(value repo.IMedicalProcedure, sources []so
 	return err
 }
 
-func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
+func (s *MedicalEntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return option, err
 	}
@@ -41,7 +41,7 @@ func (s *EntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureO
 	return option, nil
 }
 
-func (s *EntityService) SaveMedicalProcedureOptionByValues(
+func (s *MedicalEntityService) SaveMedicalProcedureOptionByValues(
 	procedure repo.IMedicalProcedure,
 	category string,
 	indications []repo.IEStatus,
@@ -50,7 +50,7 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 ) (repo.MedicalProcedureOption, error) {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return repo.MedicalProcedureOption{}, err
 	}
@@ -77,36 +77,36 @@ func (s *EntityService) SaveMedicalProcedureOptionByValues(
 	return option, nil
 }
 
-func (s *EntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
+func (s *MedicalEntityService) LinkActionResultStatusValues(action repo.IEAction, status repo.IEStatus, sourceID source.SourceId) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.EntityRepo().LinkActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status, sourceID)
+	return s.store.MedicalEntityRepo().LinkActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status, sourceID)
 }
 
-func (s *EntityService) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
+func (s *MedicalEntityService) LinkStatusActionValues(status repo.IEStatus, action repo.IEAction, sourceID source.SourceId) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return err
 	}
 	return entities.LinkStatusAction(status, action, sourceID)
 }
 
-func (s *EntityService) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
+func (s *MedicalEntityService) DeleteStatusActionValues(status repo.IEStatus, action repo.IEAction) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.EntityRepo().DeleteStatusActionValues(s.store.Context(), s.store.MainExecutor(), status, action)
+	return s.store.MedicalEntityRepo().DeleteStatusActionValues(s.store.Context(), s.store.MainExecutor(), status, action)
 }
 
-func (s *EntityService) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
+func (s *MedicalEntityService) DeleteActionResultStatusValues(action repo.IEAction, status repo.IEStatus) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.EntityRepo().DeleteActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status)
+	return s.store.MedicalEntityRepo().DeleteActionResultStatusValues(s.store.Context(), s.store.MainExecutor(), action, status)
 }
 
-func (s *EntityService) GetActorByName(name string) (repo.Actor, bool, error) {
-	entities, err := s.store.Entities()
+func (s *MedicalEntityService) GetActorByName(name string) (repo.Actor, bool, error) {
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return repo.Actor{}, false, err
 	}
@@ -120,7 +120,7 @@ func (s *EntityService) GetActorByName(name string) (repo.Actor, bool, error) {
 	return actor, true, nil
 }
 
-func (s *EntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
+func (s *MedicalEntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
 	actor, found, err := s.GetActorByName(name)
 	if err != nil || !found {
 		return repo.Actor{}, found, err
@@ -131,8 +131,8 @@ func (s *EntityService) GetDeviceByName(name string) (repo.Actor, bool, error) {
 	return actor, true, nil
 }
 
-func (s *EntityService) GetAction(value repo.IEAction) (repo.Action, bool, error) {
-	entities, err := s.store.Entities()
+func (s *MedicalEntityService) GetAction(value repo.IEAction) (repo.Action, bool, error) {
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return repo.Action{}, false, err
 	}
@@ -146,8 +146,8 @@ func (s *EntityService) GetAction(value repo.IEAction) (repo.Action, bool, error
 	return action, true, nil
 }
 
-func (s *EntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
-	entities, err := s.store.Entities()
+func (s *MedicalEntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error) {
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return repo.Status{}, false, err
 	}
@@ -161,8 +161,8 @@ func (s *EntityService) GetStatus(value repo.IEStatus) (repo.Status, bool, error
 	return status, true, nil
 }
 
-func (s *EntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
-	entities, err := s.store.Entities()
+func (s *MedicalEntityService) GetProcedure(value repo.IMedicalProcedure) (repo.Procedure, bool, error) {
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return repo.Procedure{}, false, err
 	}

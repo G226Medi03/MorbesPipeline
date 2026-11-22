@@ -15,9 +15,16 @@ import (
 )
 
 type config struct {
-	Repos     []repoConfig    `json:"repos"`
-	Adapters  []adapterConfig `json:"adapters"`
-	Forbidden []string        `json:"forbidden"`
+	Repos      []repoConfig     `json:"repos"`
+	Adapters   []adapterConfig  `json:"adapters"`
+	Forbidden  []string         `json:"forbidden"`
+	Boundaries []boundaryConfig `json:"boundaries"`
+}
+
+type boundaryConfig struct {
+	Name string   `json:"name"`
+	From string   `json:"from"`
+	To   []string `json:"to"`
 }
 
 type repoConfig struct {
@@ -49,6 +56,7 @@ type violation struct {
 	Import    string
 	Adapter   adapterConfig
 	Forbidden bool
+	Rule      string
 	Repo      string
 }
 
@@ -78,11 +86,15 @@ func main() {
 			fmt.Printf("importlint: checked %d packages in %s\n", len(packages), repo.Path)
 		}
 		for _, pkg := range packages {
-			violations = append(violations, checkPackage(repo, pkg, cfg.Adapters, cfg.Forbidden)...)
+			violations = append(violations, checkPackage(repo, pkg, cfg.Adapters, cfg.Forbidden, cfg.Boundaries)...)
 		}
 	}
 
 	for _, item := range violations {
+		if item.Rule != "" {
+			fmt.Printf("%s: import %q violates boundary %q\n", item.Package, item.Import, item.Rule)
+			continue
+		}
 		fmt.Printf("%s: import %q is forbidden (A -> C direct reference)\n", item.Package, item.Import)
 		if item.Forbidden {
 			fmt.Printf("  forbidden module: %s\n", item.Import)
@@ -144,7 +156,7 @@ func listPackages(dir string) ([]packageInfo, error) {
 	return result, nil
 }
 
-func checkPackage(repo repoConfig, pkg packageInfo, adapters []adapterConfig, forbidden []string) []violation {
+func checkPackage(repo repoConfig, pkg packageInfo, adapters []adapterConfig, forbidden []string, boundaries []boundaryConfig) []violation {
 	if !repo.Enforce {
 		return nil
 	}
@@ -163,6 +175,22 @@ func checkPackage(repo repoConfig, pkg packageInfo, adapters []adapterConfig, fo
 					Forbidden: true,
 					Repo:      repo.Path,
 				})
+			}
+		}
+		for _, boundary := range boundaries {
+			if !isExternalImport(pkg.ImportPath, boundary.From) {
+				continue
+			}
+			for _, target := range boundary.To {
+				if isExternalImport(importPath, target) {
+					result = append(result, violation{
+						Package: pkg.ImportPath,
+						Import:  importPath,
+						Rule:    boundary.Name,
+						Repo:    repo.Path,
+					})
+					break
+				}
 			}
 		}
 		if adapterPackage {

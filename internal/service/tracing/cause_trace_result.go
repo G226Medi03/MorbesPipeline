@@ -1,4 +1,4 @@
-package ccause
+package tracing
 
 type CauseTraceResult struct {
 	Observed   []string    `json:"observed"`

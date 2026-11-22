@@ -19,11 +19,15 @@ internal/service/
     coverage/
     trace/
     adapters/postprocess/
-  checkpoint/
-  input/
   llm/
   resolve/
   postprocess/
+  tracing/
+
+internal/entity/solve/
+  checkpoint/
+  input/
+  model/
   selection/
 ```
 

@@ -6,7 +6,8 @@
 root facade
   -> internal/service/orchestration
   -> internal/service/* helper packages
-  -> internal/repository/facade
+  -> internal/service/store
+  -> internal/repository/*
   -> internal/entity
 ```
 
@@ -14,17 +15,9 @@ root facade
 
 ```text
 internal/entity <- internal/repository/* <- internal/service/* <- root
-internal/entity <- internal/service/tracing <- root
 MorbesLLMService <- internal/service <- root
-MedicalEntityRepository <- internal/repository
+MedicalEntityRepository <- internal/repository/medicalentity
 MedicalEntityParser <- internal/service
-```
-
-예외:
-
-```text
-internal/repository/facade -> internal/service/store
-internal/repository/solve  -> internal/service/solve
 ```
 
 금지:
@@ -32,9 +25,13 @@ internal/repository/solve  -> internal/service/solve
 ```text
 internal/entity -> internal/repository
 internal/entity -> internal/service
+internal/repository -> internal/service
 internal/service -> root
 MedicalEntity direct import
 ```
+
+`internal/repository/facade`는 제거되었다.
+`StoreContainer`는 `internal/service/store`가 소유하고, root facade가 이를 public API로 노출한다.
 
 ## 실행 흐름
 
@@ -56,17 +53,18 @@ App
 | 영역 | 책임 |
 | --- | --- |
 | root facade | public API, 전체 조립 |
+| entity | solve domain, label, patient, situation, storage key |
+| repository/medicalentity | medical entity persistence adapter |
+| repository/store | Store: ctx/db + repositories |
+| repository/* | benchmark/solve/postprocess/schema/migration |
+| service/store | StoreContainer + persistence application services |
 | service/orchestration | case 실행, node, checkpoint, replay |
 | service/llm | LLM extraction adapter |
 | service/resolve | DTO → Entity helper |
 | service/postprocess | deterministic postprocess |
-| service/selection | procedure option 선택 |
-| service/store | persistence application services |
-| repository/facade | public store package |
-| repository/store | Store: ctx/db + repositories |
-| repository/* | benchmark/entity/solve/postprocess table과 repository |
 | service/tracing | reverse link cause trace |
-| entity | solve domain/entitykey/label |
+| support | logging/generic utility |
+| testutil | test DB helper |
 
 ## 관련 문서
 

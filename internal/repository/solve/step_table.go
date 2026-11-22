@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -38,14 +38,14 @@ func (StepTable) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (StepTable) Reset(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
+func (StepTable) Reset(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_steps WHERE case_id = ?`, string(caseID)); err != nil {
 		return fmt.Errorf("%s: %w", "solve_steps legacy cleanup failed", err)
 	}
 	return nil
 }
 
-func (StepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
+func (StepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []solve.CaseID) error {
 	if len(caseIDs) == 0 {
 		return nil
 	}
@@ -63,8 +63,8 @@ func (StepTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseI
 	return nil
 }
 
-func (StepTable) Start(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string, promptVersion int) (int64, error) {
-	seq := domain.Sequence(domain.Stage(node))
+func (StepTable) Start(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, node string, promptVersion int) (int64, error) {
+	seq := solve.Sequence(solve.Stage(node))
 	if seq == 0 {
 		return 0, fmt.Errorf("unknown solve node: %s", node)
 	}
@@ -102,7 +102,7 @@ func (StepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, stat
 	return nil
 }
 
-func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) ([]domain.Step, error) {
+func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) ([]solve.Step, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT step_id, case_id, node, seq, state, attempt, prompt_version,
 		       output_json, error, call_id, started_at, finished_at
@@ -111,10 +111,10 @@ func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.Ca
 		return nil, fmt.Errorf("%s: %w", "solve_steps query failed", err)
 	}
 	defer rows.Close() //nolint:errcheck // deferred close
-	result := make([]domain.Step, 0)
+	result := make([]solve.Step, 0)
 	for rows.Next() {
 		var (
-			step          domain.Step
+			step          solve.Step
 			rawStepID     int64
 			rawCaseID     string
 			node          string
@@ -130,16 +130,16 @@ func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.Ca
 		}
 		step.ID = int64(rawStepID)
 		step.Node = node
-		step.State = domain.StepState(state)
-		step.Meta = domain.SolveStepMeta{CaseID: domain.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
+		step.State = solve.StepState(state)
+		step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
 		result = append(result, step)
 	}
 	return result, rows.Err()
 }
 
-func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, node string) (domain.Step, bool, error) {
+func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, node string) (solve.Step, bool, error) {
 	var (
-		step          domain.Step
+		step          solve.Step
 		rawStepID     int64
 		rawCaseID     string
 		rowNode       string
@@ -156,19 +156,19 @@ func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.Cas
 			&step.Attempt, &promptVersion, &outputJSON, &step.Error,
 			&rawcallID, &step.StartedAt, &step.FinishedAt)
 	if err == sql.ErrNoRows {
-		return domain.Step{}, false, nil
+		return solve.Step{}, false, nil
 	}
 	if err != nil {
-		return domain.Step{}, false, fmt.Errorf("%s: %w", "solve_steps query failed", err)
+		return solve.Step{}, false, fmt.Errorf("%s: %w", "solve_steps query failed", err)
 	}
 	step.ID = int64(rawStepID)
 	step.Node = rowNode
-	step.State = domain.StepState(state)
-	step.Meta = domain.SolveStepMeta{CaseID: domain.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
+	step.State = solve.StepState(state)
+	step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
 	return step, true, nil
 }
 
-func (StepTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, seq int) error {
+func (StepTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, seq int) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_steps WHERE case_id = ? AND seq >= ?`, string(caseID), seq); err != nil {
 		return fmt.Errorf("%s: %w", "solve replay step reset failed", err)
 	}
@@ -187,21 +187,21 @@ func (StepTable) MarkInterrupted(ctx context.Context, db sqlutil.Executor) error
 	return nil
 }
 
-func (StepTable) MarkStaleFrom(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromSeq int) error {
+func (StepTable) MarkStaleFrom(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, fromSeq int) error {
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_steps SET state = 'stale', finished_at = NULL
 		WHERE case_id = ? AND seq >= ? AND node <> ?`,
-		caseID, fromSeq, string(domain.StageExplain)); err != nil {
+		caseID, fromSeq, string(solve.StageExplain)); err != nil {
 		return fmt.Errorf("%s: %w", "solve_steps stale update failed", err)
 	}
 	return nil
 }
 
-func (StepTable) MarkDownstreamStale(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, fromNode string) error {
-	if !domain.IsStage(fromNode) {
+func (StepTable) MarkDownstreamStale(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, fromNode string) error {
+	if !solve.IsStage(fromNode) {
 		return fmt.Errorf("unknown solve node: %s", fromNode)
 	}
-	for _, target := range domain.Downstream(domain.Stage(fromNode)) {
+	for _, target := range solve.Downstream(solve.Stage(fromNode)) {
 		if _, err := db.ExecContext(ctx, `
 			UPDATE solve_steps SET state = 'stale', finished_at = NULL
 			WHERE case_id = ? AND node = ?`, caseID, string(target)); err != nil {

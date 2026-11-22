@@ -8,8 +8,8 @@ import (
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/repository/testdb"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
+	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -28,7 +28,7 @@ func TestPostprocessCreatesTransplantRejection(t *testing.T) {
 	status := repo.ReceivedMedicalProcedure{
 		MedicalProcedure: repo.Transplant{Target: repo.NewUnknownActor("신장")},
 	}
-	entityStore, err := st.Entities()
+	entityStore, err := st.MedicalEntities()
 	if err != nil {
 		t.Fatalf("Entities: %v", err)
 	}

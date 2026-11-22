@@ -10,7 +10,7 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	responsestore "github.com/G226Medi03/MorbesLLMService/responsestore"
 	benchmarkrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/benchmark"
-	entityrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/entity"
+	medicalentityrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/medicalentity"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	srepo "github.com/G226Medi03/MorbesPipeline/internal/repository/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
@@ -34,11 +34,11 @@ type Store struct {
 	Medical  *repo.Store
 	Response *responsestore.Store
 
-	Source      storesource.Repository
-	Solve       srepo.Repository
-	Benchmark   benchmarkrepo.Repository
-	Postprocess postprocessrepo.Repository
-	Entity      entityrepo.Repository
+	Source        storesource.Repository
+	Solve         srepo.Repository
+	Benchmark     benchmarkrepo.Repository
+	Postprocess   postprocessrepo.Repository
+	MedicalEntity medicalentityrepo.Repository
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -117,16 +117,16 @@ func (s *Store) PostprocessRepo() postprocessrepo.Repository {
 	return s.Postprocess
 }
 
-func (s *Store) EntityRepo() entityrepo.Repository {
-	return s.Entity
+func (s *Store) MedicalEntityRepo() medicalentityrepo.Repository {
+	return s.MedicalEntity
 }
 
 func (s *Store) ResponseStore() *responsestore.Store {
 	return s.Response
 }
 
-func (s *Store) Entities() (*repo.Store, error) {
-	return s.entities()
+func (s *Store) MedicalEntities() (*repo.Store, error) {
+	return s.medicalEntities()
 }
 
 func (s *Store) LockWrite() func() {
@@ -140,7 +140,7 @@ func (s *Store) responseStoreWithExecutor() *responsestore.Store {
 	return s.Response.WithExecutor(s.SourceExecutor())
 }
 
-func (s *Store) entities() (*repo.Store, error) {
+func (s *Store) medicalEntities() (*repo.Store, error) {
 	if s.Medical != nil {
 		return s.Medical, nil
 	}

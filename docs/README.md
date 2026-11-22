@@ -30,7 +30,7 @@ LLM extraction
 ## 30초 요약
 
 1. 외부 앱은 root package `morbes` 하나만 import한다.
-2. `morbes.NewStore(ctx, db)`로 store를 만들고 `InitSchema()`를 호출한다.
+2. `morbes.New(ctx, db)`로 store를 만들고 `InitSchema()`를 호출한다.
 3. `morbes.NewService`로 pipeline service를 만든다.
 4. `Service.Run(ctx, caseID)`가 solve pipeline을 실행한다.
 5. LLM extraction 결과는 DTO를 거쳐 Entity로 저장된다.
@@ -42,27 +42,36 @@ LLM extraction
 .
 ├── facade.go
 ├── internal/
-│   ├── pipeline/
-│   │   ├── orchestration/
-│   │   ├── checkpoint/
-│   │   ├── input/
-│   │   ├── llm/
-│   │   ├── resolve/
-│   │   ├── postprocess/
-│   │   └── selection/
-│   ├── store/
-│   │   ├── core/
-│   │   ├── entity/
-│   │   ├── read/
-│   │   ├── source/
-│   │   ├── solve/
+│   ├── entity/
+│   │   ├── entitykey/
+│   │   ├── label/
+│   │   ├── patient/
+│   │   ├── situation/
+│   │   └── solve/
+│   │       ├── checkpoint/
+│   │       ├── input/
+│   │       ├── model/
+│   │       └── selection/
+│   ├── repository/
 │   │   ├── benchmark/
+│   │   ├── medicalentity/
+│   │   ├── migration/
 │   │   ├── postprocess/
-│   │   └── migration/
-│   ├── domain/
-│   ├── tracing/
+│   │   ├── schema/
+│   │   ├── solve/
+│   │   └── store/
+│   ├── service/
+│   │   ├── llm/
+│   │   ├── orchestration/
+│   │   ├── postprocess/
+│   │   ├── resolve/
+│   │   ├── store/
+│   │   └── tracing/
 │   ├── support/
-│   └── testdb/
+│   │   ├── logconfig/
+│   │   └── sliceutil/
+│   └── testutil/
+│       └── testdb/
 ├── tools/importlint/
 └── docs/
 ```

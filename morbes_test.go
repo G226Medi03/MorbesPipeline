@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
+	testdb "github.com/G226Medi03/MorbesPipeline/internal/testutil/testdb"
 	source "github.com/G226Medi03/SourceEntity"
-	testdb "github.com/G226Medi03/MorbesPipeline/internal/repository/testdb"
 )
 
 type testQuestionStore struct{}
@@ -28,7 +28,7 @@ func TestPublicFacade(t *testing.T) {
 	if err := store.InitSchema(); err != nil {
 		t.Fatalf("InitSchema: %v", err)
 	}
-	entityStore, err := store.Entities()
+	entityStore, err := store.MedicalEntities()
 	if err != nil {
 		t.Fatalf("Entities: %v", err)
 	}

@@ -1,4 +1,4 @@
-package domain
+package solve
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"

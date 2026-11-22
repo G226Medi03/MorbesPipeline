@@ -1,25 +1,20 @@
-// Package facade is the public SQLite persistence facade.
-package facade
+// Package store owns persistence application services and the store container.
+package store
 
 import (
 	"context"
 	"database/sql"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/repository/benchmark"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	srepo "github.com/G226Medi03/MorbesPipeline/internal/repository/solve"
-	coreservice "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	corestore "github.com/G226Medi03/MorbesPipeline/internal/repository/store"
 )
 
 type (
 	Store = corestore.Store
 
-	ProblemResultFilter    = benchmark.ProblemResultFilter
-	ProblemResultRow       = benchmark.ProblemResultRow
-	ExamQuestionDataCounts = benchmark.ExamQuestionDataCounts
-	ExamQuestionCaseStats  = srepo.ExamQuestionCaseStats
-	FailedCase             = srepo.FailedCase
+	ExamQuestionCaseStats = srepo.ExamQuestionCaseStats
+	FailedCase            = srepo.FailedCase
 
 	Operation             = postprocessrepo.Operation
 	EntityType            = postprocessrepo.EntityType
@@ -59,15 +54,15 @@ const (
 	PostprocessEntityOption    = postprocessrepo.EntityOption
 )
 
-// StoreContainer is the public store facade.
+// StoreContainer composes the store with persistence application services.
 type StoreContainer struct {
 	*corestore.Store
 
-	*coreservice.EntityService
-	*coreservice.SolveService
-	*coreservice.SourceService
-	*coreservice.BenchmarkService
-	*coreservice.PostprocessService
+	*MedicalEntityService
+	*SolveService
+	*SourceService
+	*BenchmarkService
+	*PostprocessService
 }
 
 // New keeps the single-file behavior used by tests and command-line tools.
@@ -86,11 +81,11 @@ func newContainer(st *corestore.Store) *StoreContainer {
 }
 
 func (s *StoreContainer) bindServices() {
-	s.EntityService = coreservice.NewEntity(s.Store)
-	s.SolveService = coreservice.NewSolve(s.Store)
-	s.SourceService = coreservice.NewSource(s.Store)
-	s.BenchmarkService = coreservice.NewBenchmark(s.Store)
-	s.PostprocessService = coreservice.NewPostprocess(s.Store, s.EntityService)
+	s.MedicalEntityService = NewMedicalEntity(s.Store)
+	s.SolveService = NewSolve(s.Store)
+	s.SourceService = NewSource(s.Store)
+	s.BenchmarkService = NewBenchmark(s.Store)
+	s.PostprocessService = NewPostprocess(s.Store)
 }
 
 func (s *StoreContainer) InitSchema() error {

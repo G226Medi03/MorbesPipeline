@@ -1,8 +1,8 @@
 package prompt
 
 import (
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve/model"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/model"
 )
 
 type PromptVersion = model.PromptVersion
@@ -13,28 +13,28 @@ type Set struct {
 }
 
 const (
-	PromptExplain                = domain.PromptExplain
-	PromptQuestionType           = domain.PromptQuestionType
-	PromptCaseExtraction         = domain.PromptCaseExtraction
-	PromptActor                  = domain.PromptActor
-	PromptOtherNames             = domain.PromptOtherNames
-	PromptStatus                 = domain.PromptStatus
-	PromptAction                 = domain.PromptAction
-	PromptActorAction            = domain.PromptActorAction
-	PromptPatientDescription     = domain.PromptPatientDescription
-	PromptMedicalProcedureOption = domain.PromptMedicalProcedureOption
-	PromptRelation               = domain.PromptRelation
-	PromptSituation              = domain.PromptSituation
+	PromptExplain                = solve.PromptExplain
+	PromptQuestionType           = solve.PromptQuestionType
+	PromptCaseExtraction         = solve.PromptCaseExtraction
+	PromptActor                  = solve.PromptActor
+	PromptOtherNames             = solve.PromptOtherNames
+	PromptStatus                 = solve.PromptStatus
+	PromptAction                 = solve.PromptAction
+	PromptActorAction            = solve.PromptActorAction
+	PromptPatientDescription     = solve.PromptPatientDescription
+	PromptMedicalProcedureOption = solve.PromptMedicalProcedureOption
+	PromptRelation               = solve.PromptRelation
+	PromptSituation              = solve.PromptSituation
 )
 
 func PromptStages() []string {
-	return domain.PromptStages()
+	return solve.PromptStages()
 }
 
 func PromptPlaceholders(stage string) []string {
-	return domain.PromptPlaceholders(stage)
+	return solve.PromptPlaceholders(stage)
 }
 
 func RenderPrompt(template string, values map[string]string) string {
-	return domain.RenderPrompt(template, values)
+	return solve.RenderPrompt(template, values)
 }

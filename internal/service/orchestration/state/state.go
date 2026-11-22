@@ -3,10 +3,10 @@ package state
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
-	csituation "github.com/G226Medi03/MorbesPipeline/internal/entity/situation"
-	solve "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	situation "github.com/G226Medi03/MorbesPipeline/internal/entity/situation"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/prompt"
-	ccause "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
+	tracing "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -28,7 +28,7 @@ type State struct {
 	Relations           [][]string
 	RelationSource      source.Source
 	SituationJSON       string
-	Situation           csituation.Situation
+	Situation           situation.Situation
 	SituationSourceID   source.SourceId
-	Candidates          []ccause.Candidate
+	Candidates          []tracing.Candidate
 }

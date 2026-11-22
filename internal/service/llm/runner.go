@@ -4,28 +4,28 @@ import (
 	"context"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	domain "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 )
 
-func Run(ctx context.Context, runner *morbesllm.ExtractionRunner, request morbesllm.ExtractionRequest) (morbesllm.ExtractionResult, domain.QuestionType, error) {
+func Run(ctx context.Context, runner *morbesllm.ExtractionRunner, request morbesllm.ExtractionRequest) (morbesllm.ExtractionResult, solve.QuestionType, error) {
 	result, err := runner.Run(ctx, request)
 	if err != nil {
 		return result, "", err
 	}
-	questionType := domain.NormalizeQuestionType(result.RawQuestionType)
-	policy := domain.InferQuestionPolicy(request.ProblemStem)
+	questionType := solve.NormalizeQuestionType(result.RawQuestionType)
+	policy := solve.InferQuestionPolicy(request.ProblemStem)
 	switch {
-	case policy.Type == domain.QuestionTypeDeviceAction:
+	case policy.Type == solve.QuestionTypeDeviceAction:
 		questionType = policy.Type
-	case questionType == domain.QuestionTypeStatus && policy.Type == domain.QuestionTypeProcedure:
+	case questionType == solve.QuestionTypeStatus && policy.Type == solve.QuestionTypeProcedure:
 		questionType = policy.Type
-	case policy.Type == domain.QuestionTypeMechanism && questionType != domain.QuestionTypeMechanism:
+	case policy.Type == solve.QuestionTypeMechanism && questionType != solve.QuestionTypeMechanism:
 		questionType = policy.Type
 	case questionType == "" && policy.Type != "":
 		questionType = policy.Type
 	}
 	if questionType == "" {
-		questionType = domain.QuestionTypeProcedure
+		questionType = solve.QuestionTypeProcedure
 	}
 	return result, questionType, nil
 }

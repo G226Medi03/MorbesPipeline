@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve/model"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/model"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/prompt"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	clog "github.com/G226Medi03/log-sqlite"
 )
 

@@ -1,14 +1,14 @@
-package ccause
+package tracing
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
+	label "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 )
 
 func ObservedLabels(statuses []repo.IEStatus) []string {
 	result := make([]string, 0, len(statuses))
 	for _, status := range statuses {
-		result = append(result, centitylabel.StatusLabelValue(status))
+		result = append(result, label.StatusLabelValue(status))
 	}
 	return result
 }

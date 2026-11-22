@@ -1,4 +1,4 @@
-package service
+package store
 
 import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
@@ -101,7 +101,7 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 
 // AddStatusSource attaches a postprocess source to a status.
 func (s *PostprocessService) AddStatusSource(value repo.IEStatus, sourceID source.SourceId) error {
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (s *PostprocessService) AddStatusSource(value repo.IEStatus, sourceID sourc
 
 // AddActionSource attaches a postprocess source to an action.
 func (s *PostprocessService) AddActionSource(value repo.IEAction, sourceID source.SourceId) error {
-	entities, err := s.store.Entities()
+	entities, err := s.store.MedicalEntities()
 	if err != nil {
 		return err
 	}

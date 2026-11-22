@@ -1,13 +1,13 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 	"errors"
 
 	morbesllm "github.com/G226Medi03/MorbesLLMService"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	pllm "github.com/G226Medi03/MorbesPipeline/internal/service/llm"
-	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
+	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	core "github.com/G226Medi03/PipeLineCore"
 	sourceentity "github.com/G226Medi03/SourceEntity"
 	cllmcall "github.com/G226Medi03/llm-client/call"
@@ -41,7 +41,7 @@ type extractionCallRecorder struct {
 
 func (recorder extractionCallRecorder) RecordExtractionCall(call morbesllm.ExtractionCall) error {
 	recorder.service.record_call(LLMCallInput{
-		CaseID:        domain.CaseID(call.CaseID),
+		CaseID:        solve.CaseID(call.CaseID),
 		Seq:           call.Seq,
 		Stage:         call.Stage,
 		Role:          call.Role,
@@ -102,7 +102,7 @@ func New_Service(ctx context.Context, deps Dependencies) (*Service, error) {
 	return service, nil
 }
 
-func (self *Service) set_stage(id domain.CaseID, stage string) error {
+func (self *Service) set_stage(id solve.CaseID, stage string) error {
 	if err := self.store.SetStage(id, stage); err != nil {
 		_ = self.store.SetFailed(id, err)
 		return err

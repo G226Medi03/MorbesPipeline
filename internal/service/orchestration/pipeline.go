@@ -1,25 +1,25 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	ccause "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
+	tracing "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
 	"strings"
 	"time"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	core "github.com/G226Medi03/PipeLineCore"
 	source "github.com/G226Medi03/SourceEntity"
 	clog "github.com/G226Medi03/log-sqlite"
 )
 
-func (self *Service) Run(ctx context.Context, id domain.CaseID) error {
+func (self *Service) Run(ctx context.Context, id solve.CaseID) error {
 	return self.RunWithCache(ctx, id, true)
 }
 
-func (self *Service) RunWithCache(ctx context.Context, id domain.CaseID, useCache bool) error {
+func (self *Service) RunWithCache(ctx context.Context, id solve.CaseID, useCache bool) error {
 	run := *self
 	run.ctx = ctx
 	run.cache_mode = core.CacheUse
@@ -29,7 +29,7 @@ func (self *Service) RunWithCache(ctx context.Context, id domain.CaseID, useCach
 	return run.run_v2_from(ctx, id, "")
 }
 
-func (self *Service) record_provided_explanation(id domain.CaseID, state *pipelineState) error {
+func (self *Service) record_provided_explanation(id solve.CaseID, state *pipelineState) error {
 	if err := self.set_stage(id, "solver_explain"); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (self *Service) record_provided_explanation(id domain.CaseID, state *pipeli
 	)
 }
 
-func (self *Service) run_explain_node(ctx context.Context, id domain.CaseID, state *pipelineState) error {
+func (self *Service) run_explain_node(ctx context.Context, id solve.CaseID, state *pipelineState) error {
 	if err := self.set_stage(id, "solver_explain"); err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func trim_string_list(values []string) []string {
 
 const cause_trace_timeout = 90 * time.Second
 
-func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state *pipelineState) error {
+func (self *Service) run_cause_node(ctx context.Context, id solve.CaseID, state *pipelineState) error {
 	step_id, err := self.store.StartStep(id, NodeCause, 0)
 	if err != nil {
 		return err
@@ -163,12 +163,12 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	entityStore, err := self.store.Entities()
+	entityStore, err := self.store.MedicalEntities()
 	if err != nil {
 		_ = self.store.FinishStep(step_id, "failed", "", err.Error(), 0)
 		return err
 	}
-	cause_service := ccause.New_Service(entityStore)
+	cause_service := tracing.New_Service(entityStore)
 	const cause_trace_max_depth = 100
 	candidates, err := cause_service.TraceContext(cause_ctx, statuses, cause_trace_max_depth)
 	self.record_call(LLMCallInput{
@@ -180,7 +180,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 		return err
 	}
 	result := causeStepOutput{
-		Observed:      ccause.ObservedLabels(statuses),
+		Observed:      tracing.ObservedLabels(statuses),
 		Candidates:    candidates,
 		Missing:       []string{},
 		CoverageAdded: coverageAdded,
@@ -197,7 +197,7 @@ func (self *Service) run_cause_node(ctx context.Context, id domain.CaseID, state
 	return self.store.FinishStep(step_id, "succeeded", encoded, "", 0)
 }
 
-func (self *Service) load_explain(id domain.CaseID, state *pipelineState) error {
+func (self *Service) load_explain(id solve.CaseID, state *pipelineState) error {
 	var out explainStepOutput
 	if err := self.load_step_output(id, NodeExplain, &out); err != nil {
 		return err
@@ -211,7 +211,7 @@ func (self *Service) load_explain(id domain.CaseID, state *pipelineState) error 
 	return nil
 }
 
-func (self *Service) load_cause(id domain.CaseID, state *pipelineState) error {
+func (self *Service) load_cause(id solve.CaseID, state *pipelineState) error {
 	var out causeStepOutput
 	if err := self.load_step_output(id, NodeCause, &out); err != nil {
 		return err
@@ -220,7 +220,7 @@ func (self *Service) load_cause(id domain.CaseID, state *pipelineState) error {
 	return nil
 }
 
-func (self *Service) load_step_output(case_id domain.CaseID, node string, target any) error {
+func (self *Service) load_step_output(case_id solve.CaseID, node string, target any) error {
 	step, found, err := self.store.GetStep(case_id, node)
 	if err != nil {
 		return err

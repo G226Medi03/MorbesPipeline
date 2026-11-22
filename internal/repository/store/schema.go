@@ -10,7 +10,7 @@ func (s *Store) InitSchema() error {
 	if err := migration.ApplyMigration(s.Context(), s); err != nil {
 		return err
 	}
-	if _, err := s.Entities(); err != nil {
+	if _, err := s.MedicalEntities(); err != nil {
 		return err
 	}
 	if err := s.Postprocess.Init(s.Context(), s); err != nil {

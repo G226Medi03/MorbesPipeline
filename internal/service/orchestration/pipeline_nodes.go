@@ -1,11 +1,11 @@
-package csolve
+package orchestration
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	solvedomain "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	"github.com/G226Medi03/PipeLineCore"
 )
 
@@ -20,7 +20,7 @@ const (
 	causeNode      = core.NodeName("GraphCauseTraceNode")
 )
 
-func (self *Service) runPipelineNodes(ctx context.Context, id domain.CaseID, fromNode string) error {
+func (self *Service) runPipelineNodes(ctx context.Context, id solvedomain.CaseID, fromNode string) error {
 	pipeline := newSolveNodePipeline(self)
 	state := core.NewState()
 	state.Set(solveIDKey, id)
@@ -46,23 +46,23 @@ func newSolveNodePipeline(runtime *Service) core.Pipeline {
 }
 
 func nodeForStage(stage string) core.NodeName {
-	switch domain.Stage(stage) {
+	switch solvedomain.Stage(stage) {
 	case "":
 		return ""
-	case domain.StageExplain:
+	case solvedomain.StageExplain:
 		return explainNode
-	case domain.StageCaseExtraction:
+	case solvedomain.StageCaseExtraction:
 		return extractionNode
-	case domain.StageResolve:
+	case solvedomain.StageResolve:
 		return resolveNode
-	case domain.StageCause:
+	case solvedomain.StageCause:
 		return causeNode
 	default:
 		return core.NodeName(stage)
 	}
 }
 
-func solveState(state *core.State) (*pipelineState, domain.CaseID, string, error) {
+func solveState(state *core.State) (*pipelineState, solvedomain.CaseID, string, error) {
 	raw, ok := state.Get(solveStateKey)
 	if !ok {
 		return nil, "", "", fmt.Errorf("solve state가 없습니다")
@@ -72,7 +72,7 @@ func solveState(state *core.State) (*pipelineState, domain.CaseID, string, error
 		return nil, "", "", fmt.Errorf("solve state 타입이 올바르지 않습니다: %T", raw)
 	}
 	idRaw, _ := state.Get(solveIDKey)
-	id, _ := idRaw.(domain.CaseID)
+	id, _ := idRaw.(solvedomain.CaseID)
 	fromRaw, _ := state.Get(solveFromKey)
 	from, _ := fromRaw.(string)
 	return solve, id, from, nil
@@ -80,7 +80,7 @@ func solveState(state *core.State) (*pipelineState, domain.CaseID, string, error
 
 func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error {
 	id, _ := state.Get(solveIDKey)
-	caseID, _ := id.(domain.CaseID)
+	caseID, _ := id.(solvedomain.CaseID)
 	fromRaw, _ := state.Get(solveFromKey)
 	fromNode, _ := fromRaw.(string)
 
@@ -113,7 +113,7 @@ func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error 
 			return err
 		}
 	} else {
-		if !domain.IsStage(fromNode) {
+		if !solvedomain.IsStage(fromNode) {
 			return fmt.Errorf("알 수 없는 resume node 입니다: %s", fromNode)
 		}
 		if err := self.store.MarkDownstreamStale(caseID, fromNode); err != nil {

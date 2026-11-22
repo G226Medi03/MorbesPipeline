@@ -43,9 +43,7 @@ Rules:
 
 ```text
 internal/entity must not import internal/repository or internal/service.
-internal/repository must not import internal/service, except:
-  internal/repository/facade -> internal/service/store
-  internal/repository/solve  -> internal/service/solve
+internal/repository must not import internal/service.
 internal/service must not import root.
 LLM call, prompt, cache, explain, extraction, replay belong to MorbesLLMService.
 llm-client/call is used directly by internal/service.
@@ -54,6 +52,9 @@ MedicalEntity direct import is forbidden. Use MedicalEntityRepository/repo facad
 go-duration is used only through MorbesLLMService or MedicalEntityParser.
 ```
 
+`internal/repository/facade` no longer exists.
+`StoreContainer` is owned by `internal/service/store`.
+`internal/repository/medicalentity` is the medical entity persistence adapter.
 `internal/persistence` no longer exists. Use `internal/repository`.
 
 `tools/importlint` checks these boundaries. Fix violations before creating a PR.

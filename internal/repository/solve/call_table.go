@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve/model"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve/model"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 )
 
@@ -43,7 +43,7 @@ func (CallTable) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (CallTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
+func (CallTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []solve.CaseID) error {
 	if len(caseIDs) == 0 {
 		return nil
 	}
@@ -84,7 +84,7 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 	return int64(id), nil
 }
 
-func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) ([]model.LLMCall, error) {
+func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) ([]model.LLMCall, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT call_id, case_id, seq, stage, role, model, prompt_version, prompt,
 		       raw_output, preprocessed_output, preprocess_changes, parsed_output,
@@ -105,20 +105,20 @@ func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID domain.Ca
 			&call.CreatedAt); err != nil {
 			return nil, fmt.Errorf("%s: %w", "solve_llm_calls scan failed", err)
 		}
-		call.CaseID = domain.CaseID(rawCaseID)
+		call.CaseID = solve.CaseID(rawCaseID)
 		result = append(result, call)
 	}
 	return result, rows.Err()
 }
 
-func (CallTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, seq int) error {
+func (CallTable) DeleteFromSeq(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, seq int) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_llm_calls WHERE case_id = ? AND seq >= ?`, string(caseID), seq); err != nil {
 		return fmt.Errorf("%s: %w", "solve replay calls delete failed", err)
 	}
 	return nil
 }
 
-func (CallTable) DeleteByStage(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID, stage string) error {
+func (CallTable) DeleteByStage(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID, stage string) error {
 	if _, err := db.ExecContext(ctx,
 		`DELETE FROM solve_llm_calls WHERE case_id = ? AND stage = ?`, string(caseID), stage); err != nil {
 		return fmt.Errorf("%s: %w", "solve llm call stage delete failed", err)

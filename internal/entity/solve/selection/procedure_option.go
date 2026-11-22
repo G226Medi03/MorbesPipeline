@@ -2,10 +2,10 @@ package selection
 
 import (
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
-	domain "github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 )
 
-func ScoreMedicalProcedureOption(option domain.MedicalProcedureOptionGraphItem) int {
+func ScoreMedicalProcedureOption(option solve.MedicalProcedureOptionGraphItem) int {
 	score := 0
 	for _, indication := range option.Indications {
 		if indication.Observed {
@@ -29,8 +29,8 @@ func ScoreMedicalProcedureOption(option domain.MedicalProcedureOptionGraphItem) 
 	return score
 }
 
-func SelectMedicalProcedureOption(options []domain.MedicalProcedureOptionGraphItem, problem string) (domain.MedicalProcedureOptionGraphItem, bool) {
-	desiredCategory := domain.InferQuestionPolicy(problem).DesiredCategory
+func SelectMedicalProcedureOption(options []solve.MedicalProcedureOptionGraphItem, problem string) (solve.MedicalProcedureOptionGraphItem, bool) {
+	desiredCategory := solve.InferQuestionPolicy(problem).DesiredCategory
 	bestIndex := -1
 	bestScore := 0
 	for index, option := range options {
@@ -47,12 +47,12 @@ func SelectMedicalProcedureOption(options []domain.MedicalProcedureOptionGraphIt
 		}
 	}
 	if bestIndex < 0 {
-		return domain.MedicalProcedureOptionGraphItem{}, false
+		return solve.MedicalProcedureOptionGraphItem{}, false
 	}
 	return options[bestIndex], true
 }
 
-func optionTieLess(left, right domain.MedicalProcedureOptionGraphItem) bool {
+func optionTieLess(left, right solve.MedicalProcedureOptionGraphItem) bool {
 	leftKey := left.Key
 	if leftKey == "" {
 		leftKey = entitykey.Procedure(left.Procedure)

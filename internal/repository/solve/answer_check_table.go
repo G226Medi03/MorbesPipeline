@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/G226Medi03/MorbesPipeline/internal/service/solve"
+	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -121,7 +121,7 @@ func ensure_analysis_column(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value domain.AnswerCheck) error {
+func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value solve.AnswerCheck) error {
 	contains := 0
 	if value.ContainsAnswer {
 		contains = 1
@@ -172,8 +172,8 @@ func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value d
 	return nil
 }
 
-func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) (domain.AnswerCheck, bool, error) {
-	var value domain.AnswerCheck
+func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) (solve.AnswerCheck, bool, error) {
+	var value solve.AnswerCheck
 	var caseIDValue string
 	var respID int64
 	var contains int
@@ -185,12 +185,12 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID dom
 		Scan(&caseIDValue, &respID, &value.QuestionType, &contains, &answer_present, &answer_satisfied, &effect_matched,
 			&value.MatchedType, &value.MatchedKey, &value.AnalysisJSON, &value.Error, &value.UpdatedAt)
 	if err == sql.ErrNoRows {
-		return domain.AnswerCheck{}, false, nil
+		return solve.AnswerCheck{}, false, nil
 	}
 	if err != nil {
-		return domain.AnswerCheck{}, false, fmt.Errorf("answer check 조회 실패: %w", err)
+		return solve.AnswerCheck{}, false, fmt.Errorf("answer check 조회 실패: %w", err)
 	}
-	value.CaseID = domain.CaseID(caseIDValue)
+	value.CaseID = solve.CaseID(caseIDValue)
 	value.RespID = source.NewRespId(respID)
 	value.ContainsAnswer = contains != 0
 	value.AnswerPresent = answer_present.Valid && answer_present.Int64 != 0
@@ -199,14 +199,14 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID dom
 	return value, true, nil
 }
 
-func (AnswerCheckTable) Delete(ctx context.Context, db sqlutil.Executor, caseID domain.CaseID) error {
+func (AnswerCheckTable) Delete(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) error {
 	if _, err := db.ExecContext(ctx, `DELETE FROM solve_answer_checks WHERE case_id = ?`, string(caseID)); err != nil {
 		return fmt.Errorf("answer check 삭제 실패: %w", err)
 	}
 	return nil
 }
 
-func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []domain.CaseID) error {
+func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []solve.CaseID) error {
 	if len(caseIDs) == 0 {
 		return nil
 	}
