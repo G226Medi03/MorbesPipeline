@@ -22,11 +22,10 @@ func TestProblemStemRemovesChoices(t *testing.T) {
 
 func TestSelectMedicalProcedureOptionIgnoresUnrelatedOptions(t *testing.T) {
 	options := []MedicalProcedureOptionGraphItem{
-		{Procedure: emedical_procedure.Surgery{Name: "디곡신"}, ProcedureLabel: "디곡신", TreatOptionPriority: 1},
+		{Procedure: emedical_procedure.Surgery{Name: "디곡신"}, ProcedureLabel: "디곡신"},
 		{
-			Procedure:           emedical_procedure.Surgery{Name: "아트로핀"},
-			ProcedureLabel:      "아트로핀",
-			TreatOptionPriority: 2,
+			Procedure:      emedical_procedure.Surgery{Name: "아트로핀"},
+			ProcedureLabel: "아트로핀",
 			Indications: []MedicalProcedureOptionIndication{{
 				Status:   estatus.HaveDisease{Disease: edisease.EDisease("동서맥")},
 				Label:    "동서맥",
@@ -34,9 +33,8 @@ func TestSelectMedicalProcedureOptionIgnoresUnrelatedOptions(t *testing.T) {
 			}},
 		},
 		{
-			Procedure:           emedical_procedure.Surgery{Name: "아데노신"},
-			ProcedureLabel:      "아데노신",
-			TreatOptionPriority: 3,
+			Procedure:      emedical_procedure.Surgery{Name: "아데노신"},
+			ProcedureLabel: "아데노신",
 			Indications: []MedicalProcedureOptionIndication{{
 				Status: estatus.HaveDisease{Disease: edisease.EDisease("빈맥")},
 				Label:  "빈맥",

@@ -8,7 +8,7 @@ import (
 )
 
 type LLMCall struct {
-	ID                 int64   `json:"id"`
+	ID                 int64           `json:"id"`
 	CaseID             domain.CaseID   `json:"caseId"`
 	Seq                int             `json:"seq"`
 	Stage              string          `json:"stage"`

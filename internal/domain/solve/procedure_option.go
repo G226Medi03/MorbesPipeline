@@ -3,7 +3,6 @@ package domain
 import (
 	"github.com/G226Medi03/MedicalEntity/ename/emedical_procedure"
 	"github.com/G226Medi03/MedicalEntity/ename/estatus"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
@@ -17,20 +16,14 @@ type MedicalProcedureOptionGraph struct {
 }
 
 type MedicalProcedureOptionGraphItem struct {
-	Procedure           emedical_procedure.IMedicalProcedure `json:"procedure"`
-	Category            string                               `json:"category"`
-	ProcedureTraits     []trait.Trait                        `json:"procedureTraits,omitempty"`
-	ContextTraits       []trait.Trait                        `json:"contextTraits,omitempty"`
-	PriorityTraits      []trait.Trait                        `json:"priorityTraits,omitempty"`
-	DescriptiveTraits   []trait.Trait                        `json:"descriptiveTraits,omitempty"`
-	TreatOptionPriority int                                  `json:"treatOptionPriority"`
-	PriorityReason      string                               `json:"priorityReason,omitempty"`
-	ProcedureLabel      string                               `json:"procedureLabel"`
-	Action              string                               `json:"action,omitempty"`
-	Indications         []MedicalProcedureOptionIndication   `json:"indications"`
-	ExpectedEffects     []MedicalProcedureOptionIndication   `json:"expectedEffects,omitempty"`
-	Outcomes            []MedicalProcedureOptionOutcome      `json:"outcomes,omitempty"`
-	Sources             []source.Source                      `json:"sources"`
+	Procedure       emedical_procedure.IMedicalProcedure `json:"procedure"`
+	Category        string                               `json:"category"`
+	ProcedureLabel  string                               `json:"procedureLabel"`
+	Action          string                               `json:"action,omitempty"`
+	Indications     []MedicalProcedureOptionIndication   `json:"indications"`
+	ExpectedEffects []MedicalProcedureOptionIndication   `json:"expectedEffects,omitempty"`
+	Outcomes        []MedicalProcedureOptionOutcome      `json:"outcomes,omitempty"`
+	Sources         []source.Source                      `json:"sources"`
 }
 
 type MedicalProcedureOptionOutcome struct {

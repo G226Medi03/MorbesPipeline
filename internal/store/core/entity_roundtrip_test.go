@@ -38,11 +38,11 @@ func TestTypedStoreRoundTrip(t *testing.T) {
 		t.Fatalf("LinkStatusAction: %v", err)
 	}
 	procedure := repo.Surgery{Name: "기관절개술"}
-	if _, err := st.SaveProcedure(procedure, nil, sources); err != nil {
+	if _, err := st.SaveProcedure(procedure, sources); err != nil {
 		t.Fatalf("SaveProcedure: %v", err)
 	}
 	if _, err := st.SaveMedicalProcedureOptionByValues(
-		procedure, "treatment", nil, nil, []repo.IEStatus{status}, nil, sources,
+		procedure, "treatment", []repo.IEStatus{status}, nil, sources,
 	); err != nil {
 		t.Fatalf("SaveMedicalProcedureOptionByValues: %v", err)
 	}

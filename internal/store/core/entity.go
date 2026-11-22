@@ -5,12 +5,10 @@ import (
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	entitykey "github.com/G226Medi03/MorbesPipeline/internal/domain/entitykey"
-	"github.com/G226Medi03/MorbesPipeline/internal/domain/trait"
-	storeentity "github.com/G226Medi03/MorbesPipeline/internal/store/entity"
 	source "github.com/G226Medi03/SourceEntity"
 )
 
-func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []trait.Trait, sources []source.Source) (int64, error) {
+func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, sources []source.Source) (int64, error) {
 	if value == nil {
 		return 0, fmt.Errorf("procedure value is nil")
 	}
@@ -20,7 +18,7 @@ func (s *StoreContainer) SaveProcedure(value repo.IMedicalProcedure, traits []tr
 	if err != nil {
 		return 0, err
 	}
-	if _, err := entityStore.InsertProcedure(value, nil, storeentity.MedicalEntityTraits(traits), sourceIDs(sources)); err != nil {
+	if _, err := entityStore.InsertProcedure(value, nil, sourceIDs(sources)); err != nil {
 		return 0, err
 	}
 	return s.procedureIDForValue(value)
@@ -46,8 +44,6 @@ func (s *StoreContainer) SaveMedicalProcedureOption(option repo.MedicalProcedure
 func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
 	procedure repo.IMedicalProcedure,
 	category string,
-	traits []trait.Trait,
-	_ []trait.Trait,
 	indications []repo.IEStatus,
 	effects []repo.IEStatus,
 	sources []source.Source,
@@ -59,7 +55,6 @@ func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
 	option := repo.MedicalProcedureOption{
 		Key:              key,
 		Category:         category,
-		Traits:           traitStrings(traits),
 		MedicalProcedure: procedure,
 		Indications:      indications,
 		ExpectedEffects:  effects,
@@ -68,14 +63,6 @@ func (s *StoreContainer) SaveMedicalProcedureOptionByValues(
 		option.SourceID = sources[0].SourceID
 	}
 	return s.SaveMedicalProcedureOption(option)
-}
-
-func traitStrings(values []trait.Trait) []string {
-	result := make([]string, len(values))
-	for index, value := range values {
-		result[index] = string(value)
-	}
-	return result
 }
 
 // LinkActionResultStatusValues links typed action/status values using their
