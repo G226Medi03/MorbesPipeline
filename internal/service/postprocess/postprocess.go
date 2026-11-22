@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entitykey "github.com/G226Medi03/MorbesPipeline/internal/entity/key"
 	store "github.com/G226Medi03/MorbesPipeline/internal/repository/facade"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -132,7 +131,6 @@ func increasedIndexActionRule(
 			return err
 		}
 		action := repo.CauseStatus{Status: status}
-		actionKey := entitykey.Action(action)
 		sourceID := sourceForStatus(state, key)
 		if _, err := ensureAction(st, entityStore, store.PostprocessorIncreasedIndexAction, action, sourceID); err != nil {
 			return err
@@ -146,7 +144,7 @@ func increasedIndexActionRule(
 		}
 		for _, link := range outgoing {
 			other := link.Action.Name()
-			if entitykey.Action(other) == actionKey {
+			if equalAction(other, action) {
 				continue
 			}
 			if err := st.DeleteStatusActionValues(status, other); err != nil {
@@ -170,7 +168,7 @@ func increasedIndexActionRule(
 		}
 		for _, link := range incoming {
 			other := link.Action
-			if entitykey.Action(other) == actionKey {
+			if equalAction(other, action) {
 				continue
 			}
 			predecessors, err := entityStore.StatusesCausingAction(other)
@@ -194,7 +192,7 @@ func increasedIndexActionRule(
 				); err != nil {
 					return err
 				}
-				if entitykey.Status(pred) != entitykey.Status(status) {
+				if !equalStatus(pred, status) {
 					if err := st.DeleteStatusActionValues(pred, other); err != nil {
 						return err
 					}
@@ -261,7 +259,7 @@ func causeStatusResultRule(
 			return err
 		}
 		for _, link := range results {
-			if entitykey.Status(link.Status) == entitykey.Status(status) {
+			if equalStatus(link.Status, status) {
 				continue
 			}
 			if err := st.DeleteActionResultStatusValues(action, link.Status); err != nil {
@@ -342,12 +340,11 @@ func sourceFallback(state State) source.SourceId {
 }
 
 func findStatus(statuses map[string]repo.IEStatus, target repo.IEStatus) (string, repo.IEStatus, bool) {
-	expected := entitykey.Status(target)
 	for key, status := range statuses {
 		if status.Kind() != target.Kind() {
 			continue
 		}
-		if entitykey.Status(status) == expected {
+		if equalStatus(status, target) {
 			return key, status, true
 		}
 	}

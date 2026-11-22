@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	entitykey "github.com/G226Medi03/MorbesPipeline/internal/entity/key"
 	centitylabel "github.com/G226Medi03/MorbesPipeline/internal/entity/label"
 	source_entity "github.com/G226Medi03/SourceEntity"
 )
@@ -31,20 +30,21 @@ func (s *Service) TraceContext(ctx context.Context, observed []repo.IEStatus, ma
 	if maxDepth <= 0 {
 		maxDepth = 3
 	}
-	seen := make(map[string]Candidate)
+	seen := make([]Candidate, 0)
 	for _, status := range observed {
-		status_key := entitykey.Status(status)
 		node := status_node(status)
 		start_path := []TraceNode{node}
-		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, map[string]struct{}{status_key: {}}, map[string]struct{}{}, seen); err != nil {
+		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, []repo.IEStatus{status}, nil, &seen); err != nil {
 			return nil, err
 		}
 	}
 
-	result := make([]Candidate, 0, len(seen))
-	for _, candidate := range seen {
-		sort.Slice(candidate.SourceIDs, func(i, j int) bool { return candidate.SourceIDs[i].ToI64() < candidate.SourceIDs[j].ToI64() })
-		result = append(result, candidate)
+	result := make([]Candidate, len(seen))
+	copy(result, seen)
+	for index := range result {
+		sort.Slice(result[index].SourceIDs, func(i, j int) bool {
+			return result[index].SourceIDs[i].ToI64() < result[index].SourceIDs[j].ToI64()
+		})
 	}
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].Depth != result[j].Depth {
@@ -60,9 +60,9 @@ func (s *Service) trace_from(
 	status repo.IEStatus,
 	depth, max_depth int,
 	path []TraceNode,
-	path_set map[string]struct{},
-	actor_path_set map[string]struct{},
-	seen map[string]Candidate,
+	path_set []repo.IEStatus,
+	actor_path_set []repo.IEActor,
+	seen *[]Candidate,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -79,10 +79,10 @@ func (s *Service) trace_from(
 			return err
 		}
 		action := actionLink.Action
-		action_key := entitykey.Action(action)
+		actionKey := actionDisplayKey(action)
 		action_node := TraceNode{
 			Type:  "action",
-			Key:   action_key,
+			Key:   actionKey,
 			Label: action_label(action),
 		}
 		causes, err := s.reader.StatusesCausingAction(action)
@@ -94,8 +94,7 @@ func (s *Service) trace_from(
 				return err
 			}
 			cause := cause_link.Status
-			cause_key := entitykey.Status(cause)
-			if _, ok := path_set[cause_key]; ok {
+			if containsStatus(path_set, cause) {
 				continue
 			}
 			cause_node := status_node(cause)
@@ -103,33 +102,22 @@ func (s *Service) trace_from(
 			candidate_path = append(candidate_path, path...)
 			candidate_path = append(candidate_path, action_node, cause_node)
 
-			key := cause_key + ":" + action_key
 			candidate := Candidate{
-				CauseKey:      cause_key,
+				CauseKey:      cause_node.Key,
 				CauseKind:     cause.Kind(),
 				CauseLabel:    cause_node.Label,
-				ViaActionKey:  action_key,
+				ViaActionKey:  actionKey,
 				ViaActionKind: action.Kind(),
 				Depth:         depth + 1,
 				SourceIDs:     append_unique_ids([]source_entity.SourceId{actionLink.SourceID}, cause_link.SourceID),
 				Path:          candidate_path,
+				causeStatus:   cause,
+				viaAction:     action,
 			}
-			if existing, ok := seen[key]; ok {
-				existing.SourceIDs = append_unique_ids(existing.SourceIDs, candidate.SourceIDs...)
-				if len(candidate.Path) < len(existing.Path) {
-					candidate.SourceIDs = existing.SourceIDs
-					seen[key] = candidate
-				} else {
-					seen[key] = existing
-				}
-			} else {
-				seen[key] = candidate
-			}
-			next_path_set := make(map[string]struct{}, len(path_set)+1)
-			for id := range path_set {
-				next_path_set[id] = struct{}{}
-			}
-			next_path_set[cause_key] = struct{}{}
+			mergeCandidate(seen, candidate)
+			next_path_set := make([]repo.IEStatus, 0, len(path_set)+1)
+			next_path_set = append(next_path_set, path_set...)
+			next_path_set = append(next_path_set, cause)
 			if err := s.trace_from(ctx, cause, depth+1, max_depth, candidate_path, next_path_set, actor_path_set, seen); err != nil {
 				return err
 			}
@@ -141,8 +129,7 @@ func (s *Service) trace_from(
 		}
 		for _, actor_link := range actors {
 			actor := actor_link.Actor
-			actor_key := entitykey.Actor(actor)
-			if _, ok := actor_path_set[actor_key]; ok {
+			if containsActor(actor_path_set, actor) {
 				continue
 			}
 			actor_node, ok := actor_node(actor)
@@ -152,40 +139,121 @@ func (s *Service) trace_from(
 			candidate_path := make([]TraceNode, 0, len(path)+2)
 			candidate_path = append(candidate_path, path...)
 			candidate_path = append(candidate_path, action_node, actor_node)
-			key := actor_key + ":" + action_key
 			candidate := Candidate{
 				CauseType:     "actor",
-				CauseKey:      actor_key,
+				CauseKey:      actorDisplayKey(actor),
 				CauseKind:     "actor",
 				CauseLabel:    actor_node.Label,
-				ViaActionKey:  action_key,
+				ViaActionKey:  actionKey,
 				ViaActionKind: action.Kind(),
 				Depth:         depth + 1,
 				SourceIDs:     append_unique_ids([]source_entity.SourceId{actionLink.SourceID}, actor_link.SourceID),
 				Path:          candidate_path,
+				causeActor:    actor,
+				viaAction:     action,
 			}
-			if existing, ok := seen[key]; ok {
-				existing.SourceIDs = append_unique_ids(existing.SourceIDs, candidate.SourceIDs...)
-				if len(candidate.Path) < len(existing.Path) {
-					candidate.SourceIDs = existing.SourceIDs
-					seen[key] = candidate
-				} else {
-					seen[key] = existing
-				}
-			} else {
-				seen[key] = candidate
-			}
+			mergeCandidate(seen, candidate)
 		}
 	}
 	return nil
 }
 
+func mergeCandidate(seen *[]Candidate, candidate Candidate) {
+	for index := range *seen {
+		existing := (*seen)[index]
+		if !sameCandidate(existing, candidate) {
+			continue
+		}
+		existing.SourceIDs = append_unique_ids(existing.SourceIDs, candidate.SourceIDs...)
+		if len(candidate.Path) < len(existing.Path) {
+			candidate.SourceIDs = existing.SourceIDs
+			(*seen)[index] = candidate
+		} else {
+			(*seen)[index] = existing
+		}
+		return
+	}
+	*seen = append(*seen, candidate)
+}
+
+func sameCandidate(left, right Candidate) bool {
+	if left.CauseType != right.CauseType {
+		return false
+	}
+	if left.causeStatus != nil || right.causeStatus != nil {
+		return equalStatus(left.causeStatus, right.causeStatus) &&
+			equalAction(left.viaAction, right.viaAction)
+	}
+	return equalActor(left.causeActor, right.causeActor) &&
+		equalAction(left.viaAction, right.viaAction)
+}
+
+func containsStatus(values []repo.IEStatus, target repo.IEStatus) bool {
+	for _, value := range values {
+		if equalStatus(value, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsActor(values []repo.IEActor, target repo.IEActor) bool {
+	for _, value := range values {
+		if equalActor(value, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func equalStatus(a, b repo.IEStatus) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return a.Equal(b)
+}
+
+func equalAction(a, b repo.IEAction) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return a.Equal(b)
+}
+
+func equalActor(a, b repo.IEActor) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return a.Equal(b)
+}
+
 func status_node(status repo.IEStatus) TraceNode {
 	return TraceNode{
 		Type:  "status",
-		Key:   entitykey.Status(status),
+		Key:   statusDisplayKey(status),
 		Label: centitylabel.StatusLabelValue(status),
 	}
+}
+
+func statusDisplayKey(status repo.IEStatus) string {
+	if status == nil {
+		return ""
+	}
+	return status.Kind() + "|" + centitylabel.StatusLabelValue(status)
+}
+
+func actionDisplayKey(action repo.IEAction) string {
+	if action == nil {
+		return ""
+	}
+	return action.Kind() + "|" + action_label(action)
+}
+
+func actorDisplayKey(actor repo.IEActor) string {
+	if actor == nil {
+		return ""
+	}
+	return actor.Kind() + "|" + actor.ActorName()
 }
 
 func action_label(action repo.IEAction) string {

@@ -1,5 +1,5 @@
 // Package entitykey builds stable identity keys for typed medical entity values.
-package entitykey
+package service
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 // Status returns a stable identity key for a status value.
-func Status(value repo.IEStatus) string {
+func statusOptionKey(value repo.IEStatus) string {
 	if value == nil {
 		return ""
 	}
@@ -22,37 +22,37 @@ func Status(value repo.IEStatus) string {
 	case repo.HaveDisease:
 		return "have_disease|" + strings.TrimSpace(string(typed.Disease))
 	case repo.HaveSymptom:
-		return "have_symptom|" + Symptom(typed.Symptom)
+		return "have_symptom|" + symptomOptionKey(typed.Symptom)
 	case repo.Damaged:
-		return "damaged|" + Actor(typed.Actor)
+		return "damaged|" + actorOptionKey(typed.Actor)
 	case repo.Inflammation:
-		return "inflammation|" + Actor(typed.Actor)
+		return "inflammation|" + actorOptionKey(typed.Actor)
 	case repo.ReceivedMedicalProcedure:
-		return "received_medical_procedure|" + Procedure(typed.MedicalProcedure) + "|" + strings.TrimSpace(typed.PostProcedurePeriod)
+		return "received_medical_procedure|" + procedureOptionKey(typed.MedicalProcedure) + "|" + strings.TrimSpace(typed.PostProcedurePeriod)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
 // Action returns a stable identity key for an action value.
-func Action(value repo.IEAction) string {
+func actionOptionKey(value repo.IEAction) string {
 	if value == nil {
 		return ""
 	}
 	switch typed := value.(type) {
 	case repo.CauseStatus:
-		return "cause_status|" + Status(typed.Status)
+		return "cause_status|" + statusOptionKey(typed.Status)
 	case repo.Block:
-		return "block|" + Actor(typed.Actor)
+		return "block|" + actorOptionKey(typed.Actor)
 	case repo.Relax:
-		return "relax|" + Actor(typed.Actor)
+		return "relax|" + actorOptionKey(typed.Actor)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
 // Symptom returns a stable identity key for a symptom value.
-func Symptom(value repo.IESymptom) string {
+func symptomOptionKey(value repo.IESymptom) string {
 	if value == nil {
 		return ""
 	}
@@ -61,9 +61,9 @@ func Symptom(value repo.IESymptom) string {
 		return "other_symptom|" + strings.TrimSpace(typed.Name)
 	case repo.EPain:
 		items := make([]string, 0, len(typed.Aspects)+1)
-		items = append(items, "site|"+Actor(typed.Site))
+		items = append(items, "site|"+actorOptionKey(typed.Site))
 		for _, aspect := range typed.Aspects {
-			items = append(items, aspectKey(aspect))
+			items = append(items, aspectOptionKey(aspect))
 		}
 		sort.Strings(items)
 		return "pain|" + strings.Join(items, ";")
@@ -73,7 +73,7 @@ func Symptom(value repo.IESymptom) string {
 }
 
 // Procedure returns a stable identity key for a procedure value.
-func Procedure(value repo.IMedicalProcedure) string {
+func procedureOptionKey(value repo.IMedicalProcedure) string {
 	if value == nil {
 		return ""
 	}
@@ -89,27 +89,27 @@ func Procedure(value repo.IMedicalProcedure) string {
 	case repo.Instruction:
 		return "instruction|" + strings.TrimSpace(typed.Name) + "|" + strings.TrimSpace(typed.Action) + "|" + strings.TrimSpace(typed.Duration) + "|" + strings.TrimSpace(typed.Position)
 	case repo.Insertion:
-		return "insertion|" + Actor(typed.Device) + "|" + Actor(typed.Site)
+		return "insertion|" + actorOptionKey(typed.Device) + "|" + actorOptionKey(typed.Site)
 	case repo.Infuse:
-		return "infuse|" + Actor(typed.Material) + "|" + string(typed.Route)
+		return "infuse|" + actorOptionKey(typed.Material) + "|" + string(typed.Route)
 	case repo.Transplant:
-		return "transplant|" + Actor(typed.Target)
+		return "transplant|" + actorOptionKey(typed.Target)
 	case repo.Cleaning:
-		return "cleaning|" + Actor(typed.Target)
+		return "cleaning|" + actorOptionKey(typed.Target)
 	default:
 		return strings.TrimSpace(value.Kind())
 	}
 }
 
 // Actor returns a stable identity key for an actor value.
-func Actor(value repo.IEActor) string {
+func actorOptionKey(value repo.IEActor) string {
 	if value == nil {
 		return "nil"
 	}
 	return strings.TrimSpace(value.Kind()) + "|" + strings.TrimSpace(value.ActorName())
 }
 
-func aspectKey(value repo.IPainAspect) string {
+func aspectOptionKey(value repo.IPainAspect) string {
 	if value == nil {
 		return "nil"
 	}

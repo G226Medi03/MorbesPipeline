@@ -7,12 +7,12 @@
 
 | 순서 | upstream repo | version | 대응 패키지 | 상태 |
 | --- | --- | --- | --- | --- |
-| 1 | `MedicalEntity` | `v0.17.0` | `MedicalEntityRepository/repo` facade 경유 | option ename 추가 |
+| 1 | `MedicalEntity` | `v0.17.1-0.20261122084159-2645ec118401` | `MedicalEntityRepository/repo` facade 경유 | ename Equal method |
 | 2 | `MedicalEntityParser` | `v0.6.1` | `internal/service/llm`, `internal/service/resolve` | DTO decode + Entity 변환 |
 | 3 | `SourceEntity` | `v0.4.1` | `internal/repository/facade` | 동기화 완료 |
 | 4 | `SourceEntityRepository` | `v0.4.0` | `internal/repository/facade` | Repository-only API |
 | 5 | `SQLCore` | `v0.2.0` | `internal/repository/facade`, `internal/repository/*` | 동기화 완료 |
-| 6 | `MedicalEntityRepository` | `v0.14.0` | `repo` facade + `internal/repository/facade`, `internal/repository/internal/repository/*` | entity read alias |
+| 6 | `MedicalEntityRepository` | `v0.14.0` | `repo` facade + `internal/repository/facade`, `internal/repository/*` | entity read alias |
 | 7 | `PipeLineCore` | `v0.1.1-0.20261116143831-62093f9a17d1` | `internal/service/orchestration` | 동기화 완료 |
 | 8 | `llm-client` | `v0.5.0` | `internal/service/orchestration` | `*call.Client` 직접 사용 |
 | 9 | `log-sqlite` | `v0.1.1` | `internal/service/support/logconfig` + direct import | 동기화 완료 |

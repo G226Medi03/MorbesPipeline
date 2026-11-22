@@ -1,6 +1,9 @@
 package ccause
 
-import source_entity "github.com/G226Medi03/SourceEntity"
+import (
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	source_entity "github.com/G226Medi03/SourceEntity"
+)
 
 type Candidate struct {
 	CauseType     string                   `json:"causeType,omitempty"`
@@ -12,4 +15,8 @@ type Candidate struct {
 	Depth         int                      `json:"depth"`
 	SourceIDs     []source_entity.SourceId `json:"sourceIds"`
 	Path          []TraceNode              `json:"path"`
+
+	causeStatus repo.IEStatus
+	viaAction   repo.IEAction
+	causeActor  repo.IEActor
 }

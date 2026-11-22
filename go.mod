@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/G226Medi03/MedicalEntity v0.17.0 // indirect
+	github.com/G226Medi03/MedicalEntity v0.17.1-0.20261122084159-2645ec118401 // indirect
 	github.com/G226Medi03/go-duration v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
