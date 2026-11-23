@@ -22,6 +22,21 @@ func (s *MedicalEntityService) SaveProcedure(value repo.IMedicalProcedure, sourc
 	return err
 }
 
+func (s *MedicalEntityService) GetMedicalProcedureOptionByID(id int64) (repo.MedicalProcedureOption, bool, error) {
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return repo.MedicalProcedureOption{}, false, err
+	}
+	option, found, err := entities.GetMedicalProcedureOptionByID(id)
+	if errors.Is(err, repo.ErrNotFound) {
+		return repo.MedicalProcedureOption{}, false, nil
+	}
+	if err != nil {
+		return repo.MedicalProcedureOption{}, false, err
+	}
+	return option, found, nil
+}
+
 func (s *MedicalEntityService) SaveMedicalProcedureOption(option repo.MedicalProcedureOption) (repo.MedicalProcedureOption, error) {
 	unlock := s.store.LockWrite()
 	defer unlock()

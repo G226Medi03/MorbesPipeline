@@ -27,7 +27,7 @@ func TestWithPostprocessTxWithSplitDBs(t *testing.T) {
 			PostprocessorName: "test",
 			Operation:         postprocessrepo.OperationCreated,
 			EntityType:        postprocessrepo.EntityAction,
-			EntityKey:         "action:test",
+			EntityPayload:     `{"kind":"cause_status"}`,
 		})
 		if err != nil {
 			return err
