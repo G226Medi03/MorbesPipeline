@@ -4,8 +4,8 @@ github.com/G226Medi03/MedicalEntityParser v0.7.1 h1:2vIlUFD9047rH03wyZTbimYmfncf
 github.com/G226Medi03/MedicalEntityParser v0.7.1/go.mod h1:VTiHhL2BrIo16XCQHkY+1tmbFpowuZVvlhZbHu92fhc=
 github.com/G226Medi03/MedicalEntityRepository v0.19.1 h1:w8s14Dbb+4DgHqrfR8sZq8GuHkM9GbiIsP62Si99cec=
 github.com/G226Medi03/MedicalEntityRepository v0.19.1/go.mod h1:PzXsg53fu7qI2JebZZpjlnZSsWQr3C3YOargp6ZOlIU=
-github.com/G226Medi03/MorbesLLMService v0.18.1 h1:lCzOdbIjlu3dI6edmOXrPUVwxn+d8/Wcq4ngVhdKCSk=
-github.com/G226Medi03/MorbesLLMService v0.18.1/go.mod h1:nta3wU6XmwuMhiE0LZgowRZVWuAUX3hlk5dfM6OPrd4=
+github.com/G226Medi03/MorbesLLMService v0.18.2 h1:nrRpNFxA923UELxWfarZzQaA6A42j6NSWO+eWKx3jHE=
+github.com/G226Medi03/MorbesLLMService v0.18.2/go.mod h1:nta3wU6XmwuMhiE0LZgowRZVWuAUX3hlk5dfM6OPrd4=
 github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1 h1:uUJ6yJRAMic/bUfRQmRinKrjHXAkuC2GRrl71p9yqbM=
 github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1/go.mod h1:Yb54rUstYvfKPVEHncsp+UaGbyYusekxGqAVHLmYvCc=
 github.com/G226Medi03/SQLCore v0.2.0 h1:Om4N7UzJJh1tNVAt2s9NzmVXjQB2w1WJkMo8WJMqIB0=
