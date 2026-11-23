@@ -1,8 +1,9 @@
 package solve
 
 import (
-	"github.com/G226Medi03/SourceEntity"
 	"time"
+
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 const (

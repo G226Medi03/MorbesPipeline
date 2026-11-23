@@ -5,7 +5,7 @@ import "testing"
 func TestCheckPackageRejectsForbiddenImport(t *testing.T) {
 	pkg := packageInfo{
 		ImportPath: "github.com/G226Medi03/MorbesPipeline/internal/pipeline",
-		Imports:    []string{"github.com/G226Medi03/MedicalEntity/ename/estatus"},
+		Imports:    []string{"github.com/G226Medi03/MedicalEntity/entity"},
 	}
 	violations := checkPackage(
 		repoConfig{Path: ".", Enforce: true},
@@ -22,7 +22,7 @@ func TestCheckPackageRejectsForbiddenImport(t *testing.T) {
 func TestCheckPackageRejectsForbiddenTestImport(t *testing.T) {
 	pkg := packageInfo{
 		ImportPath:  "github.com/G226Medi03/MorbesPipeline/internal/pipeline",
-		TestImports: []string{"github.com/G226Medi03/MedicalEntity/ename/estatus"},
+		TestImports: []string{"github.com/G226Medi03/MedicalEntity/entity"},
 	}
 	violations := checkPackage(
 		repoConfig{Path: ".", Enforce: true},

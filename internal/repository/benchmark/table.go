@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+
 	sqlutil "github.com/G226Medi03/SQLCore/sqlite"
 	source "github.com/G226Medi03/SourceEntity"
-	"strings"
 )
 
 type Filter struct {

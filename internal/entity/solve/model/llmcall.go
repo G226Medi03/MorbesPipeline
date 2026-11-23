@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
-	"github.com/G226Medi03/SourceEntity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 type LLMCall struct {

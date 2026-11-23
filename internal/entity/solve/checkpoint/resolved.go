@@ -8,7 +8,7 @@ import (
 	"github.com/G226Medi03/MedicalEntityParser/llmdto"
 	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesLLMService"
+	morbesllm "github.com/G226Medi03/MorbesLLMService"
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
 )
 
