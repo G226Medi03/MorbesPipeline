@@ -42,7 +42,6 @@ repository/service를 import하지 않는다.
 
 ```text
 internal/entity/
-  entitykey/   # stable storage/audit key
   label/       # status/action/procedure label
   patient/     # patient description
   situation/   # situation -> status

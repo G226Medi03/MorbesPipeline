@@ -30,8 +30,8 @@ IPainAspect
 
 ```text
 status/action/actor/procedure identity -> ename Equal method
-medical procedure option identity    -> option key
-postprocess audit identity           -> entitykey storage key
+medical procedure option identity    -> procedure + category + indications
+postprocess audit identity           -> entity DTO payload
 case identity                        -> CaseID string
 ```
 

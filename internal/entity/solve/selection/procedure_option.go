@@ -1,9 +1,6 @@
 package selection
 
-import (
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
-	solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
-)
+import solve "github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 
 func ScoreMedicalProcedureOption(option solve.MedicalProcedureOptionGraphItem) int {
 	score := 0
@@ -41,7 +38,7 @@ func SelectMedicalProcedureOption(options []solve.MedicalProcedureOptionGraphIte
 		if score <= 0 {
 			continue
 		}
-		if bestIndex < 0 || score > bestScore || (score == bestScore && optionTieLess(option, options[bestIndex])) {
+		if bestIndex < 0 || score > bestScore {
 			bestIndex = index
 			bestScore = score
 		}
@@ -50,16 +47,4 @@ func SelectMedicalProcedureOption(options []solve.MedicalProcedureOptionGraphIte
 		return solve.MedicalProcedureOptionGraphItem{}, false
 	}
 	return options[bestIndex], true
-}
-
-func optionTieLess(left, right solve.MedicalProcedureOptionGraphItem) bool {
-	leftKey := left.Key
-	if leftKey == "" {
-		leftKey = entitykey.Procedure(left.Procedure)
-	}
-	rightKey := right.Key
-	if rightKey == "" {
-		rightKey = entitykey.Procedure(right.Procedure)
-	}
-	return leftKey < rightKey
 }

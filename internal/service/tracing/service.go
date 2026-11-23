@@ -50,7 +50,7 @@ func (s *Service) TraceContext(ctx context.Context, observed []repo.IEStatus, ma
 		if result[i].Depth != result[j].Depth {
 			return result[i].Depth < result[j].Depth
 		}
-		return result[i].CauseKey < result[j].CauseKey
+		return result[i].CauseLabel < result[j].CauseLabel
 	})
 	return result, nil
 }
@@ -79,10 +79,8 @@ func (s *Service) trace_from(
 			return err
 		}
 		action := actionLink.Action
-		actionKey := actionDisplayKey(action)
 		action_node := TraceNode{
 			Type:  "action",
-			Key:   actionKey,
 			Label: action_label(action),
 		}
 		causes, err := s.reader.StatusesCausingAction(action)
@@ -103,10 +101,8 @@ func (s *Service) trace_from(
 			candidate_path = append(candidate_path, action_node, cause_node)
 
 			candidate := Candidate{
-				CauseKey:      cause_node.Key,
 				CauseKind:     cause.Kind(),
 				CauseLabel:    cause_node.Label,
-				ViaActionKey:  actionKey,
 				ViaActionKind: action.Kind(),
 				Depth:         depth + 1,
 				SourceIDs:     append_unique_ids([]source_entity.SourceId{actionLink.SourceID}, cause_link.SourceID),
@@ -141,10 +137,8 @@ func (s *Service) trace_from(
 			candidate_path = append(candidate_path, action_node, actor_node)
 			candidate := Candidate{
 				CauseType:     "actor",
-				CauseKey:      actorDisplayKey(actor),
 				CauseKind:     "actor",
 				CauseLabel:    actor_node.Label,
-				ViaActionKey:  actionKey,
 				ViaActionKind: action.Kind(),
 				Depth:         depth + 1,
 				SourceIDs:     append_unique_ids([]source_entity.SourceId{actionLink.SourceID}, actor_link.SourceID),
@@ -230,30 +224,8 @@ func equalActor(a, b repo.IEActor) bool {
 func status_node(status repo.IEStatus) TraceNode {
 	return TraceNode{
 		Type:  "status",
-		Key:   statusDisplayKey(status),
 		Label: label.StatusLabelValue(status),
 	}
-}
-
-func statusDisplayKey(status repo.IEStatus) string {
-	if status == nil {
-		return ""
-	}
-	return status.Kind() + "|" + label.StatusLabelValue(status)
-}
-
-func actionDisplayKey(action repo.IEAction) string {
-	if action == nil {
-		return ""
-	}
-	return action.Kind() + "|" + action_label(action)
-}
-
-func actorDisplayKey(actor repo.IEActor) string {
-	if actor == nil {
-		return ""
-	}
-	return actor.Kind() + "|" + actor.ActorName()
 }
 
 func action_label(action repo.IEAction) string {
@@ -284,5 +256,5 @@ func actor_node(actor repo.IEActor) (TraceNode, bool) {
 		node_type = "device"
 		prefix = "device:"
 	}
-	return TraceNode{Type: node_type, Key: prefix + name, Label: prefix + name}, true
+	return TraceNode{Type: node_type, Label: prefix + name}, true
 }

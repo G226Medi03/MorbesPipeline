@@ -23,7 +23,6 @@ func (AnswerCheckTable) init(ctx context.Context, db sqlutil.Executor) error {
 		answer_satisfied INTEGER,
 		effect_matched INTEGER,
 		matched_type TEXT NOT NULL DEFAULT 'none',
-		matched_key TEXT NOT NULL DEFAULT '',
 		analysis_json TEXT NOT NULL DEFAULT '{}',
 		error TEXT NOT NULL DEFAULT '',
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -141,8 +140,8 @@ func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value s
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO solve_answer_checks (
 			case_id, resp_id, question_type, contains_answer, answer_present, answer_satisfied, effect_matched,
-			matched_type, matched_key, analysis_json, error
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			matched_type, analysis_json, error
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(case_id) DO UPDATE SET
 			resp_id = excluded.resp_id,
 			question_type = excluded.question_type,
@@ -151,7 +150,6 @@ func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value s
 			answer_satisfied = excluded.answer_satisfied,
 			effect_matched = excluded.effect_matched,
 			matched_type = excluded.matched_type,
-			matched_key = excluded.matched_key,
 			analysis_json = excluded.analysis_json,
 			error = excluded.error,
 			updated_at = CURRENT_TIMESTAMP`,
@@ -163,7 +161,6 @@ func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value s
 		answer_satisfied,
 		effect_matched,
 		value.MatchedType,
-		value.MatchedKey,
 		value.AnalysisJSON,
 		value.Error,
 	); err != nil {
@@ -180,10 +177,10 @@ func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID sol
 	var answer_present, answer_satisfied, effect_matched sql.NullInt64
 	err := db.QueryRowContext(ctx, `
 		SELECT case_id, resp_id, question_type, contains_answer, answer_present, answer_satisfied, effect_matched,
-		       matched_type, matched_key, analysis_json, error, updated_at
+		       matched_type, analysis_json, error, updated_at
 		FROM solve_answer_checks WHERE case_id = ?`, string(caseID)).
 		Scan(&caseIDValue, &respID, &value.QuestionType, &contains, &answer_present, &answer_satisfied, &effect_matched,
-			&value.MatchedType, &value.MatchedKey, &value.AnalysisJSON, &value.Error, &value.UpdatedAt)
+			&value.MatchedType, &value.AnalysisJSON, &value.Error, &value.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return solve.AnswerCheck{}, false, nil
 	}

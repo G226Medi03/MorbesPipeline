@@ -17,7 +17,6 @@ type AnswerCheck struct {
 	AnswerSatisfied bool          `json:"answerSatisfied"`
 	EffectMatched   bool          `json:"effectMatched,omitempty"`
 	MatchedType     string        `json:"matchedType"`
-	MatchedKey      string        `json:"matchedKey"`
 	AnalysisJSON    string        `json:"analysisJson,omitempty"`
 	Error           string        `json:"error,omitempty"`
 	UpdatedAt       time.Time     `json:"updatedAt"`

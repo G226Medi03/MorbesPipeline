@@ -11,7 +11,6 @@ import (
 func TestMedicalProcedureOptionGraphJSONUsesEnameFields(t *testing.T) {
 	graph := MedicalProcedureOptionGraph{
 		Options: []MedicalProcedureOptionGraphItem{{
-			Key:       "surgery|신장이식|treatment",
 			Procedure: repo.Surgery{Name: "신장이식"},
 			Category:  "treatment",
 			Indications: []MedicalProcedureOptionIndication{{

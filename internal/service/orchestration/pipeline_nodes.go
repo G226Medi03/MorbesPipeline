@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	solveStateKey  = "solve_state"
-	solveFromKey   = "solve_from_node"
-	solveIDKey     = "solve_case_id"
+	solveStateSlot = "solve_state"
+	solveFromSlot  = "solve_from_node"
+	solveIDSlot    = "solve_case_id"
 	solveLoadNode  = core.NodeName("CaseLoadNode")
 	explainNode    = core.NodeName("CaseExplainNode")
 	extractionNode = core.NodeName("LLMCaseExtractionNode")
@@ -23,8 +23,8 @@ const (
 func (self *Service) runPipelineNodes(ctx context.Context, id solvedomain.CaseID, fromNode string) error {
 	pipeline := newSolveNodePipeline(self)
 	state := core.NewState()
-	state.Set(solveIDKey, id)
-	state.Set(solveFromKey, fromNode)
+	state.Set(solveIDSlot, id)
+	state.Set(solveFromSlot, fromNode)
 	start := nodeForStage(fromNode)
 	if start == "" {
 		return pipeline.Run(ctx, state)
@@ -63,7 +63,7 @@ func nodeForStage(stage string) core.NodeName {
 }
 
 func solveState(state *core.State) (*pipelineState, solvedomain.CaseID, string, error) {
-	raw, ok := state.Get(solveStateKey)
+	raw, ok := state.Get(solveStateSlot)
 	if !ok {
 		return nil, "", "", fmt.Errorf("solve state가 없습니다")
 	}
@@ -71,17 +71,17 @@ func solveState(state *core.State) (*pipelineState, solvedomain.CaseID, string, 
 	if !ok {
 		return nil, "", "", fmt.Errorf("solve state 타입이 올바르지 않습니다: %T", raw)
 	}
-	idRaw, _ := state.Get(solveIDKey)
+	idRaw, _ := state.Get(solveIDSlot)
 	id, _ := idRaw.(solvedomain.CaseID)
-	fromRaw, _ := state.Get(solveFromKey)
+	fromRaw, _ := state.Get(solveFromSlot)
 	from, _ := fromRaw.(string)
 	return solve, id, from, nil
 }
 
 func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error {
-	id, _ := state.Get(solveIDKey)
+	id, _ := state.Get(solveIDSlot)
 	caseID, _ := id.(solvedomain.CaseID)
-	fromRaw, _ := state.Get(solveFromKey)
+	fromRaw, _ := state.Get(solveFromSlot)
 	fromNode, _ := fromRaw.(string)
 
 	item, found, err := self.store.Get(caseID)
@@ -123,7 +123,7 @@ func (self *Service) caseLoadNode(ctx context.Context, state *core.State) error 
 	if err := self.store.SetRunning(caseID); err != nil {
 		return err
 	}
-	state.Set(solveStateKey, &pipelineState{Case: item, Prompts: prompts})
+	state.Set(solveStateSlot, &pipelineState{Case: item, Prompts: prompts})
 	return nil
 }
 

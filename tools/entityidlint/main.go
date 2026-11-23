@@ -15,6 +15,9 @@ var patterns = []*regexp.Regexp{
 	regexp.MustCompile(`\b(?:status_id|action_id|actor_id|procedure_id|device_id|entity_id|target_entity_id)\b`),
 	regexp.MustCompile(`\b(?:StatusID|ActionID|ActorID|ProcedureID|DeviceID|EntityID|SelectedOptionID|MedicalProcedureOptionID)\b`),
 	regexp.MustCompile(`"(?:statusId|procedureId|entityId|selectedOptionId)"`),
+	regexp.MustCompile(`\b[A-Za-z]*Key\b`),
+	regexp.MustCompile(`\b(?:entity_key|target_entity_key|matched_key)\b`),
+	regexp.MustCompile(`\bentitykey\b`),
 }
 
 func main() {

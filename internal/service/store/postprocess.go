@@ -1,8 +1,10 @@
 package store
 
 import (
+	"encoding/json"
+
+	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	"github.com/G226Medi03/MorbesPipeline/internal/entity/entitykey"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
 )
@@ -13,17 +15,17 @@ func (s *PostprocessService) RecordPostprocess(
 	name string,
 	operation postprocessrepo.Operation,
 	entityType postprocessrepo.EntityType,
-	entityKey string,
+	entityPayload string,
 	targetType postprocessrepo.EntityType,
-	targetKey string,
+	targetPayload string,
 ) (source.SourceId, error) {
 	postprocessID, err := s.store.PostprocessRepo().Append(s.store.Context(), s.store.MainExecutor(), postprocessrepo.Record{
-		PostprocessorName: name,
-		Operation:         operation,
-		EntityType:        entityType,
-		EntityKey:         entityKey,
-		TargetEntityType:  targetType,
-		TargetEntityKey:   targetKey,
+		PostprocessorName:   name,
+		Operation:           operation,
+		EntityType:          entityType,
+		EntityPayload:       entityPayload,
+		TargetEntityType:    targetType,
+		TargetEntityPayload: targetPayload,
 	})
 	if err != nil {
 		return source.SourceId{}, err
@@ -33,14 +35,22 @@ func (s *PostprocessService) RecordPostprocess(
 
 // AuditPostprocessStatus records one status observation.
 func (s *PostprocessService) AuditPostprocessStatus(name string, operation postprocessrepo.Operation, value repo.IEStatus) error {
-	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
+	payload, err := statusPayload(value)
+	if err != nil {
+		return err
+	}
+	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, payload, "", "")
 	return err
 }
 
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, entitykey.Status(value), "", "")
+	payload, err := statusPayload(value)
+	if err != nil {
+		return err
+	}
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, payload, "", "")
 	if err != nil {
 		return err
 	}
@@ -49,14 +59,22 @@ func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value re
 
 // AuditPostprocessAction records one action observation.
 func (s *PostprocessService) AuditPostprocessAction(name string, operation postprocessrepo.Operation, value repo.IEAction) error {
-	_, err := s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
+	payload, err := actionPayload(value)
+	if err != nil {
+		return err
+	}
+	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, payload, "", "")
 	return err
 }
 
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, entitykey.Action(value), "", "")
+	payload, err := actionPayload(value)
+	if err != nil {
+		return err
+	}
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, payload, "", "")
 	if err != nil {
 		return err
 	}
@@ -70,13 +88,21 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 	status repo.IEStatus,
 	action repo.IEAction,
 ) error {
-	_, err := s.RecordPostprocess(
+	statusValue, err := statusPayload(status)
+	if err != nil {
+		return err
+	}
+	actionValue, err := actionPayload(action)
+	if err != nil {
+		return err
+	}
+	_, err = s.RecordPostprocess(
 		name,
 		operation,
 		postprocessrepo.EntityStatus,
-		entitykey.Status(status),
+		statusValue,
 		postprocessrepo.EntityAction,
-		entitykey.Action(action),
+		actionValue,
 	)
 	return err
 }
@@ -88,13 +114,21 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 	action repo.IEAction,
 	status repo.IEStatus,
 ) error {
-	_, err := s.RecordPostprocess(
+	actionValue, err := actionPayload(action)
+	if err != nil {
+		return err
+	}
+	statusValue, err := statusPayload(status)
+	if err != nil {
+		return err
+	}
+	_, err = s.RecordPostprocess(
 		name,
 		operation,
 		postprocessrepo.EntityAction,
-		entitykey.Action(action),
+		actionValue,
 		postprocessrepo.EntityStatus,
-		entitykey.Status(status),
+		statusValue,
 	)
 	return err
 }
@@ -125,6 +159,22 @@ func (s *PostprocessService) AddActionSource(value repo.IEAction, sourceID sourc
 	}
 	action.Sources = appendSource(action.Sources, sourceID)
 	return entities.SaveAction(action)
+}
+
+func statusPayload(value repo.IEStatus) (string, error) {
+	encoded, err := json.Marshal(llmparser.StatusToDTO(value))
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}
+
+func actionPayload(value repo.IEAction) (string, error) {
+	encoded, err := json.Marshal(llmparser.ActionToDTO(value))
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }
 
 func appendSource(sources []source.Source, sourceID source.SourceId) []source.Source {

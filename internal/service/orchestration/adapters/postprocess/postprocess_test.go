@@ -5,8 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/G226Medi03/MedicalEntityParser/llmdto"
 	llmparser "github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	"github.com/G226Medi03/MorbesLLMService/extraction"
 	"github.com/G226Medi03/MorbesPipeline/internal/service/orchestration/state"
 	store "github.com/G226Medi03/MorbesPipeline/internal/service/store"
 	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
@@ -35,12 +37,22 @@ func TestPostprocessCreatesTransplantRejection(t *testing.T) {
 	if _, err := entityStore.InsertStatus(status, []source.SourceId{sourceID}); err != nil {
 		t.Fatalf("InsertStatus: %v", err)
 	}
+	extractionValue, err := extraction.NewCaseExtraction(struct {
+		Actors                  []llmdto.ActorItem
+		Statuses                []extraction.StatusDraft
+		Actions                 []extraction.ActionDraft
+		Relations               []extraction.RelationDraft
+		MedicalProcedureOptions []extraction.OptionDraft
+		PatientDescriptions     []extraction.PatientDescriptionDraft
+	}{
+		Statuses: []extraction.StatusDraft{{Value: llmparser.StatusToDTO(status), SourceID: sourceID}},
+	})
+	if err != nil {
+		t.Fatalf("NewCaseExtraction: %v", err)
+	}
 	testState := &state.State{
-		Statuses: map[string]repo.IEStatus{"s1": status},
-		Actions:  map[string]repo.IEAction{},
-		Extraction: state.CaseExtraction{
-			Statuses: []state.StatusDraft{{Key: "s1", Value: llmparser.StatusToDTO(status), SourceID: sourceID}},
-		},
+		Statuses:   []repo.IEStatus{status},
+		Extraction: extractionValue,
 	}
 	if err := Run(ctx, st, testState); err != nil {
 		t.Fatalf("Postprocess: %v", err)
