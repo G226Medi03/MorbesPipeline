@@ -85,9 +85,9 @@ morbes_postprocesses
   postprocessor_name
   operation
   entity_type
-  entity_key
+  entity_payload
   target_entity_type
-  target_entity_key
+  target_entity_payload
   finished_at
 ```
 

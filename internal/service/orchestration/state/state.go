@@ -22,8 +22,8 @@ type State struct {
 	Actors              []string
 	Devices             []string
 	ExplanationSourceID source.SourceId
-	Statuses            map[string]repo.IEStatus
-	Actions             map[string]repo.IEAction
+	Statuses            []repo.IEStatus
+	Actions             []repo.IEAction
 	PatientDescriptions []patient.PatientDescription
 	Relations           [][]string
 	RelationSource      source.Source

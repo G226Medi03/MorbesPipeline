@@ -15,7 +15,6 @@ type MedicalProcedureOptionGraph struct {
 }
 
 type MedicalProcedureOptionGraphItem struct {
-	Key             string                             `json:"key,omitempty"`
 	Procedure       repo.IMedicalProcedure             `json:"procedure"`
 	Category        string                             `json:"category"`
 	ProcedureLabel  string                             `json:"procedureLabel"`

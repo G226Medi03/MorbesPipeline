@@ -43,7 +43,7 @@ func TestInitSchemaDropsEntitySources(t *testing.T) {
 		if err := rows.Scan(&cid, &columnName, &columnType, &notNull, &defaultValue, &pk); err != nil {
 			t.Fatalf("scan postprocess column: %v", err)
 		}
-		if columnName == "entity_key" {
+		if columnName == "entity_payload" {
 			found = true
 		}
 	}
@@ -51,6 +51,6 @@ func TestInitSchemaDropsEntitySources(t *testing.T) {
 		t.Fatalf("postprocess columns: %v", err)
 	}
 	if !found {
-		t.Fatal("morbes_postprocesses.entity_key is missing")
+		t.Fatal("morbes_postprocesses.entity_payload is missing")
 	}
 }

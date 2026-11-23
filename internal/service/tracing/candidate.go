@@ -7,10 +7,8 @@ import (
 
 type Candidate struct {
 	CauseType     string                   `json:"causeType,omitempty"`
-	CauseKey      string                   `json:"causeKey,omitempty"`
 	CauseKind     string                   `json:"causeKind"`
 	CauseLabel    string                   `json:"causeLabel"`
-	ViaActionKey  string                   `json:"viaActionKey,omitempty"`
 	ViaActionKind string                   `json:"viaActionKind"`
 	Depth         int                      `json:"depth"`
 	SourceIDs     []source_entity.SourceId `json:"sourceIds"`

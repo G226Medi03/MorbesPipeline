@@ -20,13 +20,13 @@ func (table) init(ctx context.Context, db sqlutil.Executor) error {
 			postprocessor_name TEXT NOT NULL,
 			operation TEXT NOT NULL,
 			entity_type TEXT NOT NULL,
-			entity_key TEXT NOT NULL,
+			entity_payload TEXT NOT NULL,
 			target_entity_type TEXT NOT NULL DEFAULT '',
-			target_entity_key TEXT NOT NULL DEFAULT '',
+			target_entity_payload TEXT NOT NULL DEFAULT '',
 			finished_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_morbes_postprocesses_entity
-			ON morbes_postprocesses(entity_type, entity_key);`,
+			ON morbes_postprocesses(entity_type, entity_payload);`,
 		`CREATE INDEX IF NOT EXISTS idx_morbes_postprocesses_processor
 			ON morbes_postprocesses(postprocessor_name, finished_at);`,
 	}
@@ -38,14 +38,14 @@ func (table) init(ctx context.Context, db sqlutil.Executor) error {
 	return nil
 }
 
-// archiveLegacy preserves a pre-key audit table under an immutable legacy name.
+// archiveLegacy preserves a legacy audit table under an immutable archive name.
 func (table) archiveLegacy(ctx context.Context, db sqlutil.Executor) error {
 	exists, err := sqlutil.TableExists(ctx, db, "morbes_postprocesses")
 	if err != nil || !exists {
 		return err
 	}
-	hasEntityKey, err := columnExists(ctx, db, "morbes_postprocesses", "entity_key")
-	if err != nil || hasEntityKey {
+	hasEntityPayload, err := columnExists(ctx, db, "morbes_postprocesses", "entity_payload")
+	if err != nil || hasEntityPayload {
 		return err
 	}
 	if _, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS morbes_postprocesses_legacy`); err != nil {
@@ -88,15 +88,15 @@ func columnExists(ctx context.Context, db sqlutil.Executor, table, column string
 func (table) insert(ctx context.Context, db sqlutil.Executor, record Record) (int64, error) {
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO morbes_postprocesses (
-			postprocessor_name, operation, entity_type, entity_key,
-			target_entity_type, target_entity_key, finished_at
+			postprocessor_name, operation, entity_type, entity_payload,
+			target_entity_type, target_entity_payload, finished_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		record.PostprocessorName,
 		string(record.Operation),
 		string(record.EntityType),
-		record.EntityKey,
+		record.EntityPayload,
 		string(record.TargetEntityType),
-		record.TargetEntityKey,
+		record.TargetEntityPayload,
 		record.FinishedAt,
 	)
 	if err != nil {
@@ -113,15 +113,15 @@ func (table) listByEntity(
 	ctx context.Context,
 	db sqlutil.Executor,
 	entityType EntityType,
-	entityKey string,
+	entityPayload string,
 ) ([]Record, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT postprocess_id, postprocessor_name, operation, entity_type, entity_key,
-		       target_entity_type, target_entity_key, finished_at
+		SELECT postprocess_id, postprocessor_name, operation, entity_type, entity_payload,
+		       target_entity_type, target_entity_payload, finished_at
 		FROM morbes_postprocesses
-		WHERE entity_type = ? AND entity_key = ?
+		WHERE entity_type = ? AND entity_payload = ?
 		ORDER BY postprocess_id`,
-		string(entityType), entityKey,
+		string(entityType), entityPayload,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("postprocess record list failed: %w", err)
@@ -136,9 +136,9 @@ func (table) listByEntity(
 			&record.PostprocessorName,
 			&operation,
 			&entityTypeValue,
-			&record.EntityKey,
+			&record.EntityPayload,
 			&targetType,
-			&record.TargetEntityKey,
+			&record.TargetEntityPayload,
 			&record.FinishedAt,
 		); err != nil {
 			return nil, err

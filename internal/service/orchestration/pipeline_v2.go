@@ -64,41 +64,42 @@ func (self *Service) run_resolve_node(ctx context.Context, id solve.CaseID, stat
 }
 
 func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCaseExtraction, error) {
+	extraction := state.Extraction
+	patientDrafts := extraction.PatientDescriptions()
 	if !looks_like_patient_description(state.Case.Problem) {
-		state.Extraction.PatientDescription = nil
-		state.Extraction.PatientDescriptions = nil
+		patientDrafts = nil
 	}
 	resolved := ResolvedCaseExtraction{
-		Actors:              state.Extraction.Actors,
-		Statuses:            map[string]repo.IEStatus{},
-		Actions:             map[string]repo.IEAction{},
-		Relations:           state.Extraction.Relations,
+		Actors:              extraction.Actors(),
+		Statuses:            make([]repo.IEStatus, 0, len(extraction.Statuses())),
+		Actions:             make([]repo.IEAction, 0, len(extraction.Actions())),
+		Relations:           extraction.Relations(),
 		PatientDescriptions: []patient.PatientDescription{},
 	}
 	entityStore, err := self.store.MedicalEntities()
 	if err != nil {
 		return resolved, err
 	}
-	source_id := state.ExplanationSourceID
-	if source_id.ToI64() <= 0 {
-		source_id = state.Case.SourceID
+	sourceID := state.ExplanationSourceID
+	if sourceID.ToI64() <= 0 {
+		sourceID = state.Case.SourceID
 	}
-	type infusion_actor struct {
+	type infusionActor struct {
 		name    string
 		sources []source.Source
 	}
-	infusion_actors := make([]infusion_actor, 0)
-	draft_sources := func(draft_source_id source.SourceId) []source.Source {
-		if draft_source_id.ToI64() <= 0 {
-			draft_source_id = source_id
+	infusionActors := make([]infusionActor, 0)
+	draftSources := func(draftSourceID source.SourceId) []source.Source {
+		if draftSourceID.ToI64() <= 0 {
+			draftSourceID = sourceID
 		}
-		if draft_source_id.ToI64() <= 0 {
+		if draftSourceID.ToI64() <= 0 {
 			return nil
 		}
-		return []source.Source{{SourceID: draft_source_id}}
+		return []source.Source{{SourceID: draftSourceID}}
 	}
 
-	for index, draft := range state.Extraction.Actors {
+	for index, draft := range extraction.Actors() {
 		actor, err := presolve.Actor(draft)
 		if err != nil {
 			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
@@ -107,84 +108,83 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		if actor == nil {
 			continue
 		}
-		sources := draft_sources(source_id)
+		sources := draftSources(sourceID)
 		if _, err := entityStore.InsertActor(actor, nil, sourceIDs(sources)); err != nil {
 			clog.Warn("case extraction actor skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
-		if strings.Contains(strings.TrimSpace(draft.Name), "투여") {
-			infusion_actors = append(infusion_actors, infusion_actor{
-				name:    strings.TrimSpace(draft.Name),
+		if strings.Contains(strings.TrimSpace(actor.ActorName()), "투여") {
+			infusionActors = append(infusionActors, infusionActor{
+				name:    strings.TrimSpace(actor.ActorName()),
 				sources: sources,
 			})
 		}
 	}
 
-	patient_drafts := make([]PatientDescriptionDraft, 0, len(state.Extraction.PatientDescriptions)+1)
-	if state.Extraction.PatientDescription != nil {
-		patient_drafts = append(patient_drafts, *state.Extraction.PatientDescription)
-	}
-	patient_drafts = append(patient_drafts, state.Extraction.PatientDescriptions...)
-	if !looks_like_patient_description(state.Case.Problem) {
-		patient_drafts = nil
-	}
-
-	for _, draft := range state.Extraction.Statuses {
-		draft_source_id := draft.SourceID
-		if draft_source_id.ToI64() <= 0 {
-			draft_source_id = source_id
+	for index, draft := range extraction.Statuses() {
+		draftSourceID := draft.SourceID
+		if draftSourceID.ToI64() <= 0 {
+			draftSourceID = sourceID
 		}
 		status, err := llmparser.StatusFromDTO(draft.Value)
 		if err != nil {
-			panic(fmt.Errorf("status DTO conversion failed key=%s: %w", draft.Key, err))
+			clog.Warn("case extraction status skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
+			resolved.Statuses = append(resolved.Statuses, nil)
+			continue
 		}
-		if draft_source_id.ToI64() > 0 {
-			if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-				panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, status.Kind(), draft_source_id, err))
+		if draftSourceID.ToI64() > 0 {
+			if _, err := entityStore.InsertStatus(status, sourceIDs(draftSources(draftSourceID))); err != nil {
+				clog.Warn("case extraction status save failed", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			}
 		}
-		resolved.Statuses[draft.Key] = status
+		resolved.Statuses = append(resolved.Statuses, status)
 	}
-	for _, description_draft := range patient_drafts {
-		for _, draft := range description_draft.Description {
-			if _, exists := resolved.Statuses[draft.Key]; exists {
-				continue
+
+	for _, descriptionDraft := range patientDrafts {
+		description := patient.PatientDescription{
+			Choice:    strings.TrimSpace(descriptionDraft.Choice),
+			Knowledge: trim_string_list(descriptionDraft.Knowledge),
+		}
+		for index, draft := range descriptionDraft.Description {
+			draftSourceID := draft.SourceID
+			if draftSourceID.ToI64() <= 0 {
+				draftSourceID = descriptionDraft.SourceID
 			}
-			draft_source_id := draft.SourceID
-			if draft_source_id.ToI64() <= 0 {
-				draft_source_id = description_draft.SourceID
-			}
-			if draft_source_id.ToI64() <= 0 {
-				draft_source_id = source_id
+			if draftSourceID.ToI64() <= 0 {
+				draftSourceID = sourceID
 			}
 			status, err := llmparser.StatusFromDTO(draft.Value)
 			if err != nil {
+				clog.Warn("case description status skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 				continue
 			}
-			if draft_source_id.ToI64() > 0 {
-				if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-					panic(fmt.Errorf("status save failed key=%s kind=%s source=%d: %w", draft.Key, status.Kind(), draft_source_id, err))
+			if draftSourceID.ToI64() > 0 {
+				if _, err := entityStore.InsertStatus(status, sourceIDs(draftSources(draftSourceID))); err != nil {
+					clog.Warn("case description status save failed", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 				}
 			}
-			resolved.Statuses[draft.Key] = status
+			description.Description = append(description.Description, status)
+		}
+		if len(description.Description) > 0 || len(description.Knowledge) > 0 {
+			resolved.PatientDescriptions = append(resolved.PatientDescriptions, description)
 		}
 	}
 
-	for _, draft := range state.Extraction.Actions {
+	for index, draft := range extraction.Actions() {
 		value, err := llmparser.ActionFromDTO(draft.Value)
 		if err != nil {
-			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
+			resolved.Actions = append(resolved.Actions, nil)
 			continue
 		}
-		sources := draft_sources(draft.SourceID)
+		sources := draftSources(draft.SourceID)
 		if _, err := entityStore.InsertAction(value, nil, sourceIDs(sources)); err != nil {
-			clog.Warn("case extraction action skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
-			continue
+			clog.Warn("case extraction action save failed", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 		}
-		resolved.Actions[draft.Key] = value
+		resolved.Actions = append(resolved.Actions, value)
 	}
 
-	for _, draft := range state.Extraction.MedicalProcedureOptions {
+	for index, draft := range extraction.MedicalProcedureOptions() {
 		indications := make([]repo.IEStatus, 0, len(draft.Indications))
 		for _, statusDTO := range draft.Indications {
 			if status, err := llmparser.StatusFromDTO(statusDTO); err == nil {
@@ -193,7 +193,9 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 		}
 		if len(indications) == 0 {
 			for _, status := range resolved.Statuses {
-				indications = append(indications, status)
+				if status != nil {
+					indications = append(indications, status)
+				}
 			}
 		}
 		effects := make([]repo.IEStatus, 0, len(draft.ExpectedEffects))
@@ -202,14 +204,14 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 				effects = append(effects, status)
 			}
 		}
-		option_sources := draft_sources(draft.SourceID)
+		optionSources := draftSources(draft.SourceID)
 		procedure, err := llmparser.ProcedureFromDTO(&draft.MedicalProcedure)
 		if err != nil {
-			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
-		if err := self.store.SaveProcedure(procedure, option_sources); err != nil {
-			clog.Warn("case extraction procedure skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+		if err := self.store.SaveProcedure(procedure, optionSources); err != nil {
+			clog.Warn("case extraction procedure save failed", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
 		saved, err := self.store.SaveMedicalProcedureOptionByValues(
@@ -217,76 +219,57 @@ func (self *Service) resolve_case_extraction(state *pipelineState) (ResolvedCase
 			draft.Category,
 			indications,
 			effects,
-			option_sources,
+			optionSources,
 		)
 		if err != nil {
-			clog.Warn("case extraction option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("key", draft.Key), clog.AttrOf("error", err))
+			clog.Warn("case extraction option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("index", index), clog.AttrOf("error", err))
 			continue
 		}
 		resolved.MedicalProcedureOptions = append(resolved.MedicalProcedureOptions, saved)
 	}
 
-	for _, actor := range infusion_actors {
+	for _, actor := range infusionActors {
 		if err := presolve.EnsureInfusionOption(self.store, actor.name, actor.sources); err != nil {
 			clog.Warn("case extraction infusion option skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("name", actor.name), clog.AttrOf("error", err))
 		}
 	}
 
-	for _, relation := range state.Extraction.Relations {
-		status, status_ok := resolved.Statuses[relation.CauseStatusKey]
-		action, action_ok := resolved.Actions[relation.ActionKey]
-		result, result_ok := resolved.Statuses[relation.ResultStatusKey]
-		relation_source_id := relation.SourceID
-		if relation_source_id.ToI64() <= 0 {
-			relation_source_id = source_id
+	for _, relation := range extraction.Relations() {
+		status, statusOK := statusAt(resolved.Statuses, relation.CauseStatusIndex)
+		action, actionOK := actionAt(resolved.Actions, relation.ActionIndex)
+		result, resultOK := statusAt(resolved.Statuses, relation.ResultStatusIndex)
+		relationSourceID := relation.SourceID
+		if relationSourceID.ToI64() <= 0 {
+			relationSourceID = sourceID
 		}
-		if status_ok && action_ok {
-			if err := entityStore.LinkStatusAction(status, action, relation_source_id); err != nil {
+		if statusOK && actionOK {
+			if err := entityStore.LinkStatusAction(status, action, relationSourceID); err != nil {
 				clog.Warn("case extraction status-action link skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("error", err))
 			}
 		}
-		if action_ok && result_ok {
-			if err := self.store.LinkActionResultStatusValues(action, result, relation_source_id); err != nil {
+		if actionOK && resultOK {
+			if err := self.store.LinkActionResultStatusValues(action, result, relationSourceID); err != nil {
 				clog.Warn("case extraction action-result link skip", clog.AttrOf("case", state.Case.ID), clog.AttrOf("error", err))
 			}
 		}
 	}
 
-	for _, description_draft := range patient_drafts {
-		description := patient.PatientDescription{
-			Choice:    strings.TrimSpace(description_draft.Choice),
-			Knowledge: trim_string_list(description_draft.Knowledge),
-		}
-		for _, draft := range description_draft.Description {
-			status, ok := resolved.Statuses[draft.Key]
-			if !ok {
-				draft_source_id := draft.SourceID
-				if draft_source_id.ToI64() <= 0 {
-					draft_source_id = description_draft.SourceID
-				}
-				if draft_source_id.ToI64() <= 0 {
-					draft_source_id = source_id
-				}
-				status, err = llmparser.StatusFromDTO(draft.Value)
-				if err != nil {
-					continue
-				}
-				if draft_source_id.ToI64() > 0 {
-					if _, err := entityStore.InsertStatus(status, sourceIDs(draft_sources(draft_source_id))); err != nil {
-						continue
-					}
-				}
-				resolved.Statuses[draft.Key] = status
-			}
-			description.Description = append(description.Description, status)
-		}
-		if len(description.Description) > 0 || len(description.Knowledge) > 0 {
-			resolved.PatientDescriptions = append(resolved.PatientDescriptions, description)
-		}
-	}
 	return resolved, nil
 }
 
+func statusAt(values []repo.IEStatus, index int) (repo.IEStatus, bool) {
+	if index < 0 || index >= len(values) || values[index] == nil {
+		return nil, false
+	}
+	return values[index], true
+}
+
+func actionAt(values []repo.IEAction, index int) (repo.IEAction, bool) {
+	if index < 0 || index >= len(values) || values[index] == nil {
+		return nil, false
+	}
+	return values[index], true
+}
 func (self *Service) load_case_extraction(id solve.CaseID, state *pipelineState) error {
 	var output caseExtractionStepOutput
 	if err := self.load_step_output(id, NodeCaseExtraction, &output); err != nil {

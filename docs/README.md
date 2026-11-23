@@ -43,7 +43,6 @@ LLM extraction
 ├── facade.go
 ├── internal/
 │   ├── entity/
-│   │   ├── entitykey/
 │   │   ├── label/
 │   │   ├── patient/
 │   │   ├── situation/

@@ -21,41 +21,45 @@ func Run(ctx context.Context, st *store.StoreContainer, state *state.State) erro
 }
 
 func buildPostprocessState(state *state.State) enginepostprocess.State {
+	statuses := currentStatuses(state)
+	actions := currentActions(state)
 	result := enginepostprocess.State{
-		Statuses:            currentStatuses(state),
-		Actions:             currentActions(state),
-		StatusSources:       make(map[string]source.SourceId, len(state.Extraction.Statuses)),
-		ActionSources:       make(map[string]source.SourceId, len(state.Extraction.Actions)),
+		Statuses:            statuses,
+		Actions:             actions,
+		StatusSources:       make([]source.SourceId, len(statuses)),
+		ActionSources:       make([]source.SourceId, len(actions)),
 		RelationSource:      state.RelationSource.SourceID,
 		ExplanationSourceID: state.ExplanationSourceID,
 	}
-	for _, draft := range state.Extraction.Statuses {
-		if draft.SourceID.ToI64() > 0 {
-			result.StatusSources[draft.Key] = draft.SourceID
-			if result.FallbackSource.ToI64() <= 0 {
-				result.FallbackSource = draft.SourceID
-			}
+	for index, draft := range state.Extraction.Statuses() {
+		if index >= len(result.StatusSources) || draft.SourceID.ToI64() <= 0 {
+			continue
+		}
+		result.StatusSources[index] = draft.SourceID
+		if result.FallbackSource.ToI64() <= 0 {
+			result.FallbackSource = draft.SourceID
 		}
 	}
-	for _, draft := range state.Extraction.Actions {
-		if draft.SourceID.ToI64() > 0 {
-			result.ActionSources[draft.Key] = draft.SourceID
-			if result.FallbackSource.ToI64() <= 0 {
-				result.FallbackSource = draft.SourceID
-			}
+	for index, draft := range state.Extraction.Actions() {
+		if index >= len(result.ActionSources) || draft.SourceID.ToI64() <= 0 {
+			continue
+		}
+		result.ActionSources[index] = draft.SourceID
+		if result.FallbackSource.ToI64() <= 0 {
+			result.FallbackSource = draft.SourceID
 		}
 	}
 	return result
 }
 
-func currentStatuses(state *state.State) map[string]repo.IEStatus {
+func currentStatuses(state *state.State) []repo.IEStatus {
 	if len(state.Statuses) > 0 {
 		return state.Statuses
 	}
 	return state.Resolved.Statuses
 }
 
-func currentActions(state *state.State) map[string]repo.IEAction {
+func currentActions(state *state.State) []repo.IEAction {
 	if len(state.Actions) > 0 {
 		return state.Actions
 	}

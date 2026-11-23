@@ -22,15 +22,13 @@ func Run(ctx context.Context, st *store.StoreContainer, state State) error {
 	if err != nil {
 		return err
 	}
-	statuses := currentStatuses(state)
-	actions := currentActions(state)
-	rules := []func(*store.StoreContainer, *repo.Store, State, map[string]repo.IEStatus, map[string]repo.IEAction) error{
+	rules := []func(*store.StoreContainer, *repo.Store, State, []repo.IEStatus, []repo.IEAction) error{
 		transplantRejectionRule,
 		increasedIndexActionRule,
 		causeStatusResultRule,
 	}
 	for _, rule := range rules {
-		if err := rule(st, entityStore, state, statuses, actions); err != nil {
+		if err := rule(st, entityStore, state, state.Statuses, state.Actions); err != nil {
 			return err
 		}
 	}
@@ -41,11 +39,11 @@ func transplantRejectionRule(
 	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state State,
-	statuses map[string]repo.IEStatus,
-	_ map[string]repo.IEAction,
+	statuses []repo.IEStatus,
+	_ []repo.IEAction,
 ) error {
-	transplantKeys := make([]string, 0)
-	for key, status := range statuses {
+	transplantIndexes := make([]int, 0)
+	for index, status := range statuses {
 		received, ok := status.(repo.ReceivedMedicalProcedure)
 		if !ok {
 			continue
@@ -53,15 +51,15 @@ func transplantRejectionRule(
 		if _, ok := received.MedicalProcedure.(repo.Transplant); !ok {
 			continue
 		}
-		transplantKeys = append(transplantKeys, key)
+		transplantIndexes = append(transplantIndexes, index)
 	}
-	if len(transplantKeys) == 0 {
+	if len(transplantIndexes) == 0 {
 		return nil
 	}
 
 	sourceID := source.SourceId{}
-	for _, key := range transplantKeys {
-		if value := sourceForStatus(state, key); value.ToI64() > 0 {
+	for _, index := range transplantIndexes {
+		if value := sourceForStatus(state, index); value.ToI64() > 0 {
 			sourceID = value
 			break
 		}
@@ -73,8 +71,8 @@ func transplantRejectionRule(
 	effect := repo.HaveSymptom{
 		Symptom: repo.EOtherSymptom{Name: RejectionStatusName},
 	}
-	for _, key := range transplantKeys {
-		if err := st.AuditPostprocessStatus(store.PostprocessorTransplantRejection, store.OperationObserved, statuses[key]); err != nil {
+	for _, index := range transplantIndexes {
+		if err := st.AuditPostprocessStatus(store.PostprocessorTransplantRejection, store.OperationObserved, statuses[index]); err != nil {
 			return err
 		}
 	}
@@ -85,8 +83,8 @@ func transplantRejectionRule(
 	if _, err := ensureAction(st, entityStore, store.PostprocessorTransplantRejection, action, sourceID); err != nil {
 		return err
 	}
-	for _, key := range transplantKeys {
-		status := statuses[key]
+	for _, index := range transplantIndexes {
+		status := statuses[index]
 		if err := st.LinkStatusActionValues(status, action, sourceID); err != nil {
 			return err
 		}
@@ -120,10 +118,10 @@ func increasedIndexActionRule(
 	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state State,
-	statuses map[string]repo.IEStatus,
-	_ map[string]repo.IEAction,
+	statuses []repo.IEStatus,
+	_ []repo.IEAction,
 ) error {
-	for key, status := range statuses {
+	for index, status := range statuses {
 		if status.Kind() != "increased_index" {
 			continue
 		}
@@ -131,7 +129,7 @@ func increasedIndexActionRule(
 			return err
 		}
 		action := repo.CauseStatus{Status: status}
-		sourceID := sourceForStatus(state, key)
+		sourceID := sourceForStatus(state, index)
 		if _, err := ensureAction(st, entityStore, store.PostprocessorIncreasedIndexAction, action, sourceID); err != nil {
 			return err
 		}
@@ -219,7 +217,7 @@ func increasedIndexActionRule(
 			}
 		}
 		if sourceID.ToI64() <= 0 {
-			return fmt.Errorf("increased_index status source is missing: %s", key)
+			return fmt.Errorf("increased_index status source is missing: %d", index)
 		}
 		if err := st.LinkActionResultStatusValues(action, status, sourceID); err != nil {
 			return err
@@ -242,15 +240,15 @@ func causeStatusResultRule(
 	st *store.StoreContainer,
 	entityStore *repo.Store,
 	state State,
-	statuses map[string]repo.IEStatus,
-	actions map[string]repo.IEAction,
+	statuses []repo.IEStatus,
+	actions []repo.IEAction,
 ) error {
-	for key, action := range actions {
+	for actionIndex, action := range actions {
 		cause, ok := action.(repo.CauseStatus)
 		if !ok || cause.Status == nil {
 			continue
 		}
-		statusKey, status, ok := findStatus(statuses, cause.Status)
+		statusIndex, status, ok := findStatus(statuses, cause.Status)
 		if !ok {
 			continue
 		}
@@ -274,12 +272,12 @@ func causeStatusResultRule(
 				return err
 			}
 		}
-		sourceID := sourceForAction(state, key)
+		sourceID := sourceForAction(state, actionIndex)
 		if sourceID.ToI64() <= 0 {
-			sourceID = sourceForStatus(state, statusKey)
+			sourceID = sourceForStatus(state, statusIndex)
 		}
 		if sourceID.ToI64() <= 0 {
-			return fmt.Errorf("cause_status action source is missing: %s", key)
+			return fmt.Errorf("cause_status action source is missing: %d", actionIndex)
 		}
 		if err := st.LinkActionResultStatusValues(action, status, sourceID); err != nil {
 			return err
@@ -298,33 +296,29 @@ func causeStatusResultRule(
 
 // State is the typed postprocess input owned by the current case.
 type State struct {
-	Statuses            map[string]repo.IEStatus
-	Actions             map[string]repo.IEAction
-	StatusSources       map[string]source.SourceId
-	ActionSources       map[string]source.SourceId
+	Statuses            []repo.IEStatus
+	Actions             []repo.IEAction
+	StatusSources       []source.SourceId
+	ActionSources       []source.SourceId
 	FallbackSource      source.SourceId
 	RelationSource      source.SourceId
 	ExplanationSourceID source.SourceId
 }
 
-func currentStatuses(state State) map[string]repo.IEStatus {
-	return state.Statuses
-}
-
-func currentActions(state State) map[string]repo.IEAction {
-	return state.Actions
-}
-
-func sourceForStatus(state State, key string) source.SourceId {
-	if value := state.StatusSources[key]; value.ToI64() > 0 {
-		return value
+func sourceForStatus(state State, index int) source.SourceId {
+	if index >= 0 && index < len(state.StatusSources) {
+		if value := state.StatusSources[index]; value.ToI64() > 0 {
+			return value
+		}
 	}
 	return sourceFallback(state)
 }
 
-func sourceForAction(state State, key string) source.SourceId {
-	if value := state.ActionSources[key]; value.ToI64() > 0 {
-		return value
+func sourceForAction(state State, index int) source.SourceId {
+	if index >= 0 && index < len(state.ActionSources) {
+		if value := state.ActionSources[index]; value.ToI64() > 0 {
+			return value
+		}
 	}
 	return sourceFallback(state)
 }
@@ -339,16 +333,16 @@ func sourceFallback(state State) source.SourceId {
 	return state.ExplanationSourceID
 }
 
-func findStatus(statuses map[string]repo.IEStatus, target repo.IEStatus) (string, repo.IEStatus, bool) {
-	for key, status := range statuses {
+func findStatus(statuses []repo.IEStatus, target repo.IEStatus) (int, repo.IEStatus, bool) {
+	for index, status := range statuses {
 		if status.Kind() != target.Kind() {
 			continue
 		}
 		if equalStatus(status, target) {
-			return key, status, true
+			return index, status, true
 		}
 	}
-	return "", nil, false
+	return -1, nil, false
 }
 
 func ensureStatus(

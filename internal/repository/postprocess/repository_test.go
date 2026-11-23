@@ -26,7 +26,7 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 		PostprocessorName: "transplant_rejection",
 		Operation:         OperationCreated,
 		EntityType:        EntityStatus,
-		EntityKey:         "have_disease|신장",
+		EntityPayload:     `{"kind":"have_disease","disease":"신장"}`,
 		FinishedAt:        finished,
 	})
 	if err != nil {
@@ -35,7 +35,7 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	if id <= 0 {
 		t.Fatalf("id = %d", id)
 	}
-	records, err := repo.ListByEntity(ctx, db, EntityStatus, "have_disease|신장")
+	records, err := repo.ListByEntity(ctx, db, EntityStatus, `{"kind":"have_disease","disease":"신장"}`)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestRepositoryAppendAndListByEntity(t *testing.T) {
 	if records[0].Operation != OperationCreated {
 		t.Fatalf("record = %#v", records[0])
 	}
-	if records[0].EntityKey != "have_disease|신장" {
+	if records[0].EntityPayload != `{"kind":"have_disease","disease":"신장"}` {
 		t.Fatalf("record = %#v", records[0])
 	}
 }
@@ -94,7 +94,7 @@ func TestRepositoryArchivesLegacyTable(t *testing.T) {
 		PostprocessorName: "new",
 		Operation:         OperationObserved,
 		EntityType:        EntityStatus,
-		EntityKey:         "have_disease|신장",
+		EntityPayload:     `{"kind":"have_disease","disease":"신장"}`,
 	}); err != nil {
 		t.Fatalf("append new row: %v", err)
 	}

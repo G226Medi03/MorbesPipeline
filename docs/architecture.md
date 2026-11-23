@@ -53,7 +53,7 @@ App
 | 영역 | 책임 |
 | --- | --- |
 | root facade | public API, 전체 조립 |
-| entity | solve domain, label, patient, situation, storage key |
+| entity | solve domain, label, patient, situation |
 | repository/store | Store: ctx/db + repositories |
 | repository/* | benchmark/solve/postprocess |
 | service/store | StoreContainer + persistence application services + MedicalEntityRepository ename APIs |
