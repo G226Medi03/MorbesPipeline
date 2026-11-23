@@ -96,6 +96,18 @@ morbes_postprocesses
 
 `entity_sources`, `status_other_name` legacy table은 schema 초기화 시 제거된다.
 
+## Postprocess transaction
+
+```text
+WithPostprocessTx
+  -> medical(db) transaction only
+  -> morbes_postprocesses audit row: medical DB
+  -> postprocess source: source DB, outside the medical transaction
+```
+
+split DB 구성에서도 `WithPostprocessTx`를 사용할 수 있다.
+medical transaction이 rollback되어도 source DB의 postprocess source는 남을 수 있다.
+
 ## 관련 문서
 
 - [project-structure.md](project-structure.md)
