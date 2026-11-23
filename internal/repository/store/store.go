@@ -247,12 +247,12 @@ func (s *Store) WithSourceTx(ctx context.Context, fn func(*Store) error) error {
 }
 
 // WithPostprocessTx runs postprocess writes in one main.db transaction.
+// Split database stores are supported. The source DB audit source written by
+// PostprocessService.RecordPostprocess is outside this transaction because it
+// belongs to a separate database.
 func (s *Store) WithPostprocessTx(ctx context.Context, fn func(*Store) error) error {
 	if s == nil || s.db == nil {
 		return fmt.Errorf("store db is required")
-	}
-	if s.sourceDB != s.db || s.solveDB != s.db {
-		return fmt.Errorf("postprocess requires a single database")
 	}
 	return s.WithTx(ctx, fn)
 }
