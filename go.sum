@@ -1,9 +1,5 @@
-github.com/G226Medi03/MedicalEntity v0.19.0 h1:ra94XhhKjBD+D7RM5usbJX2n7WMaTilu7LslsHFWGr8=
-github.com/G226Medi03/MedicalEntity v0.19.0/go.mod h1:9jaHIPFCGEqghJxyXv1f3996m4CUhLQpIspobG0XORU=
 github.com/G226Medi03/MedicalEntityParser v0.6.2 h1:F+7oM6U5Zna45H3gIdGvZnUcCcpMryP7p5rMTHqheTs=
 github.com/G226Medi03/MedicalEntityParser v0.6.2/go.mod h1:L3tKnojVxlxW9PCqd7lwxODEZ15HHHNcId3/I1yv61Q=
-github.com/G226Medi03/MedicalEntityRepository v0.17.0 h1:gjzf1Y+S+P6bxKcHU32yy8akiUv4s9AiFldz2RZWGL4=
-github.com/G226Medi03/MedicalEntityRepository v0.17.0/go.mod h1:x4tQwfU32s8UcqWqCgnf1LunxZ9q0/TWyyzVp4bWrSo=
 github.com/G226Medi03/MorbesLLMService v0.17.0 h1:qc4Q9t/wHLp1sEebN4oqeFelCFKjqnnBI2drqut2TMk=
 github.com/G226Medi03/MorbesLLMService v0.17.0/go.mod h1:DONxoxNbgvF8d4Uk0FIpJQa7ExUMkLsItcUaMXiRiV8=
 github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1 h1:uUJ6yJRAMic/bUfRQmRinKrjHXAkuC2GRrl71p9yqbM=
