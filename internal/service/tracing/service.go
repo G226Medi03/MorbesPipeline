@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -31,10 +32,14 @@ func (s *Service) TraceContext(ctx context.Context, observed []repo.IEStatus, ma
 		maxDepth = 3
 	}
 	seen := make([]Candidate, 0)
+	// A graph traversal must expand each status at most once. Without this,
+	// dense cause graphs produce an exponential number of paths that reach the
+	// same nodes, which is the main cause of cause_trace timeouts.
+	expanded := make(map[string]bool)
 	for _, status := range observed {
 		node := status_node(status)
 		start_path := []TraceNode{node}
-		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, []repo.IEStatus{status}, nil, &seen); err != nil {
+		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, []repo.IEStatus{status}, nil, &seen, expanded); err != nil {
 			return nil, err
 		}
 	}
@@ -63,6 +68,7 @@ func (s *Service) trace_from(
 	path_set []repo.IEStatus,
 	actor_path_set []repo.IEActor,
 	seen *[]Candidate,
+	expanded map[string]bool,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -70,9 +76,14 @@ func (s *Service) trace_from(
 	if depth >= max_depth {
 		return nil
 	}
+	key := statusFingerprint(status)
+	if expanded[key] {
+		return nil
+	}
+	expanded[key] = true
 	actions, err := s.reader.ActionsResultingInStatus(status)
 	if err != nil {
-		return err
+		return fmt.Errorf("cause trace: actions resulting in %q: %w", statusFingerprint(status), err)
 	}
 	for _, actionLink := range actions {
 		if err := ctx.Err(); err != nil {
@@ -85,7 +96,7 @@ func (s *Service) trace_from(
 		}
 		causes, err := s.reader.StatusesCausingAction(action)
 		if err != nil {
-			return err
+			return fmt.Errorf("cause trace: causes of action %q: %w", action_label(action), err)
 		}
 		for _, cause_link := range causes {
 			if err := ctx.Err(); err != nil {
@@ -114,14 +125,14 @@ func (s *Service) trace_from(
 			next_path_set := make([]repo.IEStatus, 0, len(path_set)+1)
 			next_path_set = append(next_path_set, path_set...)
 			next_path_set = append(next_path_set, cause)
-			if err := s.trace_from(ctx, cause, depth+1, max_depth, candidate_path, next_path_set, actor_path_set, seen); err != nil {
+			if err := s.trace_from(ctx, cause, depth+1, max_depth, candidate_path, next_path_set, actor_path_set, seen, expanded); err != nil {
 				return err
 			}
 		}
 
 		actors, err := s.reader.ActorsCausingAction(action)
 		if err != nil {
-			return err
+			return fmt.Errorf("cause trace: actors of action %q: %w", action_label(action), err)
 		}
 		for _, actor_link := range actors {
 			actor := actor_link.Actor
@@ -226,6 +237,13 @@ func status_node(status repo.IEStatus) TraceNode {
 		Type:  "status",
 		Label: label.StatusLabelValue(status),
 	}
+}
+
+func statusFingerprint(status repo.IEStatus) string {
+	if status == nil {
+		return "status||"
+	}
+	return "status|" + status.Kind() + "|" + label.StatusLabelValue(status)
 }
 
 func action_label(action repo.IEAction) string {
