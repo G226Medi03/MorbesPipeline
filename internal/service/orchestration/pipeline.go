@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
-	tracing "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
 	"strings"
 	"time"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
+	tracing "github.com/G226Medi03/MorbesPipeline/internal/service/tracing"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	core "github.com/G226Medi03/PipeLineCore"

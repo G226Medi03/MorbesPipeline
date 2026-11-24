@@ -2,8 +2,9 @@ package situation
 
 import (
 	"encoding/json"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"testing"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
 
 func TestToStatuses(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/solve"
 	srepo "github.com/G226Medi03/MorbesPipeline/internal/repository/solve"
 	corestore "github.com/G226Medi03/MorbesPipeline/internal/repository/store"
-	"github.com/G226Medi03/SourceEntity"
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 func (s *SolveService) ResetCaseForReplay(id solve.CaseID, mode, fromNode string, keepCalls bool) error {

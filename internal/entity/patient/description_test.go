@@ -2,8 +2,9 @@ package patient_test
 
 import (
 	"encoding/json"
-	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	"testing"
+
+	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
 )

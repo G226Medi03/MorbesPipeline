@@ -2,7 +2,8 @@ package solve
 
 import (
 	"context"
-	"github.com/G226Medi03/SourceEntity"
+
+	source "github.com/G226Medi03/SourceEntity"
 )
 
 // QuestionInput is the exam question payload handed to the solve pipeline.
