@@ -19,7 +19,14 @@ func procedure_label(value repo.IMedicalProcedure) string {
 		}
 		return target + " 이식"
 	case repo.Infuse:
-		return first_nonempty(strings.TrimSpace(typed.Material.ActorName()), "주입")
+		material := ""
+		if typed.Material != nil {
+			material = strings.TrimSpace(typed.Material.ActorName())
+		}
+		if isBloodProduct(material) {
+			return "수혈"
+		}
+		return first_nonempty(material, "주입")
 	case repo.Surgery:
 		return first_nonempty(strings.TrimSpace(typed.Name), "수술")
 	case repo.Insertion:
@@ -48,4 +55,16 @@ func procedure_label(value repo.IMedicalProcedure) string {
 	default:
 		return value.Kind()
 	}
+}
+func isBloodProduct(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	if lower == "" {
+		return false
+	}
+	for _, token := range []string{"혈액", "혈장", "혈소판", "적혈구", "농축적혈구", "blood", "plasma", "platelet", "erythrocyte"} {
+		if strings.Contains(lower, token) {
+			return true
+		}
+	}
+	return false
 }
