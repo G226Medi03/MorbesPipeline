@@ -6,6 +6,13 @@ import (
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 )
 
+func TestProcedureLabelBloodInfusion(t *testing.T) {
+	value := repo.Infuse{Material: repo.NewUnknownActor("혈액"), Route: repo.InfuseRouteIV}
+	if got, want := ProcedureLabel(value), "수혈"; got != want {
+		t.Fatalf("ProcedureLabel() = %q, want %q", got, want)
+	}
+}
+
 func TestStatusLabelIndex(t *testing.T) {
 	tests := []struct {
 		value repo.IEStatus
