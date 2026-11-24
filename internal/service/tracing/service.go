@@ -31,15 +31,21 @@ func (s *Service) TraceContext(ctx context.Context, observed []repo.IEStatus, ma
 	if maxDepth <= 0 {
 		maxDepth = 3
 	}
+	for index, status := range observed {
+		if status == nil {
+			return nil, fmt.Errorf("cause trace: observed status[%d] is nil", index)
+		}
+	}
 	seen := make([]Candidate, 0)
 	// A graph traversal must expand each status at most once. Without this,
 	// dense cause graphs produce an exponential number of paths that reach the
 	// same nodes, which is the main cause of cause_trace timeouts.
-	expanded := make(map[string]bool)
+	expanded := make(map[[32]byte]bool)
 	for _, status := range observed {
 		node := status_node(status)
 		start_path := []TraceNode{node}
-		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, []repo.IEStatus{status}, nil, &seen, expanded); err != nil {
+		start_hashes := [][32]byte{status.Hash()}
+		if err := s.trace_from(ctx, status, 0, maxDepth, start_path, start_hashes, nil, &seen, expanded); err != nil {
 			return nil, err
 		}
 	}
@@ -65,10 +71,10 @@ func (s *Service) trace_from(
 	status repo.IEStatus,
 	depth, max_depth int,
 	path []TraceNode,
-	path_set []repo.IEStatus,
+	path_hashes [][32]byte,
 	actor_path_set []repo.IEActor,
 	seen *[]Candidate,
-	expanded map[string]bool,
+	expanded map[[32]byte]bool,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -76,14 +82,14 @@ func (s *Service) trace_from(
 	if depth >= max_depth {
 		return nil
 	}
-	key := statusFingerprint(status)
-	if expanded[key] {
+	statusHash := status.Hash()
+	if expanded[statusHash] {
 		return nil
 	}
-	expanded[key] = true
+	expanded[statusHash] = true
 	actions, err := s.reader.ActionsResultingInStatus(status)
 	if err != nil {
-		return fmt.Errorf("cause trace: actions resulting in %q: %w", statusFingerprint(status), err)
+		return fmt.Errorf("cause trace: actions resulting in %q (hash %x): %w", label.StatusLabelValue(status), statusHash, err)
 	}
 	for _, actionLink := range actions {
 		if err := ctx.Err(); err != nil {
@@ -103,7 +109,11 @@ func (s *Service) trace_from(
 				return err
 			}
 			cause := cause_link.Status
-			if containsStatus(path_set, cause) {
+			if cause == nil {
+				continue
+			}
+			causeHash := cause.Hash()
+			if containsHash(path_hashes, causeHash) {
 				continue
 			}
 			cause_node := status_node(cause)
@@ -122,10 +132,10 @@ func (s *Service) trace_from(
 				viaAction:     action,
 			}
 			mergeCandidate(seen, candidate)
-			next_path_set := make([]repo.IEStatus, 0, len(path_set)+1)
-			next_path_set = append(next_path_set, path_set...)
-			next_path_set = append(next_path_set, cause)
-			if err := s.trace_from(ctx, cause, depth+1, max_depth, candidate_path, next_path_set, actor_path_set, seen, expanded); err != nil {
+			next_path_hashes := make([][32]byte, 0, len(path_hashes)+1)
+			next_path_hashes = append(next_path_hashes, path_hashes...)
+			next_path_hashes = append(next_path_hashes, causeHash)
+			if err := s.trace_from(ctx, cause, depth+1, max_depth, candidate_path, next_path_hashes, actor_path_set, seen, expanded); err != nil {
 				return err
 			}
 		}
@@ -193,9 +203,9 @@ func sameCandidate(left, right Candidate) bool {
 		equalAction(left.viaAction, right.viaAction)
 }
 
-func containsStatus(values []repo.IEStatus, target repo.IEStatus) bool {
+func containsHash(values [][32]byte, target [32]byte) bool {
 	for _, value := range values {
-		if equalStatus(value, target) {
+		if value == target {
 			return true
 		}
 	}
@@ -237,13 +247,6 @@ func status_node(status repo.IEStatus) TraceNode {
 		Type:  "status",
 		Label: label.StatusLabelValue(status),
 	}
-}
-
-func statusFingerprint(status repo.IEStatus) string {
-	if status == nil {
-		return "status||"
-	}
-	return "status|" + status.Kind() + "|" + label.StatusLabelValue(status)
 }
 
 func action_label(action repo.IEAction) string {
