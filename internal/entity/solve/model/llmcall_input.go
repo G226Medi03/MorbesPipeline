@@ -6,20 +6,18 @@ import (
 )
 
 type LLMCallInput struct {
-	CaseID             solve.CaseID
-	Seq                int
-	Stage              string
-	Role               string
-	Model              string
-	PromptVersion      int
-	Prompt             string
-	RawOutput          string
-	PreprocessedOutput string
-	PreprocessChanges  string
-	ParsedOutput       string
-	SourceID           source.SourceId
-	RespID             source.RespId
-	State              string
-	Error              string
-	DurationMS         int64
+	CaseID        solve.CaseID
+	Seq           int
+	Stage         string
+	Role          string
+	Model         string
+	PromptVersion int
+	Prompt        string
+	RawOutput     string
+	ParsedOutput  string
+	SourceID      source.SourceId
+	RespID        source.RespId
+	State         string
+	Error         string
+	DurationMS    int64
 }

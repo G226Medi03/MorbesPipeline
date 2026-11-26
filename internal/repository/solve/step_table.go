@@ -23,7 +23,6 @@ func (StepTable) init(ctx context.Context, db sqlutil.Executor) error {
 		prompt_version INTEGER NOT NULL DEFAULT 0,
 		output_json TEXT NOT NULL DEFAULT '',
 		error TEXT NOT NULL DEFAULT '',
-		call_id INTEGER NOT NULL DEFAULT 0,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		finished_at DATETIME,
 		UNIQUE(case_id, node),
@@ -34,6 +33,9 @@ func (StepTable) init(ctx context.Context, db sqlutil.Executor) error {
 	}
 	if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_solve_steps_case ON solve_steps(case_id, seq);`); err != nil {
 		return fmt.Errorf("%s: %w", "solve_steps schema init failed", err)
+	}
+	if err := dropColumnIfExists(ctx, db, "solve_steps", "call_id"); err != nil {
+		return err
 	}
 	return nil
 }
@@ -69,15 +71,14 @@ func (StepTable) Start(ctx context.Context, db sqlutil.Executor, caseID solve.Ca
 		return 0, fmt.Errorf("unknown solve node: %s", node)
 	}
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO solve_steps (case_id, node, seq, state, attempt, prompt_version, output_json, error, call_id, started_at, finished_at)
-		VALUES (?, ?, ?, 'running', 1, ?, '', '', 0, CURRENT_TIMESTAMP, NULL)
+		INSERT INTO solve_steps (case_id, node, seq, state, attempt, prompt_version, output_json, error, started_at, finished_at)
+		VALUES (?, ?, ?, 'running', 1, ?, '', '', CURRENT_TIMESTAMP, NULL)
 		ON CONFLICT(case_id, node) DO UPDATE SET
 			state = 'running',
 			attempt = solve_steps.attempt + 1,
 			prompt_version = excluded.prompt_version,
 			output_json = '',
 			error = '',
-			call_id = 0,
 			started_at = CURRENT_TIMESTAMP,
 			finished_at = NULL`,
 		caseID, node, seq, promptVersion)
@@ -91,11 +92,11 @@ func (StepTable) Start(ctx context.Context, db sqlutil.Executor, caseID solve.Ca
 	return id, nil
 }
 
-func (StepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, state, outputJSON, message string, callID int64) error {
+func (StepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, state, outputJSON, message string, _ int64) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE solve_steps
-		SET state = ?, output_json = ?, error = ?, call_id = ?, finished_at = CURRENT_TIMESTAMP
-		WHERE step_id = ?`, state, outputJSON, message, callID, id)
+		SET state = ?, output_json = ?, error = ?, finished_at = CURRENT_TIMESTAMP
+		WHERE step_id = ?`, state, outputJSON, message, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", "solve_steps finish failed", err)
 	}
@@ -105,7 +106,7 @@ func (StepTable) Finish(ctx context.Context, db sqlutil.Executor, id int64, stat
 func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) ([]solve.Step, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT step_id, case_id, node, seq, state, attempt, prompt_version,
-		       output_json, error, call_id, started_at, finished_at
+		       output_json, error, started_at, finished_at
 		FROM solve_steps WHERE case_id = ? ORDER BY seq`, string(caseID))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "solve_steps query failed", err)
@@ -121,17 +122,16 @@ func (StepTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.Cas
 			state         string
 			promptVersion int
 			outputJSON    string
-			rawcallID     int64
 		)
 		if err := rows.Scan(&rawStepID, &rawCaseID, &node, &step.Seq, &state,
 			&step.Attempt, &promptVersion, &outputJSON, &step.Error,
-			&rawcallID, &step.StartedAt, &step.FinishedAt); err != nil {
+			&step.StartedAt, &step.FinishedAt); err != nil {
 			return nil, fmt.Errorf("%s: %w", "solve_steps scan failed", err)
 		}
 		step.ID = int64(rawStepID)
 		step.Node = node
 		step.State = solve.StepState(state)
-		step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
+		step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON}
 		result = append(result, step)
 	}
 	return result, rows.Err()
@@ -146,15 +146,14 @@ func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID solve.Case
 		state         string
 		promptVersion int
 		outputJSON    string
-		rawcallID     int64
 	)
 	err := db.QueryRowContext(ctx, `
 		SELECT step_id, case_id, node, seq, state, attempt, prompt_version,
-		       output_json, error, call_id, started_at, finished_at
+		       output_json, error, started_at, finished_at
 		FROM solve_steps WHERE case_id = ? AND node = ?`, string(caseID), node).
 		Scan(&rawStepID, &rawCaseID, &rowNode, &step.Seq, &state,
 			&step.Attempt, &promptVersion, &outputJSON, &step.Error,
-			&rawcallID, &step.StartedAt, &step.FinishedAt)
+			&step.StartedAt, &step.FinishedAt)
 	if err == sql.ErrNoRows {
 		return solve.Step{}, false, nil
 	}
@@ -164,7 +163,7 @@ func (StepTable) Get(ctx context.Context, db sqlutil.Executor, caseID solve.Case
 	step.ID = int64(rawStepID)
 	step.Node = rowNode
 	step.State = solve.StepState(state)
-	step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON, CallID: int64(rawcallID)}
+	step.Meta = solve.SolveStepMeta{CaseID: solve.CaseID(rawCaseID), PromptVersion: promptVersion, OutputJSON: outputJSON}
 	return step, true, nil
 }
 

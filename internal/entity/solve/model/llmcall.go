@@ -8,22 +8,20 @@ import (
 )
 
 type LLMCall struct {
-	ID                 int64           `json:"id"`
-	CaseID             solve.CaseID    `json:"caseId"`
-	Seq                int             `json:"seq"`
-	Stage              string          `json:"stage"`
-	Role               string          `json:"role"`
-	Model              string          `json:"model"`
-	PromptVersion      int             `json:"promptVersion"`
-	Prompt             string          `json:"prompt"`
-	RawOutput          string          `json:"rawOutput"`
-	PreprocessedOutput string          `json:"preprocessedOutput"`
-	PreprocessChanges  string          `json:"preprocessChanges"`
-	ParsedOutput       string          `json:"parsedOutput"`
-	SourceID           source.SourceId `json:"sourceId"`
-	RespID             source.RespId   `json:"respId"`
-	State              string          `json:"state"`
-	Error              string          `json:"error"`
-	DurationMS         int64           `json:"durationMs"`
-	CreatedAt          time.Time       `json:"createdAt"`
+	ID            int64           `json:"id"`
+	CaseID        solve.CaseID    `json:"caseId"`
+	Seq           int             `json:"seq"`
+	Stage         string          `json:"stage"`
+	Role          string          `json:"role"`
+	Model         string          `json:"model"`
+	PromptVersion int             `json:"promptVersion"`
+	Prompt        string          `json:"prompt"`
+	RawOutput     string          `json:"rawOutput"`
+	ParsedOutput  string          `json:"parsedOutput"`
+	SourceID      source.SourceId `json:"sourceId"`
+	RespID        source.RespId   `json:"respId"`
+	State         string          `json:"state"`
+	Error         string          `json:"error"`
+	DurationMS    int64           `json:"durationMs"`
+	CreatedAt     time.Time       `json:"createdAt"`
 }

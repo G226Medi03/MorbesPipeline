@@ -1,5 +1,7 @@
 package store
 
+// entityidlint:allow-file postprocess entity id audit
+
 import (
 	"context"
 	"database/sql"
@@ -43,14 +45,17 @@ func TestInitSchemaDropsEntitySources(t *testing.T) {
 		if err := rows.Scan(&cid, &columnName, &columnType, &notNull, &defaultValue, &pk); err != nil {
 			t.Fatalf("scan postprocess column: %v", err)
 		}
-		if columnName == "entity_payload" {
+		if columnName == "entity_id" {
 			found = true
+		}
+		if columnName == "entity_payload" {
+			t.Fatal("morbes_postprocesses.entity_payload must not exist")
 		}
 	}
 	if err := rows.Err(); err != nil {
 		t.Fatalf("postprocess columns: %v", err)
 	}
 	if !found {
-		t.Fatal("morbes_postprocesses.entity_payload is missing")
+		t.Fatal("morbes_postprocesses.entity_id is missing")
 	}
 }

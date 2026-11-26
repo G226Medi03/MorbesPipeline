@@ -70,6 +70,21 @@ func checkFile(root, path string, violations *int) error {
 		return err
 	}
 	scanner := bufio.NewScanner(file)
+	allowFile := false
+	for line := 1; line <= 8 && scanner.Scan(); line++ {
+		if strings.Contains(scanner.Text(), "entityidlint:allow-file") {
+			allowFile = true
+		}
+	}
+	if allowFile {
+		_, err := file.Seek(0, 0)
+		return err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+	scanner = bufio.NewScanner(file)
 	for line := 1; scanner.Scan(); line++ {
 		text := scanner.Text()
 		for _, pattern := range patterns {

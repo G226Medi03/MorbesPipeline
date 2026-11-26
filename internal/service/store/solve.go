@@ -136,12 +136,6 @@ func (s *SolveService) SetQuestionType(id solve.CaseID, questionType string) err
 	return s.store.SolveRepo().Case.SetQuestionType(s.store.Context(), s.store.SolveExecutor(), id, questionType)
 }
 
-func (s *SolveService) SetSituation(id solve.CaseID, situation string) error {
-	unlock := s.store.LockWrite()
-	defer unlock()
-	return s.store.SolveRepo().Case.SetSituation(s.store.Context(), s.store.SolveExecutor(), id, situation)
-}
-
 func (s *SolveService) SetSource(id solve.CaseID, source_id source.SourceId) error {
 	if source_id.ToI64() <= 0 {
 		return fmt.Errorf("solve case source가 필요합니다")

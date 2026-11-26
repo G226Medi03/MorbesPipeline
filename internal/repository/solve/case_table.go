@@ -18,11 +18,8 @@ func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_cases (
 		case_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		exam_question_id INTEGER NOT NULL,
-		situation_json TEXT NOT NULL DEFAULT '',
-		answer_json TEXT NOT NULL DEFAULT '',
 		state TEXT NOT NULL DEFAULT 'pending',
 		stage TEXT NOT NULL DEFAULT 'queued',
-		question_type TEXT NOT NULL DEFAULT '',
 		error TEXT NOT NULL DEFAULT '',
 		source_id INTEGER NOT NULL CHECK (source_id > 0),
 		situation_source_id INTEGER NOT NULL DEFAULT 0,
@@ -38,40 +35,10 @@ func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_solve_cases_exam_question ON solve_cases(exam_question_id);`); err != nil {
 		return fmt.Errorf("solve_cases exam_question index 생성 실패: %w", err)
 	}
-	if err := ensure_question_type_column(ctx, db); err != nil {
-		return err
-	}
-	return nil
-}
-
-func ensure_question_type_column(ctx context.Context, db sqlutil.Executor) error {
-	rows, err := db.QueryContext(ctx, `PRAGMA table_info(solve_cases)`)
-	if err != nil {
-		return fmt.Errorf("solve_cases schema 조회 실패: %w", err)
-	}
-	has_column := false
-	for rows.Next() {
-		var cid, notnull, pk int
-		var name, column_type string
-		var default_value sql.NullString
-		if err := rows.Scan(&cid, &name, &column_type, &notnull, &default_value, &pk); err != nil {
-			_ = rows.Close()
+	for _, column := range []string{"situation_json", "answer_json", "question_type"} {
+		if err := dropColumnIfExists(ctx, db, "solve_cases", column); err != nil {
 			return err
 		}
-		if name == "question_type" {
-			has_column = true
-		}
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-	if has_column {
-		return nil
-	}
-	if _, err := db.ExecContext(ctx, `ALTER TABLE solve_cases ADD COLUMN question_type TEXT NOT NULL DEFAULT ''`); err != nil {
-		return fmt.Errorf("solve_cases question_type 컬럼 추가 실패: %w", err)
 	}
 	return nil
 }
@@ -115,11 +82,22 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]so
 		limit = 20
 	}
 	rows, err := db.QueryContext(ctx, `
-		SELECT case_id, exam_question_id, situation_json, answer_json,
-		       state, stage, question_type, error, source_id, situation_source_id,
-		       replay_of, replay_mode, replay_from_node, created_at, updated_at
-		FROM solve_cases
-		ORDER BY updated_at DESC, created_at DESC
+		SELECT c.case_id, c.exam_question_id,
+		       COALESCE((
+		           SELECT s.output_json FROM solve_steps s
+		           WHERE s.case_id = c.case_id AND s.node = 'cause_trace'
+		       ), '') AS answer_json,
+		       c.state, c.stage,
+		       COALESCE((
+		           SELECT CASE WHEN json_valid(s.output_json)
+		               THEN json_extract(s.output_json, '$.questionType') END
+		           FROM solve_steps s
+		           WHERE s.case_id = c.case_id AND s.node = 'case_extraction'
+		       ), '') AS question_type,
+		       c.error, c.source_id, c.situation_source_id,
+		       c.replay_of, c.replay_mode, c.replay_from_node, c.created_at, c.updated_at
+		FROM solve_cases c
+		ORDER BY c.updated_at DESC, c.created_at DESC
 		LIMIT ?`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("solve case 목록 조회 실패: %w", err)
@@ -138,10 +116,21 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]so
 
 func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id solve.CaseID) (solve.Case, bool, error) {
 	row := db.QueryRowContext(ctx, `
-		SELECT case_id, exam_question_id, situation_json, answer_json,
-		       state, stage, question_type, error, source_id, situation_source_id,
-		       replay_of, replay_mode, replay_from_node, created_at, updated_at
-		FROM solve_cases WHERE case_id = ?`, id)
+		SELECT c.case_id, c.exam_question_id,
+		       COALESCE((
+		           SELECT s.output_json FROM solve_steps s
+		           WHERE s.case_id = c.case_id AND s.node = 'cause_trace'
+		       ), '') AS answer_json,
+		       c.state, c.stage,
+		       COALESCE((
+		           SELECT CASE WHEN json_valid(s.output_json)
+		               THEN json_extract(s.output_json, '$.questionType') END
+		           FROM solve_steps s
+		           WHERE s.case_id = c.case_id AND s.node = 'case_extraction'
+		       ), '') AS question_type,
+		       c.error, c.source_id, c.situation_source_id,
+		       c.replay_of, c.replay_mode, c.replay_from_node, c.created_at, c.updated_at
+		FROM solve_cases c WHERE c.case_id = ?`, id)
 	item, err := scan_case(row.Scan)
 	if err == sql.ErrNoRows {
 		return solve.Case{}, false, nil
@@ -156,7 +145,7 @@ func scan_case(scan func(...any) error) (solve.Case, error) {
 	var item solve.Case
 	var id int64
 	var replayOf int64
-	if err := scan(&id, &item.ExamQuestionID, &item.SituationJSON,
+	if err := scan(&id, &item.ExamQuestionID,
 		&item.AnswerJSON, &item.State, &item.Stage, &item.QuestionType, &item.Error, &item.SourceID,
 		&item.SituationSourceID, &replayOf, &item.ReplayMode, &item.ReplayFromNode,
 		&item.CreatedAt, &item.UpdatedAt); err != nil {
@@ -173,7 +162,6 @@ func (CaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id sol
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_cases
 		SET state = 'pending', stage = 'queued', error = '',
-		    situation_json = '', answer_json = '',
 		    situation_source_id = 0,
 		    replay_mode = ?, replay_from_node = ?,
 		    updated_at = CURRENT_TIMESTAMP
@@ -203,12 +191,8 @@ func (CaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id solve.Cas
 	return (CaseTable{}).set(ctx, db, id, `stage = ?, updated_at = CURRENT_TIMESTAMP`, []any{stage})
 }
 
-func (CaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id solve.CaseID, questionType string) error {
-	return (CaseTable{}).set(ctx, db, id, `question_type = ?, updated_at = CURRENT_TIMESTAMP`, []any{questionType})
-}
-
-func (CaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id solve.CaseID, situation string) error {
-	return (CaseTable{}).set(ctx, db, id, `situation_json = ?, updated_at = CURRENT_TIMESTAMP`, []any{situation})
+func (CaseTable) SetQuestionType(context.Context, sqlutil.Executor, solve.CaseID, string) error {
+	return nil
 }
 
 func (CaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id solve.CaseID, sourceID source.SourceId) error {
@@ -219,8 +203,8 @@ func (CaseTable) SetSituationSource(ctx context.Context, db sqlutil.Executor, id
 	return (CaseTable{}).set(ctx, db, id, `situation_source_id = ?, updated_at = CURRENT_TIMESTAMP`, []any{sourceID})
 }
 
-func (CaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id solve.CaseID, answerJSON string) error {
-	return (CaseTable{}).set(ctx, db, id, `answer_json = ?, state = 'done', stage = 'done', error = '', updated_at = CURRENT_TIMESTAMP`, []any{answerJSON})
+func (CaseTable) SetAnswer(ctx context.Context, db sqlutil.Executor, id solve.CaseID, _ string) error {
+	return (CaseTable{}).set(ctx, db, id, `state = 'done', stage = 'done', error = '', updated_at = CURRENT_TIMESTAMP`, nil)
 }
 
 func (CaseTable) SetFailed(ctx context.Context, db sqlutil.Executor, id solve.CaseID, message string) error {

@@ -73,6 +73,7 @@ func (self *Service) run_explain_node(ctx context.Context, id solve.CaseID, stat
 	raw := ""
 	explanation := ""
 	prompt_version := state.Prompts.Versions[PromptExplain]
+	resp_id := source.RespId{}
 	if result != nil {
 		explanation = result.Explanation
 		raw = result.Raw
@@ -80,6 +81,7 @@ func (self *Service) run_explain_node(ctx context.Context, id solve.CaseID, stat
 		if result.Response != nil {
 			explain_model = result.Response.Model
 			prompt = result.Response.Prompt
+			resp_id = result.Response.RespID
 		}
 	}
 	self.record_call(LLMCallInput{
@@ -92,6 +94,7 @@ func (self *Service) run_explain_node(ctx context.Context, id solve.CaseID, stat
 		Prompt:        prompt,
 		RawOutput:     raw,
 		ParsedOutput:  marshal_json(map[string]string{"explanation": explanation}),
+		RespID:        resp_id,
 		State:         state_text(err),
 		Error:         error_text(err),
 	})
