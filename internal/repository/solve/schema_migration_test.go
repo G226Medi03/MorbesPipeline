@@ -88,6 +88,8 @@ func TestInitDropsRedundantColumns(t *testing.T) {
 	}
 
 	assertColumnMissing(t, ctx, db, "solve_cases", "situation_json")
+	assertColumnMissing(t, ctx, db, "solve_cases", "answer_json")
+	assertColumnMissing(t, ctx, db, "solve_cases", "question_type")
 	assertColumnMissing(t, ctx, db, "solve_steps", "call_id")
 	assertColumnMissing(t, ctx, db, "solve_llm_calls", "preprocessed_output")
 	assertColumnMissing(t, ctx, db, "solve_llm_calls", "preprocess_changes")

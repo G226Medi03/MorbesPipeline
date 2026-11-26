@@ -19,10 +19,7 @@ func (CallTable) init(ctx context.Context, db sqlutil.Executor) error {
 		seq INTEGER NOT NULL,
 		stage TEXT NOT NULL,
 		role TEXT NOT NULL,
-		model TEXT NOT NULL DEFAULT '',
 		prompt_version INTEGER NOT NULL DEFAULT 0,
-		prompt TEXT NOT NULL DEFAULT '',
-		raw_output TEXT NOT NULL DEFAULT '',
 		parsed_output TEXT NOT NULL DEFAULT '',
 		source_id INTEGER NOT NULL CHECK (source_id > 0),
 		resp_id INTEGER NOT NULL DEFAULT 0,
@@ -98,12 +95,10 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 	}
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO solve_llm_calls (
-			case_id, seq, stage, role, model, prompt_version, prompt,
-			raw_output, parsed_output,
+			case_id, seq, stage, role, prompt_version, parsed_output,
 			source_id, resp_id, state, error, duration_ms
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, 0), (SELECT source_id FROM solve_cases WHERE case_id = ?)), ?, ?, ?, ?)`,
-		call.CaseID, call.Seq, call.Stage, call.Role, call.Model, call.PromptVersion, call.Prompt,
-		call.RawOutput, call.ParsedOutput,
+		) VALUES (?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, 0), (SELECT source_id FROM solve_cases WHERE case_id = ?)), ?, ?, ?, ?)`,
+		call.CaseID, call.Seq, call.Stage, call.Role, call.PromptVersion, call.ParsedOutput,
 		call.SourceID, call.CaseID, call.RespID, call.State, call.Error, call.DurationMS)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", "solve_llm_calls 저장 실패", err)
@@ -117,8 +112,7 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 
 func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) ([]model.LLMCall, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT call_id, case_id, seq, stage, role, model, prompt_version, prompt,
-		       raw_output, parsed_output,
+		SELECT call_id, case_id, seq, stage, role, prompt_version, parsed_output,
 		       source_id, resp_id, state, error, duration_ms, created_at
 		FROM solve_llm_calls WHERE case_id = ? ORDER BY seq, call_id`, string(caseID))
 	if err != nil {
@@ -130,8 +124,7 @@ func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.Cas
 		var call model.LLMCall
 		var rawCaseID string
 		if err := rows.Scan(&call.ID, &rawCaseID, &call.Seq, &call.Stage, &call.Role,
-			&call.Model, &call.PromptVersion, &call.Prompt, &call.RawOutput,
-			&call.ParsedOutput,
+			&call.PromptVersion, &call.ParsedOutput,
 			&call.SourceID, &call.RespID, &call.State, &call.Error, &call.DurationMS,
 			&call.CreatedAt); err != nil {
 			return nil, fmt.Errorf("%s: %w", "solve_llm_calls scan failed", err)
