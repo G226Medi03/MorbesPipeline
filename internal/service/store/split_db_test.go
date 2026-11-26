@@ -21,7 +21,7 @@ func TestRecordPostprocessWithSplitDBs(t *testing.T) {
 
 	var sourceID int64
 	err := st.WithPostprocessTx(ctx, func(tx *StoreContainer) error {
-		created, err := tx.RecordPostprocess("test", OperationCreated, EntityAction, "action:test", "", "")
+		created, err := tx.RecordPostprocess("test", OperationCreated, EntityAction, 1, "", 0)
 		if err != nil {
 			return err
 		}

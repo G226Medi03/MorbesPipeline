@@ -1,9 +1,8 @@
 package store
 
 import (
-	"encoding/json"
+	"fmt"
 
-	"github.com/G226Medi03/MedicalEntityParser/llmparser"
 	repo "github.com/G226Medi03/MedicalEntityRepository/repo"
 	postprocessrepo "github.com/G226Medi03/MorbesPipeline/internal/repository/postprocess"
 	source "github.com/G226Medi03/SourceEntity"
@@ -15,17 +14,17 @@ func (s *PostprocessService) RecordPostprocess(
 	name string,
 	operation postprocessrepo.Operation,
 	entityType postprocessrepo.EntityType,
-	entityPayload string,
+	entityID int64,
 	targetType postprocessrepo.EntityType,
-	targetPayload string,
+	targetID int64,
 ) (source.SourceId, error) {
 	postprocessID, err := s.store.PostprocessRepo().Append(s.store.Context(), s.store.MainExecutor(), postprocessrepo.Record{
-		PostprocessorName:   name,
-		Operation:           operation,
-		EntityType:          entityType,
-		EntityPayload:       entityPayload,
-		TargetEntityType:    targetType,
-		TargetEntityPayload: targetPayload,
+		PostprocessorName: name,
+		Operation:         operation,
+		EntityType:        entityType,
+		EntityID:          entityID,
+		TargetEntityType:  targetType,
+		TargetEntityID:    targetID,
 	})
 	if err != nil {
 		return source.SourceId{}, err
@@ -35,22 +34,22 @@ func (s *PostprocessService) RecordPostprocess(
 
 // AuditPostprocessStatus records one status observation.
 func (s *PostprocessService) AuditPostprocessStatus(name string, operation postprocessrepo.Operation, value repo.IEStatus) error {
-	payload, err := statusPayload(value)
+	entityID, err := s.statusID(value)
 	if err != nil {
 		return err
 	}
-	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, payload, "", "")
+	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityStatus, entityID, "", 0)
 	return err
 }
 
 // AuditPostprocessStatusCreated records a status creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value repo.IEStatus) error {
-	payload, err := statusPayload(value)
+	entityID, err := s.statusID(value)
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, payload, "", "")
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityStatus, entityID, "", 0)
 	if err != nil {
 		return err
 	}
@@ -59,22 +58,22 @@ func (s *PostprocessService) AuditPostprocessStatusCreated(name string, value re
 
 // AuditPostprocessAction records one action observation.
 func (s *PostprocessService) AuditPostprocessAction(name string, operation postprocessrepo.Operation, value repo.IEAction) error {
-	payload, err := actionPayload(value)
+	entityID, err := s.actionID(value)
 	if err != nil {
 		return err
 	}
-	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, payload, "", "")
+	_, err = s.RecordPostprocess(name, operation, postprocessrepo.EntityAction, entityID, "", 0)
 	return err
 }
 
 // AuditPostprocessActionCreated records an action creation and attaches the
 // postprocess source to it.
 func (s *PostprocessService) AuditPostprocessActionCreated(name string, value repo.IEAction) error {
-	payload, err := actionPayload(value)
+	entityID, err := s.actionID(value)
 	if err != nil {
 		return err
 	}
-	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, payload, "", "")
+	sourceID, err := s.RecordPostprocess(name, postprocessrepo.OperationCreated, postprocessrepo.EntityAction, entityID, "", 0)
 	if err != nil {
 		return err
 	}
@@ -88,11 +87,11 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 	status repo.IEStatus,
 	action repo.IEAction,
 ) error {
-	statusValue, err := statusPayload(status)
+	statusID, err := s.statusID(status)
 	if err != nil {
 		return err
 	}
-	actionValue, err := actionPayload(action)
+	actionID, err := s.actionID(action)
 	if err != nil {
 		return err
 	}
@@ -100,9 +99,9 @@ func (s *PostprocessService) AuditPostprocessStatusAction(
 		name,
 		operation,
 		postprocessrepo.EntityStatus,
-		statusValue,
+		statusID,
 		postprocessrepo.EntityAction,
-		actionValue,
+		actionID,
 	)
 	return err
 }
@@ -114,11 +113,11 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 	action repo.IEAction,
 	status repo.IEStatus,
 ) error {
-	actionValue, err := actionPayload(action)
+	actionID, err := s.actionID(action)
 	if err != nil {
 		return err
 	}
-	statusValue, err := statusPayload(status)
+	statusID, err := s.statusID(status)
 	if err != nil {
 		return err
 	}
@@ -126,11 +125,41 @@ func (s *PostprocessService) AuditPostprocessActionResultStatus(
 		name,
 		operation,
 		postprocessrepo.EntityAction,
-		actionValue,
+		actionID,
 		postprocessrepo.EntityStatus,
-		statusValue,
+		statusID,
 	)
 	return err
+}
+
+func (s *PostprocessService) statusID(value repo.IEStatus) (int64, error) {
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return 0, err
+	}
+	id, found, err := entities.GetStatusID(value)
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		return 0, fmt.Errorf("postprocess status id를 찾지 못했습니다: %s", value.Kind())
+	}
+	return id, nil
+}
+
+func (s *PostprocessService) actionID(value repo.IEAction) (int64, error) {
+	entities, err := s.store.MedicalEntities()
+	if err != nil {
+		return 0, err
+	}
+	id, found, err := entities.GetActionID(value)
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		return 0, fmt.Errorf("postprocess action id를 찾지 못했습니다: %s", value.Kind())
+	}
+	return id, nil
 }
 
 // AddStatusSource attaches a postprocess source to a status.
@@ -159,22 +188,6 @@ func (s *PostprocessService) AddActionSource(value repo.IEAction, sourceID sourc
 	}
 	action.Sources = appendSource(action.Sources, sourceID)
 	return entities.SaveAction(action)
-}
-
-func statusPayload(value repo.IEStatus) (string, error) {
-	encoded, err := json.Marshal(llmparser.StatusToDTO(value))
-	if err != nil {
-		return "", err
-	}
-	return string(encoded), nil
-}
-
-func actionPayload(value repo.IEAction) (string, error) {
-	encoded, err := json.Marshal(llmparser.ActionToDTO(value))
-	if err != nil {
-		return "", err
-	}
-	return string(encoded), nil
 }
 
 func appendSource(sources []source.Source, sourceID source.SourceId) []source.Source {

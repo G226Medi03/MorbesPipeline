@@ -34,12 +34,12 @@ const (
 
 // Record is one postprocess operation.
 type Record struct {
-	PostprocessID       int64
-	PostprocessorName   string
-	Operation           Operation
-	EntityType          EntityType
-	EntityPayload       string
-	TargetEntityType    EntityType
-	TargetEntityPayload string
-	FinishedAt          time.Time
+	PostprocessID     int64
+	PostprocessorName string
+	Operation         Operation
+	EntityType        EntityType
+	EntityID          int64
+	TargetEntityType  EntityType
+	TargetEntityID    int64
+	FinishedAt        time.Time
 }
