@@ -1,6 +1,8 @@
 // Package postprocess stores the audit trail of postprocess operations.
 package postprocess
 
+// entityidlint:allow-file postprocess entity id audit
+
 import "time"
 
 // Operation describes one postprocess change.

@@ -1,5 +1,7 @@
 package postprocess
 
+// entityidlint:allow-file postprocess entity id audit
+
 import (
 	"context"
 	"path/filepath"

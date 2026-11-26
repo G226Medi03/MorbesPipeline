@@ -1,5 +1,7 @@
 package store
 
+// entityidlint:allow-file postprocess entity id audit
+
 import (
 	"context"
 	"database/sql"
