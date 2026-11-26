@@ -40,12 +40,11 @@ type (
 )
 
 type (
-	CaseID          = solve.CaseID
-	QuestionType    = solve.QuestionType
-	QuestionInput   = solve.QuestionInput
-	QuestionStore   = solve.QuestionStore
-	AnswerCheck     = solve.AnswerCheck
-	AnswerCheckKind = solve.AnswerCheckKind
+	CaseID        = solve.CaseID
+	QuestionType  = solve.QuestionType
+	QuestionInput = solve.QuestionInput
+	QuestionStore = solve.QuestionStore
+	AnswerCheck   = solve.AnswerCheck
 
 	MedicalProcedureOption = repo.MedicalProcedureOption
 	PatientDescription     = patient.PatientDescription
@@ -114,9 +113,6 @@ const (
 
 	ReplayModeLLM  = solve.ReplayModeLLM
 	ReplayModeCode = solve.ReplayModeCode
-
-	AnswerCheckKindLLM  = solve.AnswerCheckKindLLM
-	AnswerCheckKindRule = solve.AnswerCheckKindRule
 )
 
 var (

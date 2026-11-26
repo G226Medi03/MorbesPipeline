@@ -254,7 +254,7 @@ func (CaseTable) CountFailed(ctx context.Context, db sqlutil.Executor) (int, err
 	if err := db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM solve_cases c
-		LEFT JOIN solve_answer_checks a ON a.case_id = c.case_id
+		LEFT JOIN solve_llm_answer_checks a ON a.case_id = c.case_id
 		WHERE c.state IN ('done', 'failed', 'cancelled')
 		  AND COALESCE(a.answer_satisfied, 0) = 0
 		  AND COALESCE(a.contains_answer, 0) = 0`).Scan(&count); err != nil {
@@ -270,7 +270,7 @@ func (CaseTable) ListFailed(ctx context.Context, db sqlutil.Executor, limit int)
 	rows, err := db.QueryContext(ctx, `
 		SELECT c.case_id, c.exam_question_id, c.state, c.stage, c.error
 		FROM solve_cases c
-		LEFT JOIN solve_answer_checks a ON a.case_id = c.case_id
+		LEFT JOIN solve_llm_answer_checks a ON a.case_id = c.case_id
 		WHERE c.state IN ('done', 'failed', 'cancelled')
 		  AND COALESCE(a.answer_satisfied, 0) = 0
 		  AND COALESCE(a.contains_answer, 0) = 0
@@ -315,7 +315,7 @@ func (CaseTable) StatsByExamQuestionIDs(ctx context.Context, db sqlutil.Executor
 		SELECT c.exam_question_id, c.case_id, c.state,
 		       COALESCE((
 		           SELECT CASE WHEN COALESCE(ac.answer_satisfied, 0) != 0 OR ac.contains_answer != 0 THEN 1 ELSE 0 END
-		           FROM solve_answer_checks ac
+		           FROM solve_llm_answer_checks ac
 		           WHERE ac.case_id = c.case_id
 		       ), 0)
 		FROM solve_cases c
