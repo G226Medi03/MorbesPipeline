@@ -179,6 +179,16 @@ func IsStatusKind(kind string) bool {
 	return false
 }
 
+// StatusLabelValue returns a human-readable label for a typed status value.
+func StatusLabelValue(status IEStatus) string {
+	return label.StatusLabelValue(status)
+}
+
+// ParseCauseTraceJSON normalizes a persisted cause-trace step payload.
+func ParseCauseTraceJSON(raw string, target *CauseTraceResult) error {
+	return cause.ParseCauseTraceJSON(raw, target)
+}
+
 // StatusLabel returns a label for a kind-tagged status payload.
 func StatusLabel(kind, data string) string {
 	raw, err := withJSONKind(kind, data)
