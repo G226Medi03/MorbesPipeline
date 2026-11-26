@@ -6,6 +6,16 @@ import (
 	source "github.com/G226Medi03/SourceEntity"
 )
 
+// AnswerCheckKind selects which independent answer-check result is being
+// read or written. LLM-assisted checks and pure rule checks may both exist
+// for one solve case.
+type AnswerCheckKind string
+
+const (
+	AnswerCheckKindLLM  AnswerCheckKind = "llm"
+	AnswerCheckKindRule AnswerCheckKind = "rule"
+)
+
 // AnswerCheck is the latest answer-check decision for one solve case.
 // Prompt and raw response remain in llm_responses and are linked by RespID.
 type AnswerCheck struct {
