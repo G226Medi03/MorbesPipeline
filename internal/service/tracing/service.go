@@ -96,6 +96,12 @@ func (s *Service) trace_from(
 			return err
 		}
 		action := actionLink.Action
+		// Diagnostic tests are observations, not causal actions. A CBC can
+		// reveal anemia; it does not cause anemia. Keep diagnostic actions out
+		// of cause paths even when historical graph rows still contain them.
+		if isDiagnosticCauseAction(action) {
+			continue
+		}
 		action_node := TraceNode{
 			Type:  "action",
 			Label: action_label(action),
@@ -240,6 +246,18 @@ func equalActor(a, b repo.IEActor) bool {
 		return a == nil && b == nil
 	}
 	return a.Equal(b)
+}
+
+func isDiagnosticCauseAction(action repo.IEAction) bool {
+	cause, ok := action.(repo.CauseStatus)
+	if !ok || cause.Status == nil {
+		return false
+	}
+	received, ok := cause.Status.(repo.ReceivedMedicalProcedure)
+	if !ok || received.MedicalProcedure == nil {
+		return false
+	}
+	return received.MedicalProcedure.Kind() == "DiagnosticTest"
 }
 
 func status_node(status repo.IEStatus) TraceNode {

@@ -103,13 +103,21 @@ func (s *SolveService) ApplyAnswerCheck(item *solve.Case) error {
 }
 
 func (s *SolveService) SaveAnswerCheck(value solve.AnswerCheck) error {
+	return s.SaveAnswerCheckKind(solve.AnswerCheckKindLLM, value)
+}
+
+func (s *SolveService) SaveAnswerCheckKind(kind solve.AnswerCheckKind, value solve.AnswerCheck) error {
 	unlock := s.store.LockWrite()
 	defer unlock()
-	return s.store.SolveRepo().AnswerCheck.Upsert(s.store.Context(), s.store.SolveExecutor(), value)
+	return s.store.SolveRepo().AnswerCheck.UpsertKind(s.store.Context(), s.store.SolveExecutor(), kind, value)
 }
 
 func (s *SolveService) GetAnswerCheck(caseID solve.CaseID) (solve.AnswerCheck, bool, error) {
-	return s.store.SolveRepo().AnswerCheck.Get(s.store.Context(), s.store.SolveExecutor(), caseID)
+	return s.GetAnswerCheckKind(solve.AnswerCheckKindLLM, caseID)
+}
+
+func (s *SolveService) GetAnswerCheckKind(kind solve.AnswerCheckKind, caseID solve.CaseID) (solve.AnswerCheck, bool, error) {
+	return s.store.SolveRepo().AnswerCheck.GetKind(s.store.Context(), s.store.SolveExecutor(), kind, caseID)
 }
 
 func (s *SolveService) DeleteAnswerChecksByExamQuestionID(examQuestionID int64) error {

@@ -40,11 +40,12 @@ type (
 )
 
 type (
-	CaseID        = solve.CaseID
-	QuestionType  = solve.QuestionType
-	QuestionInput = solve.QuestionInput
-	QuestionStore = solve.QuestionStore
-	AnswerCheck   = solve.AnswerCheck
+	CaseID          = solve.CaseID
+	QuestionType    = solve.QuestionType
+	QuestionInput   = solve.QuestionInput
+	QuestionStore   = solve.QuestionStore
+	AnswerCheck     = solve.AnswerCheck
+	AnswerCheckKind = solve.AnswerCheckKind
 
 	MedicalProcedureOption = repo.MedicalProcedureOption
 	PatientDescription     = patient.PatientDescription
@@ -113,6 +114,9 @@ const (
 
 	ReplayModeLLM  = solve.ReplayModeLLM
 	ReplayModeCode = solve.ReplayModeCode
+
+	AnswerCheckKindLLM  = solve.AnswerCheckKindLLM
+	AnswerCheckKindRule = solve.AnswerCheckKindRule
 )
 
 var (
@@ -173,6 +177,16 @@ func IsStatusKind(kind string) bool {
 		return true
 	}
 	return false
+}
+
+// StatusLabelValue returns a human-readable label for a typed status value.
+func StatusLabelValue(status IEStatus) string {
+	return label.StatusLabelValue(status)
+}
+
+// ParseCauseTraceJSON normalizes a persisted cause-trace step payload.
+func ParseCauseTraceJSON(raw string, target *CauseTraceResult) error {
+	return cause.ParseCauseTraceJSON(raw, target)
 }
 
 // StatusLabel returns a label for a kind-tagged status payload.
