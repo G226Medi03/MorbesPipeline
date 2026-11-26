@@ -9,7 +9,7 @@ import (
 	testutil "github.com/G226Medi03/MorbesPipeline/internal/testutil"
 )
 
-func TestAnswerCheckSplitMigrationAndKinds(t *testing.T) {
+func TestAnswerCheckLegacyMigration(t *testing.T) {
 	ctx := context.Background()
 	db, err := testutil.OpenSQLite(filepath.Join(t.TempDir(), "solve.db"))
 	if err != nil {
@@ -54,34 +54,29 @@ func TestAnswerCheckSplitMigrationAndKinds(t *testing.T) {
 		t.Fatal("legacy answer check table still exists")
 	}
 
-	llm, found, err := (AnswerCheckTable{}).GetKind(ctx, db, solve.AnswerCheckKindLLM, "1")
+	migrated, found, err := (AnswerCheckTable{}).Get(ctx, db, "1")
 	if err != nil {
-		t.Fatalf("get llm: %v", err)
+		t.Fatalf("get migrated: %v", err)
 	}
-	if !found || !llm.AnswerSatisfied || llm.RespID.ToI64() != 7 {
-		t.Fatalf("unexpected llm result: found=%v value=%+v", found, llm)
+	if !found || !migrated.AnswerSatisfied || migrated.RespID.ToI64() != 7 {
+		t.Fatalf("unexpected migrated result: found=%v value=%+v", found, migrated)
 	}
 
-	if err := (AnswerCheckTable{}).UpsertKind(ctx, db, solve.AnswerCheckKindRule, solve.AnswerCheck{
+	if err := (AnswerCheckTable{}).Upsert(ctx, db, solve.AnswerCheck{
 		CaseID:          "2",
 		QuestionType:    "procedure",
 		ContainsAnswer:  true,
 		AnswerSatisfied: false,
 		MatchedType:     "medical_procedure_option",
-		AnalysisJSON:    `{"selectionMode":"priority_rules"}`,
+		AnalysisJSON:    `{"selectionMode":"current"}`,
 	}); err != nil {
-		t.Fatalf("upsert rule: %v", err)
+		t.Fatalf("upsert: %v", err)
 	}
-	rule, found, err := (AnswerCheckTable{}).GetKind(ctx, db, solve.AnswerCheckKindRule, "2")
+	value, found, err := (AnswerCheckTable{}).Get(ctx, db, "2")
 	if err != nil {
-		t.Fatalf("get rule: %v", err)
+		t.Fatalf("get: %v", err)
 	}
-	if !found || rule.AnswerSatisfied || rule.QuestionType != "procedure" {
-		t.Fatalf("unexpected rule result: found=%v value=%+v", found, rule)
-	}
-	if _, found, err := (AnswerCheckTable{}).GetKind(ctx, db, solve.AnswerCheckKindLLM, "2"); err != nil {
-		t.Fatalf("get missing llm: %v", err)
-	} else if found {
-		t.Fatal("rule result leaked into llm table")
+	if !found || value.AnswerSatisfied || value.QuestionType != "procedure" {
+		t.Fatalf("unexpected result: found=%v value=%+v", found, value)
 	}
 }

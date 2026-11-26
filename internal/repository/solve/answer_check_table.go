@@ -13,20 +13,17 @@ import (
 
 const (
 	answerCheckTableLLM    = "solve_llm_answer_checks"
-	answerCheckTableRule   = "solve_rule_answer_checks"
 	answerCheckTableLegacy = "solve_answer_checks"
 )
 
 type AnswerCheckTable struct{}
 
 func (AnswerCheckTable) init(ctx context.Context, db sqlutil.Executor) error {
-	for _, table := range []string{answerCheckTableLLM, answerCheckTableRule} {
-		if err := createAnswerCheckTable(ctx, db, table); err != nil {
-			return err
-		}
-		if err := ensureAnswerCheckColumns(ctx, db, table); err != nil {
-			return err
-		}
+	if err := createAnswerCheckTable(ctx, db, answerCheckTableLLM); err != nil {
+		return err
+	}
+	if err := ensureAnswerCheckColumns(ctx, db, answerCheckTableLLM); err != nil {
+		return err
 	}
 	return migrateLegacyAnswerChecks(ctx, db)
 }
@@ -152,26 +149,8 @@ func tableExists(ctx context.Context, db sqlutil.Executor, table string) (bool, 
 	return true, nil
 }
 
-func answerCheckTableName(kind solve.AnswerCheckKind) (string, error) {
-	switch kind {
-	case "", solve.AnswerCheckKindLLM:
-		return answerCheckTableLLM, nil
-	case solve.AnswerCheckKindRule:
-		return answerCheckTableRule, nil
-	default:
-		return "", fmt.Errorf("알 수 없는 answer check kind 입니다: %s", kind)
-	}
-}
-
 func (AnswerCheckTable) Upsert(ctx context.Context, db sqlutil.Executor, value solve.AnswerCheck) error {
-	return (AnswerCheckTable{}).UpsertKind(ctx, db, solve.AnswerCheckKindLLM, value)
-}
-
-func (AnswerCheckTable) UpsertKind(ctx context.Context, db sqlutil.Executor, kind solve.AnswerCheckKind, value solve.AnswerCheck) error {
-	table, err := answerCheckTableName(kind)
-	if err != nil {
-		return err
-	}
+	table := answerCheckTableLLM
 	contains := 0
 	if value.ContainsAnswer {
 		contains = 1
@@ -221,20 +200,13 @@ func (AnswerCheckTable) UpsertKind(ctx context.Context, db sqlutil.Executor, kin
 }
 
 func (AnswerCheckTable) Get(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) (solve.AnswerCheck, bool, error) {
-	return (AnswerCheckTable{}).GetKind(ctx, db, solve.AnswerCheckKindLLM, caseID)
-}
-
-func (AnswerCheckTable) GetKind(ctx context.Context, db sqlutil.Executor, kind solve.AnswerCheckKind, caseID solve.CaseID) (solve.AnswerCheck, bool, error) {
-	table, err := answerCheckTableName(kind)
-	if err != nil {
-		return solve.AnswerCheck{}, false, err
-	}
+	table := answerCheckTableLLM
 	var value solve.AnswerCheck
 	var caseIDValue string
 	var respID int64
 	var contains int
 	var answer_present, answer_satisfied, effect_matched sql.NullInt64
-	err = db.QueryRowContext(ctx, fmt.Sprintf(`
+	err := db.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT case_id, resp_id, question_type, contains_answer, answer_present, answer_satisfied, effect_matched,
 		       matched_type, analysis_json, error, updated_at
 		FROM %s WHERE case_id = ?`, table), string(caseID)).
@@ -255,21 +227,9 @@ func (AnswerCheckTable) GetKind(ctx context.Context, db sqlutil.Executor, kind s
 	return value, true, nil
 }
 
-// Delete removes both independent answer-check results for a case.
+// Delete removes the answer-check result for a case.
 func (AnswerCheckTable) Delete(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) error {
-	for _, kind := range []solve.AnswerCheckKind{solve.AnswerCheckKindLLM, solve.AnswerCheckKindRule} {
-		if err := (AnswerCheckTable{}).DeleteKind(ctx, db, kind, caseID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (AnswerCheckTable) DeleteKind(ctx context.Context, db sqlutil.Executor, kind solve.AnswerCheckKind, caseID solve.CaseID) error {
-	table, err := answerCheckTableName(kind)
-	if err != nil {
-		return err
-	}
+	table := answerCheckTableLLM
 	if _, err := db.ExecContext(ctx, `DELETE FROM `+table+` WHERE case_id = ?`, string(caseID)); err != nil {
 		return fmt.Errorf("%s 삭제 실패: %w", table, err)
 	}
@@ -286,23 +246,21 @@ func (AnswerCheckTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor
 		placeholders = append(placeholders, "?")
 		args = append(args, string(id))
 	}
-	for _, table := range []string{answerCheckTableLLM, answerCheckTableRule} {
-		if _, err := db.ExecContext(ctx, `
-			DELETE FROM `+table+`
-			WHERE case_id IN (`+strings.Join(placeholders, ",")+`)`, args...); err != nil {
-			return fmt.Errorf("%s case별 삭제 실패: %w", table, err)
-		}
+	table := answerCheckTableLLM
+	if _, err := db.ExecContext(ctx, `
+		DELETE FROM `+table+`
+		WHERE case_id IN (`+strings.Join(placeholders, ",")+`)`, args...); err != nil {
+		return fmt.Errorf("%s case별 삭제 실패: %w", table, err)
 	}
 	return nil
 }
 
 func (AnswerCheckTable) DeleteByExamQuestionID(ctx context.Context, db sqlutil.Executor, ExamQuestionID int64) error {
-	for _, table := range []string{answerCheckTableLLM, answerCheckTableRule} {
-		if _, err := db.ExecContext(ctx, `
-			DELETE FROM `+table+`
-			WHERE case_id IN (SELECT case_id FROM solve_cases WHERE exam_question_id = ?)`, ExamQuestionID); err != nil {
-			return fmt.Errorf("%s exam question 삭제 실패: %w", table, err)
-		}
+	table := answerCheckTableLLM
+	if _, err := db.ExecContext(ctx, `
+		DELETE FROM `+table+`
+		WHERE case_id IN (SELECT case_id FROM solve_cases WHERE exam_question_id = ?)`, ExamQuestionID); err != nil {
+		return fmt.Errorf("%s exam question 삭제 실패: %w", table, err)
 	}
 	return nil
 }
