@@ -18,7 +18,6 @@ func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 	query := `CREATE TABLE IF NOT EXISTS solve_cases (
 		case_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		exam_question_id INTEGER NOT NULL,
-		situation_json TEXT NOT NULL DEFAULT '',
 		answer_json TEXT NOT NULL DEFAULT '',
 		state TEXT NOT NULL DEFAULT 'pending',
 		stage TEXT NOT NULL DEFAULT 'queued',
@@ -39,6 +38,9 @@ func (CaseTable) init(ctx context.Context, db sqlutil.Executor) error {
 		return fmt.Errorf("solve_cases exam_question index 생성 실패: %w", err)
 	}
 	if err := ensure_question_type_column(ctx, db); err != nil {
+		return err
+	}
+	if err := dropColumnIfExists(ctx, db, "solve_cases", "situation_json"); err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +117,7 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]so
 		limit = 20
 	}
 	rows, err := db.QueryContext(ctx, `
-		SELECT case_id, exam_question_id, situation_json, answer_json,
+		SELECT case_id, exam_question_id, answer_json,
 		       state, stage, question_type, error, source_id, situation_source_id,
 		       replay_of, replay_mode, replay_from_node, created_at, updated_at
 		FROM solve_cases
@@ -138,7 +140,7 @@ func (CaseTable) List(ctx context.Context, db sqlutil.Executor, limit int) ([]so
 
 func (CaseTable) Get(ctx context.Context, db sqlutil.Executor, id solve.CaseID) (solve.Case, bool, error) {
 	row := db.QueryRowContext(ctx, `
-		SELECT case_id, exam_question_id, situation_json, answer_json,
+		SELECT case_id, exam_question_id, answer_json,
 		       state, stage, question_type, error, source_id, situation_source_id,
 		       replay_of, replay_mode, replay_from_node, created_at, updated_at
 		FROM solve_cases WHERE case_id = ?`, id)
@@ -156,7 +158,7 @@ func scan_case(scan func(...any) error) (solve.Case, error) {
 	var item solve.Case
 	var id int64
 	var replayOf int64
-	if err := scan(&id, &item.ExamQuestionID, &item.SituationJSON,
+	if err := scan(&id, &item.ExamQuestionID,
 		&item.AnswerJSON, &item.State, &item.Stage, &item.QuestionType, &item.Error, &item.SourceID,
 		&item.SituationSourceID, &replayOf, &item.ReplayMode, &item.ReplayFromNode,
 		&item.CreatedAt, &item.UpdatedAt); err != nil {
@@ -173,7 +175,7 @@ func (CaseTable) ResetForReplay(ctx context.Context, db sqlutil.Executor, id sol
 	if _, err := db.ExecContext(ctx, `
 		UPDATE solve_cases
 		SET state = 'pending', stage = 'queued', error = '',
-		    situation_json = '', answer_json = '',
+		    answer_json = '',
 		    situation_source_id = 0,
 		    replay_mode = ?, replay_from_node = ?,
 		    updated_at = CURRENT_TIMESTAMP
@@ -205,10 +207,6 @@ func (CaseTable) SetStage(ctx context.Context, db sqlutil.Executor, id solve.Cas
 
 func (CaseTable) SetQuestionType(ctx context.Context, db sqlutil.Executor, id solve.CaseID, questionType string) error {
 	return (CaseTable{}).set(ctx, db, id, `question_type = ?, updated_at = CURRENT_TIMESTAMP`, []any{questionType})
-}
-
-func (CaseTable) SetSituation(ctx context.Context, db sqlutil.Executor, id solve.CaseID, situation string) error {
-	return (CaseTable{}).set(ctx, db, id, `situation_json = ?, updated_at = CURRENT_TIMESTAMP`, []any{situation})
 }
 
 func (CaseTable) SetSource(ctx context.Context, db sqlutil.Executor, id solve.CaseID, sourceID source.SourceId) error {

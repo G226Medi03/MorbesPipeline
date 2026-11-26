@@ -24,7 +24,6 @@ type Case struct {
 	Problem           string          `json:"problem,omitempty"`
 	Answer            string          `json:"answer,omitempty"`
 	Explanation       string          `json:"explanation,omitempty"`
-	SituationJSON     string          `json:"situationJson"`
 	AnswerJSON        string          `json:"answerJson"`
 	State             string          `json:"state"`
 	Stage             string          `json:"stage"`

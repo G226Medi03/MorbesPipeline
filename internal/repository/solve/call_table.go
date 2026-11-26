@@ -23,8 +23,6 @@ func (CallTable) init(ctx context.Context, db sqlutil.Executor) error {
 		prompt_version INTEGER NOT NULL DEFAULT 0,
 		prompt TEXT NOT NULL DEFAULT '',
 		raw_output TEXT NOT NULL DEFAULT '',
-		preprocessed_output TEXT NOT NULL DEFAULT '',
-		preprocess_changes TEXT NOT NULL DEFAULT '',
 		parsed_output TEXT NOT NULL DEFAULT '',
 		source_id INTEGER NOT NULL CHECK (source_id > 0),
 		resp_id INTEGER NOT NULL DEFAULT 0,
@@ -40,7 +38,40 @@ func (CallTable) init(ctx context.Context, db sqlutil.Executor) error {
 	if _, err := db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_solve_llm_calls_case ON solve_llm_calls(case_id, seq);`); err != nil {
 		return fmt.Errorf("%s: %w", "solve_llm_calls schema init failed", err)
 	}
+	for _, column := range []string{"preprocessed_output", "preprocess_changes"} {
+		if err := dropColumnIfExists(ctx, db, "solve_llm_calls", column); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func dropColumnIfExists(ctx context.Context, db sqlutil.Executor, tableName, column string) error {
+	rows, err := db.QueryContext(ctx, `PRAGMA table_info(`+tableName+`)`)
+	if err != nil {
+		return err
+	}
+	found := false
+	for rows.Next() {
+		var cid, notNull, pk int
+		var name, columnType string
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
+			rows.Close() //nolint:errcheck // error path
+			return err
+		}
+		if name == column {
+			found = true
+		}
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if !found {
+		return nil
+	}
+	_, err = db.ExecContext(ctx, `ALTER TABLE `+tableName+` DROP COLUMN `+column)
+	return err
 }
 
 func (CallTable) DeleteByCaseIDs(ctx context.Context, db sqlutil.Executor, caseIDs []solve.CaseID) error {
@@ -68,11 +99,11 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 	result, err := db.ExecContext(ctx, `
 		INSERT INTO solve_llm_calls (
 			case_id, seq, stage, role, model, prompt_version, prompt,
-			raw_output, preprocessed_output, preprocess_changes, parsed_output,
+			raw_output, parsed_output,
 			source_id, resp_id, state, error, duration_ms
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, 0), (SELECT source_id FROM solve_cases WHERE case_id = ?)), ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(NULLIF(?, 0), (SELECT source_id FROM solve_cases WHERE case_id = ?)), ?, ?, ?, ?)`,
 		call.CaseID, call.Seq, call.Stage, call.Role, call.Model, call.PromptVersion, call.Prompt,
-		call.RawOutput, call.PreprocessedOutput, call.PreprocessChanges, call.ParsedOutput,
+		call.RawOutput, call.ParsedOutput,
 		call.SourceID, call.CaseID, call.RespID, call.State, call.Error, call.DurationMS)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", "solve_llm_calls 저장 실패", err)
@@ -87,7 +118,7 @@ func (CallTable) Append(ctx context.Context, db sqlutil.Executor, call model.LLM
 func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.CaseID) ([]model.LLMCall, error) {
 	rows, err := db.QueryContext(ctx, `
 		SELECT call_id, case_id, seq, stage, role, model, prompt_version, prompt,
-		       raw_output, preprocessed_output, preprocess_changes, parsed_output,
+		       raw_output, parsed_output,
 		       source_id, resp_id, state, error, duration_ms, created_at
 		FROM solve_llm_calls WHERE case_id = ? ORDER BY seq, call_id`, string(caseID))
 	if err != nil {
@@ -100,7 +131,7 @@ func (CallTable) List(ctx context.Context, db sqlutil.Executor, caseID solve.Cas
 		var rawCaseID string
 		if err := rows.Scan(&call.ID, &rawCaseID, &call.Seq, &call.Stage, &call.Role,
 			&call.Model, &call.PromptVersion, &call.Prompt, &call.RawOutput,
-			&call.PreprocessedOutput, &call.PreprocessChanges, &call.ParsedOutput,
+			&call.ParsedOutput,
 			&call.SourceID, &call.RespID, &call.State, &call.Error, &call.DurationMS,
 			&call.CreatedAt); err != nil {
 			return nil, fmt.Errorf("%s: %w", "solve_llm_calls scan failed", err)
