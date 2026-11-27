@@ -29,7 +29,33 @@ func (self *Service) runPipelineNodes(ctx context.Context, id solvedomain.CaseID
 	if start == "" {
 		return pipeline.Run(ctx, state)
 	}
-	return pipeline.RunFrom(ctx, state, start)
+	replayPipeline, err := replayPipelineNodes(pipeline, start)
+	if err != nil {
+		return err
+	}
+	return replayPipeline.Run(ctx, state)
+}
+
+// replayPipelineNodes keeps the prepare node so case/prompt/state slots are
+// initialized before a partial replay starts.
+func replayPipelineNodes(pipeline core.Pipeline, start core.NodeName) (core.Pipeline, error) {
+	startIndex := -1
+	for index, node := range pipeline.Nodes {
+		if node.Name == start {
+			startIndex = index
+			break
+		}
+	}
+	if startIndex < 0 {
+		return core.Pipeline{}, fmt.Errorf("pipeline %q has no node %q", pipeline.Name, start)
+	}
+	if startIndex == 0 {
+		return pipeline, nil
+	}
+	nodes := make([]core.Node, 0, 1+len(pipeline.Nodes)-startIndex)
+	nodes = append(nodes, pipeline.Nodes[0])
+	nodes = append(nodes, pipeline.Nodes[startIndex:]...)
+	return core.Pipeline{Name: pipeline.Name, Nodes: nodes}, nil
 }
 
 func newSolveNodePipeline(runtime *Service) core.Pipeline {
