@@ -46,6 +46,15 @@ func procedure_label(value repo.IMedicalProcedure) string {
 		return "세척 (" + target + ")"
 	case repo.DiagnosticTest:
 		return first_nonempty(strings.TrimSpace(typed.Name), "검사")
+	case repo.Palpation:
+		site := ""
+		if typed.Site != nil {
+			site = strings.TrimSpace(typed.Site.ActorName())
+		}
+		if site == "" {
+			return "촉진"
+		}
+		return "촉진 (" + site + ")"
 	case repo.Education:
 		return first_nonempty(strings.TrimSpace(typed.Name), strings.TrimSpace(typed.Topic), "교육")
 	case repo.Instruction:

@@ -33,6 +33,7 @@ type (
 	HaveSymptom             = repo.HaveSymptom
 	Infuse                  = repo.Infuse
 	Instruction             = repo.Instruction
+	Palpation               = repo.Palpation
 	Surgery                 = repo.Surgery
 	Transplant              = repo.Transplant
 	UnknownActor            = repo.UnknownActor

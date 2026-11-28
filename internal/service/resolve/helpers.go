@@ -14,10 +14,16 @@ func Actor(draft llmdto.ActorItem) (repo.IEActor, error) {
 	if name == "" {
 		return nil, nil
 	}
-	if repo.ParseActorKind(string(draft.Kind)) == repo.ActorKindDevice {
+	switch repo.ParseActorKind(string(draft.Kind)) {
+	case repo.ActorKindDevice:
 		return repo.NewDevice(name), nil
+	case repo.ActorKindFood:
+		return repo.NewFood(name), nil
+	case repo.ActorKindProcedure:
+		return repo.NewActorProcedure(name), nil
+	default:
+		return repo.NewUnknownActor(name), nil
 	}
-	return repo.NewUnknownActor(name), nil
 }
 
 func EnsureInfusionOption(st *store.StoreContainer, name string, sources []source.Source) error {
