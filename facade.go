@@ -27,6 +27,7 @@ type (
 	IMedicalProcedure = repo.IMedicalProcedure
 
 	Cleaning                = repo.Cleaning
+	Diagnosis               = repo.Diagnosis
 	DiagnosticTest          = repo.DiagnosticTest
 	Education               = repo.Education
 	EOtherSymptom           = repo.EOtherSymptom
@@ -34,6 +35,11 @@ type (
 	Infuse                  = repo.Infuse
 	Instruction             = repo.Instruction
 	Palpation               = repo.Palpation
+	PatientAction           = repo.PatientAction
+	StimulatePatientAction  = repo.StimulatePatientAction
+	EnablePatientAction     = repo.EnablePatientAction
+	DisablePatientAction    = repo.DisablePatientAction
+	EPatientAction          = repo.EPatientAction
 	Surgery                 = repo.Surgery
 	Transplant              = repo.Transplant
 	UnknownActor            = repo.UnknownActor
@@ -170,7 +176,8 @@ func SelectMedicalProcedureOption(options []MedicalProcedureOptionGraphItem, pro
 func IsStatusKind(kind string) bool {
 	switch strings.TrimSpace(kind) {
 	case "increased_index", "decreased_index", "have_disease", "have_symptom",
-		"damaged", "inflammation", "received_medical_procedure":
+		"damaged", "inflammation", "received_medical_procedure",
+		"enable_patient_action", "disable_patient_action":
 		return true
 	}
 	return false

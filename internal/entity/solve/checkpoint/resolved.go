@@ -12,8 +12,14 @@ import (
 	"github.com/G226Medi03/MorbesPipeline/internal/entity/patient"
 )
 
+type ActorAction struct {
+	Actor  llmdto.ActorItem `json:"actor"`
+	Action llmdto.Action    `json:"action"`
+}
+
 type ResolvedCaseExtraction struct {
 	Actors                  []llmdto.ActorItem            `json:"actors,omitempty"`
+	ActorActions            []ActorAction                 `json:"actorActions,omitempty"`
 	Statuses                []repo.IEStatus               `json:"statuses,omitempty"`
 	Actions                 []repo.IEAction               `json:"actions,omitempty"`
 	Relations               []morbesllm.RelationDraft     `json:"relations,omitempty"`
@@ -40,17 +46,19 @@ func (value ResolvedCaseExtraction) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(struct {
 		Actors                  []llmdto.ActorItem            `json:"actors,omitempty"`
+		ActorActions            []ActorAction                 `json:"actorActions,omitempty"`
 		Statuses                []json.RawMessage             `json:"statuses,omitempty"`
 		Actions                 []json.RawMessage             `json:"actions,omitempty"`
 		Relations               []morbesllm.RelationDraft     `json:"relations,omitempty"`
 		MedicalProcedureOptions []repo.MedicalProcedureOption `json:"medicalProcedureOptions,omitempty"`
 		PatientDescriptions     []patient.PatientDescription  `json:"patientDescriptions,omitempty"`
-	}{value.Actors, statuses, actions, value.Relations, value.MedicalProcedureOptions, value.PatientDescriptions})
+	}{value.Actors, value.ActorActions, statuses, actions, value.Relations, value.MedicalProcedureOptions, value.PatientDescriptions})
 }
 
 func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 	aux := struct {
 		Actors                  []llmdto.ActorItem            `json:"actors,omitempty"`
+		ActorActions            []ActorAction                 `json:"actorActions,omitempty"`
 		Statuses                json.RawMessage               `json:"statuses,omitempty"`
 		Actions                 json.RawMessage               `json:"actions,omitempty"`
 		Relations               json.RawMessage               `json:"relations,omitempty"`
@@ -73,6 +81,7 @@ func (value *ResolvedCaseExtraction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	value.Actors = aux.Actors
+	value.ActorActions = aux.ActorActions
 	value.Statuses = statuses
 	value.Actions = actions
 	value.Relations = relations
