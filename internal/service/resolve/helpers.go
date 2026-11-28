@@ -19,6 +19,8 @@ func Actor(draft llmdto.ActorItem) (repo.IEActor, error) {
 		return repo.NewDevice(name), nil
 	case repo.ActorKindFood:
 		return repo.NewFood(name), nil
+	case repo.ActorKindPatientAction:
+		return repo.NewPatientAction(repo.EPatientAction(name)), nil
 	case repo.ActorKindProcedure:
 		return repo.NewActorProcedure(name), nil
 	default:
