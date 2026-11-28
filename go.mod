@@ -3,8 +3,8 @@ module github.com/G226Medi03/MorbesPipeline
 go 1.26.0
 
 require (
-	github.com/G226Medi03/MedicalEntityParser v0.7.1
-	github.com/G226Medi03/MedicalEntityRepository v0.19.5
+	github.com/G226Medi03/MedicalEntityParser v0.8.1
+	github.com/G226Medi03/MedicalEntityRepository v0.20.1
 	github.com/G226Medi03/MorbesLLMService v0.18.4
 	github.com/G226Medi03/PipeLineCore v0.1.1-0.20261116143831-62093f9a17d1
 	github.com/G226Medi03/SQLCore v0.2.0
@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/G226Medi03/MedicalEntity v0.20.3 // indirect
+	github.com/G226Medi03/MedicalEntity v0.21.0 // indirect
 	github.com/G226Medi03/go-duration v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
